@@ -6,14 +6,14 @@
     <title>MC-repair-history (重點事項紀錄)</title>
     <style>
         :root {
-            /* 現代配色優化 */
-            --primary-color: #4CAF50; /* 綠色 - 主要/成功 */
-            --bg-color: #f7f9fc; /* 淺灰色背景 */
-            --card-bg: #ffffff; /* 白色卡片 */
-            --danger-color: #e53935; /* 紅色 - 警告/停止 */
-            --drive-color: #1a73e8; /* 藍色 - Google Drive/Copy */
-            --view-color: #607D8B; /* 灰色 - View/其他按鈕 */
-            --frame-color: #4CAF50; /* 綠色邊框 */
+            /* 主體配色：黑、橘、綠 */
+            --primary-color: #4CAF50; /* 綠色 - 主要/成功/儲存 */
+            --bg-color: #f7f9fc; 
+            --card-bg: #ffffff;
+            --danger-color: #e53935; 
+            --copy-color: #FF9800; /* 橘色 - Copy/Drive */
+            --view-color: #212121; /* 黑色 - View/次要 */
+            --frame-color: #4CAF50; 
             --input-border: #ddd;
         }
         body { 
@@ -32,14 +32,14 @@
         #login-screen { background: var(--bg-color); }
 
         .modal-box {
-            background: white; padding: 25px; border-radius: 12px; /* 略微縮小圓角 */
+            background: white; padding: 25px; border-radius: 12px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center; width: 90%; max-width: 450px;
-            max-height: 90vh; /* 確保內容不會超出畫面 */
-            overflow-y: auto; /* 允許滾動 */
+            max-height: 90vh; 
+            overflow-y: auto; 
         }
         .login-input {
-            width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; /* 略微縮小 padding/margin */
-            border-radius: 8px; font-size: 16px; text-align: left; /* 靠左對齊 */
+            width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; 
+            border-radius: 8px; font-size: 16px; text-align: left; 
             box-sizing: border-box;
         }
         .spinner {
@@ -49,32 +49,29 @@
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        #app-screen { width: 100%; max-width: 500px; padding: 10px; box-sizing: border-box; } /* 縮小 padding */
+        #app-screen { width: 100%; max-width: 500px; padding: 10px; box-sizing: border-box; }
         
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .header-btn { 
-            font-size: 24px; /* 略微縮小 */
+            font-size: 24px; 
             cursor: pointer; color: #555; padding: 6px; 
             border-radius: 50%; transition: background 0.2s;
             width: 36px; height: 36px; 
             display: flex; align-items: center; justify-content: center;
         }
-        .header-title h2 { margin: 0; color: #333; font-size: 1.2rem; line-height: 1.4; } /* 縮小標題 */
+        .header-title h2 { margin: 0; color: #333; font-size: 1.2rem; line-height: 1.4; }
 
         .card { background: var(--card-bg); padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 12px; }
         .section-title { font-weight: bold; color: #555; margin-bottom: 8px; display: block; font-size: 1rem; }
 
         .photo-controls { display: flex; gap: 10px; margin-bottom: 10px; }
+        /* 拍照/相簿按鈕顏色調整 */
         .btn-half { flex: 1; padding: 10px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; gap: 5px;}
-        .btn-cam { background-color: #ffb300; color: #333; }
-        .btn-gallery { background-color: #fb8c00; }
-
-        /* --- 圖片預覽 (保持修正後的邏輯) --- */
-        #preview-container { max-width: 100%; height: auto; }
-        #preview-img { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; }
+        .btn-cam { background-color: #FF5722; color: white; } /* 深橘色 */
+        .btn-gallery { background-color: #FFC107; color: #333; } /* 淺橘色 */
 
         /* --- 輸入/表單樣式 --- */
-        .input-group { margin-bottom: 8px; display: flex; flex-direction: column; } /* 調整 margin */
+        .input-group { margin-bottom: 8px; display: flex; flex-direction: column; }
         .input-label { font-weight: bold; font-size: 0.9rem; color: #333; margin-bottom: 4px; }
         .text-input, textarea, select.text-input { 
             width: 100%; padding: 10px; border: 1px solid var(--input-border); 
@@ -83,7 +80,7 @@
         }
         textarea { height: 80px; resize: vertical; } 
         
-        .time-component { display: flex; flex-direction: column; margin-bottom: 8px; } /* 調整 margin */
+        .time-component { display: flex; flex-direction: column; margin-bottom: 8px; }
         .time-input-row { display: flex; align-items: center; gap: 5px; }
 
         /* --- Total Stop Time 選項 --- */
@@ -92,56 +89,34 @@
             align-items: center;
             gap: 10px;
         }
-        .total-time-input-group > input {
-            flex-grow: 1;
-        }
-        .total-time-input-group > select {
-            width: 80px;
-            padding: 8px;
-            border-radius: 6px;
-        }
-        
-        /* --- 語音/更新按鈕樣式 --- */
-        .btn-update-time {
-            background-color: #ffb300; 
-            color: #333; 
-            font-weight: bold;
-            padding: 7px; /* 略微縮小 */
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 0.85em;
-            flex-shrink: 0;
-        }
-        .btn-update-time:active { background-color: #e3a900; }
         
         /* --- 底部按鈕美學優化 --- */
         .footer-btns { display: flex; flex-direction: column; gap: 8px; margin-top: 15px; padding-bottom: 20px;}
         .btn-main { 
             width: 100%; 
-            padding: 14px 15px; /* 縮小 padding */
+            padding: 14px 15px; 
             border: none; 
-            border-radius: 8px; /* 圓角調整 */
+            border-radius: 8px; 
             font-size: 16px; 
-            font-weight: 600; /* 調整字體粗細 */
+            font-weight: 600; 
             cursor: pointer; 
             color: white; 
             transition: background 0.2s, transform 0.1s;
         }
         .btn-main:active { transform: scale(0.99); }
         
-        /* 新配色 */
-        .btn-copy { background-color: var(--drive-color); }
-        .btn-copy:hover { background-color: #1565c0; }
+        /* 黑、橘、綠配色 */
+        .btn-copy { background-color: var(--copy-color); } /* 橘色 */
+        .btn-copy:hover { background-color: #f57c00; }
 
-        .btn-save { background-color: var(--primary-color); }
+        .btn-save { background-color: var(--primary-color); } /* 綠色 */
         .btn-save:hover { background-color: #43a047; }
 
-        .btn-view { background-color: var(--view-color); }
-        .btn-view:hover { background-color: #455a64; }
+        .btn-view { background-color: var(--view-color); color: white; } /* 黑色 */
+        .btn-view:hover { background-color: #000000; }
 
-        .btn-drive { background-color: #00897b; } /* 另一種綠色 */
-        .btn-drive:hover { background-color: #00695c; }
+        .btn-drive { background-color: var(--copy-color); } /* 橘色 */
+        .btn-drive:hover { background-color: #f57c00; }
         
         /* --- 設定內排版修正 --- */
         .settings-content-group {
@@ -151,7 +126,7 @@
             margin-top: 10px;
         }
         
-        /* 機器列表優化為多欄顯示 */
+        /* 機器列表優化為三欄顯示 */
         #machine-list-container {
             display: grid;
             grid-template-columns: repeat(3, 1fr); /* 3 欄平均分佈 */
@@ -160,7 +135,7 @@
         }
         .machine-list-item {
             display: flex;
-            flex-direction: column; /* 讓內容和刪除按鈕垂直排列 */
+            flex-direction: column; 
             justify-content: space-between;
             align-items: center;
             padding: 6px;
@@ -178,6 +153,7 @@
             border-radius: 3px;
             cursor: pointer;
             margin-top: 3px;
+            font-weight: bold;
         }
         
         .hidden { display: none !important; }
@@ -205,7 +181,7 @@
     </div>
 
     <div id="app-screen" style="display: none;">
-        <div class="author-header">Author: DERER LIN (v2.7)</div>
+        <div class="author-header">Author: DERER LIN (v2.8)</div>
 
         <div class="header">
             <div class="header-btn" onclick="logout()" title="Lock / Logout (鎖定/登出)">🔒</div>
@@ -213,6 +189,14 @@
                 <h2>MC-repair-history<br>重點事項紀錄</h2>
             </div>
             <div class="header-btn" onclick="openSettings()" title="Settings (設定)">⚙️</div>
+        </div>
+
+        <div class="card">
+            <span class="section-title">0. Employee Info (員工資訊)</span>
+            <div class="input-group">
+                <label class="input-label" for="input-employee-id">Employee ID (員工編號):</label>
+                <input type="text" id="input-employee-id" class="text-input" placeholder="儲存後不會清除">
+            </div>
         </div>
 
         <div class="card">
@@ -281,6 +265,11 @@
             </div>
             
             <div class="input-group">
+                <label class="input-label" for="input-concern-section">Concern Section :</label>
+                <input type="text" id="input-concern-section" class="text-input" placeholder="e.g. Mechanical and Electric maintanence">
+            </div>
+
+            <div class="input-group">
                 <label class="input-label" for="input-reason">Reason :</label>
                 <textarea id="input-reason" placeholder="e.g. dischrge door not open"></textarea>
                 <div class="voice-control-group">
@@ -291,11 +280,6 @@
                 </div>
             </div>
             
-            <div class="input-group">
-                <label class="input-label" for="input-concern-section">Concern Section :</label>
-                <input type="text" id="input-concern-section" class="text-input" placeholder="e.g. Mechanical and Electric maintanence">
-            </div>
-
             <div class="input-group">
                 <label class="input-label" for="input-solution">How to Solve Problem:</label>
                 <textarea id="input-solution" placeholder="e.g. hydraulic pressure set"></textarea>
@@ -314,7 +298,7 @@
             <select id="voice-lang-select" class="hidden">
                 <option value="cmn-Hant-TW">中文 (繁體)</option>
                 <option value="en-US">English</option>
-                <option value="ja-JP">日本語</option>
+                <option value="ja-JP">Japanese</option>
                 <option value="hi-IN">Hindi (印地語)</option>
             </select>
         </div>
@@ -368,7 +352,7 @@
 
 
                 <div class="modal-group" style="border: 1px solid #ddd; padding: 10px; border-radius: 8px;">
-                    <label style="font-weight: bold; margin-bottom: 10px; display: block; color: var(--drive-color);">4. Machine List Management (機器列表管理)</label>
+                    <label style="font-weight: bold; margin-bottom: 10px; display: block; color: var(--copy-color);">4. Machine List Management (機器列表管理)</label>
                     
                     <input type="text" id="new-machine-name" class="login-input" style="margin: 0 0 5px 0;" placeholder="Add new machine name (e.g., CM4)">
                     <button type="button" class="btn-add-item" onclick="addMachine()">+ Add Machine (新增)</button>
@@ -392,13 +376,14 @@
     const DEFAULT_PASS = "12345"; 
     const MAX_IMAGE_WIDTH = 1000;
     const MACHINE_LIST_KEY = "cfg_machine_list";
+    const EMPLOYEE_ID_KEY = "cfg_employee_id"; // 新增員工 ID Key
     const DEFAULT_MACHINE_LIST = ["BM5", "BM6", "BM7", "BM21", "BM22", "BM23", "CA3", "CA4", "CM1", "CM2", "CM3"];
     const DEFAULT_VOICE_TIMEOUT = 1.5;
 
     // 你的固定路徑 (FIXED PATHS)
-    const FIXED_SCRIPT_ID = "AKfycbwseWx2ioJ0K_jEqHvJQVeUGw65PGW8gsxvRiKs63DdXr-mGb-OeM324vwH-DL62ujm/exec";
-    const FIXED_SHEET_ID = "1LvIn4eRb8tzVOQfxiSwZIRnaiPD0zb2jrXsi0hP_2YA/edit?gid=0#gid=0";
-    const FIXED_FOLDER_ID = "13fk6iR1JP7mUrlhoQ4h9TsF_T6VUhe38";
+    const FIXED_SCRIPT_ID = "AKfycbzfPzPODQjp_phrHPwjsoBYeA8-VgeaoYly6hr3Mx09Wj-o5tWHMPa-nTHfaHyloiH8zg/exec";
+    const FIXED_SHEET_ID = "1sDKZBJfasUbZSGNAfz9GIWfRdrdXxQMrXrxM3x9RlCY/edit?gid=0#gid=0;
+    const FIXED_FOLDER_ID = "1VPfLCMIuJPA66RjN8isrC4xq3luPMJe4";
 
     // 狀態變數
     let processedImageBase64 = ""; 
@@ -427,6 +412,8 @@
         
         loadSettingsToUI();
         loadMachineListToUI();
+        loadEmployeeID(); // 載入員工 ID
+        
         document.getElementById('input-stop-time-full').value = "";
         document.getElementById('input-start-time-full').value = "";
         document.getElementById('input-total-time').value = "";
@@ -441,7 +428,21 @@
         }
     }
 
-    // ================= 登入與設定管理 (優化排版) =================
+    // ================= 員工 ID 持久化 =================
+    function loadEmployeeID() {
+        const savedId = localStorage.getItem(EMPLOYEE_ID_KEY);
+        if (savedId) {
+            document.getElementById('input-employee-id').value = savedId;
+        }
+    }
+
+    function saveEmployeeID() {
+        const employeeId = document.getElementById('input-employee-id').value.trim();
+        localStorage.setItem(EMPLOYEE_ID_KEY, employeeId);
+    }
+
+
+    // ================= 登入與設定管理 (保持不變) =================
     function checkLogin() {
         const input = document.getElementById('loginPass').value;
         const storedPass = localStorage.getItem("app_password"); 
@@ -531,7 +532,7 @@
         localStorage.setItem("cfg_lang", val);
     }
     
-    // ================= 機器列表管理 (多欄位顯示) =================
+    // ================= 機器列表管理 (保持多欄位顯示邏輯) =================
     function getMachineList() {
         try {
             return JSON.parse(localStorage.getItem(MACHINE_LIST_KEY)) || DEFAULT_MACHINE_LIST;
@@ -543,7 +544,7 @@
     function saveMachineList(list) {
         const uniqueSortedList = [...new Set(list)].sort((a, b) => a.localeCompare(b));
         localStorage.setItem(MACHINE_LIST_KEY, JSON.stringify(uniqueSortedList));
-        loadMachineListToUI(); // 確保每次修改都同步更新 UI
+        loadMachineListToUI();
         return uniqueSortedList;
     }
     function loadMachineListToUI() {
@@ -613,8 +614,7 @@
     }
 
 
-    // ================= 時間處理函數 (修正計算邏輯與單位) =================
-
+    // ================= 時間處理函數 (計算邏輯保持不變) =================
     const DATETIME_REGEX = /^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})$/;
 
     function parseCustomDateTime(dtStr) {
@@ -636,7 +636,6 @@
         return date;
     }
     
-    /** 計算總停機時間 (Total stop time) 並填入欄位 */
     function calculateTotalStopTime() {
         const stopTimeStr = document.getElementById('input-stop-time-full').value.trim();
         const startTimeStr = document.getElementById('input-start-time-full').value.trim();
@@ -644,7 +643,6 @@
         const unitSelect = document.getElementById('total-time-unit');
         const unit = unitSelect ? unitSelect.value : 'h';
 
-        // 修正: 如果任何一個時間欄位為空，則清空總時間
         if (stopTimeStr === "" || startTimeStr === "") {
              totalTimeInput.value = "";
              totalTimeInput.style.backgroundColor = '#eee';
@@ -709,7 +707,8 @@
         }
     }
     
-    // ================= 複製格式化訊息 (使用 dataset 儲存分鐘數) =================
+    // ================= 複製格式化訊息 (修正 Concern Section 順序) =================
+    
     function extractDateAndTime(fullTimeStr) {
         const match = fullTimeStr.match(DATETIME_REGEX);
         if (match) {
@@ -728,22 +727,27 @@
                               : totalTimeInput.value.includes('Invalid') || totalTimeInput.value === '' ? 'N/A' : totalTimeInput.value;
 
         // 1. 蒐集資料
+        const employeeId = document.getElementById('input-employee-id').value || "N/A";
         const machine = document.getElementById('input-machine').value || "N/A";
         const stopTimeFull = document.getElementById('input-stop-time-full').value.trim();
         const startTimeFull = document.getElementById('input-start-time-full').value.trim();
         const repairFormNo = document.getElementById('input-form-no').value || "N/A";
         const reason = document.getElementById('input-reason').value || "N/A";
-        const concernSection = document.getElementById('input-concern-section').value || "N/A";
+        const concernSection = document.getElementById('input-concern-section').value || "N/A"; // 新增
         const solution = document.getElementById('input-solution').value || "N/A";
-        const selfActions = document.getElementById('input-self-actions').value || "N/A";
+        const selfActions = document.getElementById('input-self-actions').value || "N/A"; // 新增
         
         // 2. 處理時間
         const stopInfo = extractDateAndTime(stopTimeFull);
         const startInfo = extractDateAndTime(startTimeFull);
         
-        // 3. 構建輸出字串
+        // 3. 構建輸出字串 (調整 Concern Section 位置)
         const output = `
+Employee ID :- ${employeeId}
+
 Machine :- ${machine}
+
+Concern Section :- ${concernSection}
 
 Date :- ${stopInfo.date}
 
@@ -756,8 +760,6 @@ Total stop time :- ${totalTimeFormat}
 Repair Form No:- ${repairFormNo}
 
 Reason :- ${reason}
-
-Concern Section :- ${concernSection}
 
 How to Solve Problem:- ${solution}
 
@@ -773,9 +775,101 @@ Self Actions:- ${selfActions}
         });
     }
 
-    // ... (其他圖片/語音/上傳函數保持不變) ...
-    // 由於其他函數未修改核心邏輯，在此省略，但請確保你替換時使用完整的程式碼。
-    // ...
+    // ================= 上傳與清除邏輯 (修正) =================
+    function clearInputs() {
+        // 移除員工 ID 的清除，但其他欄位清除
+        document.getElementById('input-machine').value = ""; 
+        document.getElementById('input-total-time').value = "";
+        document.getElementById('input-form-no').value = "";
+        document.getElementById('input-reason').value = "";
+        document.getElementById('input-concern-section').value = "";
+        document.getElementById('input-solution').value = "";
+        document.getElementById('input-self-actions').value = "";
+
+        document.getElementById('input-stop-time-full').value = "";
+        document.getElementById('input-start-time-full').value = "";
+        
+        document.getElementById('input-total-time').style.backgroundColor = '#eee';
+        calculateTotalStopTime(); 
+
+        processedImageBase64 = "";
+        document.getElementById('preview-img').style.display = 'none';
+        document.querySelector('.placeholder').style.display = 'block';
+        applySettings();
+    }
+
+    function saveToCloud() {
+        if(isRecording) manualStopVoice();
+
+        // 獲取所有欄位
+        const employeeId = document.getElementById('input-employee-id').value; // 新增
+        const machine = document.getElementById('input-machine').value; 
+        const stopTimeFull = document.getElementById('input-stop-time-full').value; 
+        const startTimeFull = document.getElementById('input-start-time-full').value; 
+        const totalTime = document.getElementById('input-total-time').value; 
+        const formNo = document.getElementById('input-form-no').value;
+        const reason = document.getElementById('input-reason').value;
+        const concernSection = document.getElementById('input-concern-section').value;
+        const solution = document.getElementById('input-solution').value; 
+        const selfActions = document.getElementById('input-self-actions').value;
+        
+        // 檢查
+        if(!processedImageBase64 && !machine && !reason && !solution) {
+            alert("Empty! Please fill in machine info/notes or take a photo."); return;
+        }
+        if (machine.trim() === "") {
+            alert("請選擇 Machine (機台)。");
+            return;
+        }
+        
+        // 儲存員工 ID
+        saveEmployeeID();
+
+        const scriptUrl = `https://script.google.com/macros/s/${FIXED_SCRIPT_ID}/exec`;
+        const btn = document.getElementById('saveBtn');
+        
+        btn.disabled = true;
+        showStatus('loading', 'Uploading...', '資料上傳中...');
+
+        const data = { 
+            image: processedImageBase64, 
+            employeeId: employeeId, // 傳輸 Employee ID
+            machine: machine,
+            stopTimeFull: stopTimeFull,
+            startTimeFull: startTimeFull,
+            totalTime: totalTime, 
+            formNo: formNo,
+            reason: reason, 
+            concernSection: concernSection,
+            solution: solution, 
+            selfActions: selfActions,
+            folderId: FIXED_FOLDER_ID
+        };
+
+        fetch(scriptUrl, {
+            method: 'POST',
+            body: JSON.stringify(data)
+        })
+        .then(r => r.json())
+        .then(res => {
+            if (res.result === 'success') {
+                showStatus('success', 'Upload Success!', '上傳成功！');
+                clearInputs();
+                setTimeout(() => { closeStatusModal(); }, 2000);
+            } else {
+                showStatus('error', 'Upload Failed', `上傳失敗：${res.error || '未知的錯誤。'}`);
+            }
+        })
+        .catch(e => {
+            console.error(e);
+            showStatus('error', 'Upload Failed', '網路或伺服器錯誤，請檢查。');
+        })
+        .finally(() => {
+            btn.disabled = false;
+        });
+    }
+
+    // ... (其他函數省略，請替換完整) ...
     function triggerFile(id) { document.getElementById(id).click(); }
     
     function handleFile(input) {
@@ -973,92 +1067,6 @@ Self Actions:- ${selfActions}
     }
 
     function closeStatusModal() { document.getElementById('status-modal').style.display = 'none'; }
-
-    function clearInputs() {
-        document.getElementById('input-machine').value = ""; 
-        document.getElementById('input-total-time').value = "";
-        document.getElementById('input-form-no').value = "";
-        document.getElementById('input-reason').value = "";
-        document.getElementById('input-concern-section').value = "";
-        document.getElementById('input-solution').value = "";
-        document.getElementById('input-self-actions').value = "";
-
-        document.getElementById('input-stop-time-full').value = "";
-        document.getElementById('input-start-time-full').value = "";
-        
-        document.getElementById('input-total-time').style.backgroundColor = '#eee';
-        calculateTotalStopTime(); 
-
-        processedImageBase64 = "";
-        document.getElementById('preview-img').style.display = 'none';
-        document.querySelector('.placeholder').style.display = 'block';
-        applySettings();
-    }
-
-    function saveToCloud() {
-        if(isRecording) manualStopVoice();
-
-        const machine = document.getElementById('input-machine').value; 
-        const stopTimeFull = document.getElementById('input-stop-time-full').value; 
-        const startTimeFull = document.getElementById('input-start-time-full').value; 
-        const totalTime = document.getElementById('input-total-time').value; 
-        const formNo = document.getElementById('input-form-no').value;
-        const reason = document.getElementById('input-reason').value;
-        const concernSection = document.getElementById('input-concern-section').value;
-        const solution = document.getElementById('input-solution').value; 
-        const selfActions = document.getElementById('input-self-actions').value;
-
-        if(!processedImageBase64 && !machine && !reason && !solution) {
-            alert("Empty! Please fill in machine info/notes or take a photo."); return;
-        }
-        
-        if (machine.trim() === "") {
-            alert("請選擇 Machine (機台)。");
-            return;
-        }
-
-        const scriptUrl = `https://script.google.com/macros/s/${FIXED_SCRIPT_ID}/exec`;
-        const btn = document.getElementById('saveBtn');
-        
-        btn.disabled = true;
-        showStatus('loading', 'Uploading...', '資料上傳中...');
-
-        const data = { 
-            image: processedImageBase64, 
-            machine: machine,
-            stopTimeFull: stopTimeFull,
-            startTimeFull: startTimeFull,
-            totalTime: totalTime, 
-            formNo: formNo,
-            reason: reason, 
-            concernSection: concernSection,
-            solution: solution, 
-            selfActions: selfActions,
-            folderId: FIXED_FOLDER_ID
-        };
-
-        fetch(scriptUrl, {
-            method: 'POST',
-            body: JSON.stringify(data)
-        })
-        .then(r => r.json())
-        .then(res => {
-            if (res.result === 'success') {
-                showStatus('success', 'Upload Success!', '上傳成功！');
-                clearInputs();
-                setTimeout(() => { closeStatusModal(); }, 2000);
-            } else {
-                showStatus('error', 'Upload Failed', `上傳失敗：${res.error || '未知的錯誤。'}`);
-            }
-        })
-        .catch(e => {
-            console.error(e);
-            showStatus('error', 'Upload Failed', '網路或伺服器錯誤，請檢查。');
-        })
-        .finally(() => {
-            btn.disabled = false;
-        });
-    }
 
     function viewExcel() {
         const url = `https://docs.google.com/spreadsheets/d/${FIXED_SHEET_ID}`;
