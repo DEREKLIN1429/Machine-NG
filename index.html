@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MC-repair-history (重點事項紀錄)</title>
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --danger-color: #dc3545;
+            --drive-color: #198754; 
+            --frame-color: #00e600; 
+            --input-border: #ccc;
+        }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: var(--bg-color); 
+            margin: 0; padding: 0;
+            display: flex; justify-content: center; height: 100vh;
+        }
+
+        #login-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-color); z-index: 9999;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .login-box {
+            background: white; padding: 30px; border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center; width: 80%; max-width: 300px;
+        }
+        .login-input {
+            width: 100%; padding: 12px; margin: 15px 0; border: 2px solid #ddd;
+            border-radius: 8px; font-size: 18px; text-align: center;
+        }
+
+        #status-modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); z-index: 2000; justify-content: center; align-items: center;
+        }
+        .status-box {
+            background: white; padding: 25px; border-radius: 12px; width: 80%; max-width: 280px;
+            text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .status-icon { font-size: 40px; margin-bottom: 15px; display: block; }
+        .spinner {
+            border: 4px solid #f3f3f3; border-top: 4px solid var(--primary-color);
+            border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite;
+            margin: 0 auto 15px auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        #status-close-btn {
+            background: var(--primary-color); color: white; border: none; padding: 8px 20px;
+            border-radius: 5px; margin-top: 15px; cursor: pointer; display: none; font-size: 16px;
+        }
+
+        #app-screen { display: none; width: 100%; max-width: 500px; height: 100%; overflow-y: auto; padding: 20px; box-sizing: border-box; }
+        
+        .author-header {
+            text-align: center; font-size: 0.75rem; color: #999; padding-bottom: 10px;
+            letter-spacing: 1px; font-weight: 500;
+        }
+
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        
+        .header-btn { 
+            font-size: 26px; cursor: pointer; color: #555; padding: 8px; 
+            border-radius: 50%; transition: background 0.2s, color 0.2s;
+            width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+        }
+        .header-btn:active { background: #e9ecef; }
+        
+        .header-title { text-align: center; flex-grow: 1; }
+        .header-title h2 { margin: 0; color: #333; font-size: 1.3rem; line-height: 1.4; }
+        .header-title span { font-size: 0.85em; color: #666; font-weight: normal; }
+
+        .card { background: var(--card-bg); padding: 20px; border-radius: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 15px; }
+        .section-title { font-weight: bold; color: #555; margin-bottom: 10px; display: block; font-size: 1rem; }
+
+        .photo-controls { display: flex; gap: 10px; margin-bottom: 10px; }
+        .btn-half { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; gap: 5px;}
+        .btn-cam { background-color: #ffc107; color: #333; }
+        .btn-gallery { background-color: #fd7e14; }
+
+        /* ... 照片預覽框樣式 (省略未改動的 CSS) ... */
+        #preview-container { 
+            width: 100%; 
+            background: #f0fff0; 
+            border: 2px solid var(--frame-color);
+            border-radius: 8px; 
+            display: flex; align-items: center; justify-content: center; 
+            overflow: hidden;
+            position: relative;
+            box-sizing: border-box;
+            transition: aspect-ratio 0.3s ease;
+            box-shadow: 0 0 10px rgba(0, 230, 0, 0.15);
+            cursor: pointer;
+        }
+        #preview-container:active { opacity: 0.8; }
+
+        #preview-container::after {
+            content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            border: 4px solid transparent;
+            background: 
+                linear-gradient(to right, var(--frame-color) 4px, transparent 4px) 0 0,
+                linear-gradient(to bottom, var(--frame-color) 4px, transparent 4px) 0 0,
+                linear-gradient(to left, var(--frame-color) 4px, transparent 4px) 100% 0,
+                linear-gradient(to bottom, var(--frame-color) 4px, transparent 4px) 100% 0,
+                linear-gradient(to right, var(--frame-color) 4px, transparent 4px) 0 100%,
+                linear-gradient(to top, var(--frame-color) 4px, transparent 4px) 0 100%,
+                linear-gradient(to left, var(--frame-color) 4px, transparent 4px) 100% 100%,
+                linear-gradient(to top, var(--frame-color) 4px, transparent 4px) 100% 100%;
+            background-repeat: no-repeat; background-size: 20px 20px; pointer-events: none; margin: 5px;
+        }
+        
+        .ratio-tag {
+            position: absolute; top: 10px; left: 10px;
+            background: var(--frame-color); color: #000; font-weight: bold;
+            padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; pointer-events: none;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        #preview-img { width: 100%; height: 100%; object-fit: contain; display: none; z-index: 1; }
+        .placeholder { color: #555; text-align: center; font-size: 0.9em; z-index: 0; font-weight: 500;}
+
+
+        /* --- 新增/修改輸入欄位樣式 --- */
+        .input-group {
+            margin-bottom: 12px;
+            display: flex;
+            flex-direction: column;
+        }
+        .input-label {
+            font-weight: bold;
+            font-size: 0.95rem;
+            color: #333;
+            margin-bottom: 4px;
+        }
+        .text-input, textarea { 
+            width: 100%; 
+            padding: 10px; 
+            border: 1px solid var(--input-border); 
+            border-radius: 6px; 
+            font-size: 15px; 
+            box-sizing: border-box;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+        .text-input:focus, textarea:focus { border-color: var(--primary-color); outline: none; }
+        textarea { height: 120px; resize: vertical; } /* 讓 Reason 和 Solution 可以垂直拖曳 */
+        
+        .date-time-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap; /* 換行以適應小螢幕 */
+        }
+        .date-time-group > div {
+            flex: 1 1 45%; /* 允許在小螢幕上平均分配空間 */
+            min-width: 100px;
+        }
+
+        .footer-btns { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; padding-bottom: 30px;}
+        .btn-main { width: 100%; padding: 15px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; color: white; }
+        .btn-save { background-color: var(--primary-color); }
+        .btn-view { background-color: #6c757d; }
+        .btn-drive { background-color: var(--drive-color); }
+        
+        /* ... 其他未改動的 CSS ... */
+        #settings-modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background: white; width: 90%; max-width: 400px; padding: 25px; 
+            border-radius: 15px; max-height: 85vh; overflow-y: auto;
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px;}
+        .modal-group { margin-bottom: 15px; }
+        .modal-group label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 0.9rem; color: #333; }
+        .modal-input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 0.95rem;}
+        select.modal-input { background: white; }
+        .hint-text { font-size: 0.8rem; color: #888; margin-top: 3px; }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body onload="initApp()">
+
+    <div id="login-screen">
+        <div class="login-box">
+            <h3>🔒 Login (登入)</h3>
+            <p style="color:#666; font-size:0.9em;">Please enter password<br>(請輸入密碼)</p>
+            <input type="password" id="loginPass" class="login-input" placeholder="Password">
+            <button class="btn-main btn-save" onclick="checkLogin()">Login (進入)</button>
+        </div>
+    </div>
+
+    <div id="status-modal">
+        <div class="status-box">
+            <div id="status-spinner" class="spinner"></div>
+            <div id="status-icon" class="status-icon" style="display:none;"></div>
+            <h3 id="status-text" style="color:#333; margin:0;">Uploading...</h3>
+            <p id="status-subtext" style="color:#666; font-size:0.9em; margin-top:5px;">(資料上傳中...)</p>
+            <button id="status-close-btn" onclick="closeStatusModal()">OK</button>
+        </div>
+    </div>
+
+    <div id="app-screen">
+        <div class="author-header">Author: DERER LIN</div>
+
+        <div class="header">
+            <div class="header-btn" onclick="logout()" title="Lock / Logout (鎖定/登出)">🔒</div>
+            <div class="header-title">
+                <h2>MC-repair-history<br>重點事項紀錄</h2>
+            </div>
+            <div class="header-btn" onclick="openSettings()" title="Settings (設定)">⚙️</div>
+        </div>
+
+        <div class="card">
+            <span class="section-title">1. Photo (圖片紀錄)</span>
+            <div class="photo-controls">
+                <button class="btn-half btn-cam" onclick="triggerCam()">📷 Camera (拍照)</button>
+                <button class="btn-half btn-gallery" onclick="triggerGallery()">🖼️ Gallery (相簿)</button>
+            </div>
+            
+            <div id="preview-container" class="ratio-4-3" onclick="triggerCam()" title="Click to take photo">
+                <div class="ratio-tag" id="ratio-display-tag">Ratio: 4:3</div>
+                <span class="placeholder">Tap here to Take Photo<br>(點擊此處拍照)</span>
+                <img id="preview-img">
+            </div>
+            
+            <input type="file" id="input-cam" accept="image/*" capture="environment" class="hidden" onchange="handleFile(this)">
+            <input type="file" id="input-gallery" accept="image/*" class="hidden" onchange="handleFile(this)">
+        </div>
+
+        <div class="card" id="note-card">
+            <span class="section-title" id="machine-info-title">2. Machine NG Information_ </span>
+            
+            <div class="input-group">
+                <label class="input-label" for="input-machine">Machine :</label>
+                <input type="text" id="input-machine" class="text-input" placeholder="e.g. A01">
+            </div>
+
+            <div class="date-time-group">
+                <div>
+                    <label class="input-label" for="input-date">Date : (DD/MM/YYYY)</label>
+                    <input type="text" id="input-date" class="text-input" placeholder="e.g. 01/12/2025">
+                </div>
+                <div>
+                    <label class="input-label" for="input-total-time">Total stop time :</label>
+                    <input type="text" id="input-total-time" class="text-input" placeholder="e.g. 1.5h">
+                </div>
+                <div>
+                    <label class="input-label" for="input-stop-time">Stop time : (hh:mm)</label>
+                    <input type="text" id="input-stop-time" class="text-input" placeholder="e.g. 09:30">
+                </div>
+                <div>
+                    <label class="input-label" for="input-start-time">Start time : (hh:mm)</label>
+                    <input type="text" id="input-start-time" class="text-input" placeholder="e.g. 11:00">
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label class="input-label" for="input-form-no">Repair Form No:</label>
+                <input type="text" id="input-form-no" class="text-input" placeholder="e.g. RF20251201">
+            </div>
+
+            <div class="input-group">
+                <label class="input-label" for="input-reason">Reason :</label>
+                <textarea id="input-reason" placeholder="Describe the reason for the failure... (請描述故障原因...)"></textarea>
+            </div>
+            
+            <div class="input-group">
+                <label class="input-label" for="input-solution">How to Solve Problem:</label>
+                <textarea id="input-solution" placeholder="Describe the solution taken... (請描述採取的解決方案...)"></textarea>
+            </div>
+            
+        </div>
+
+        <div class="footer-btns">
+            <button class="btn-main btn-save" id="saveBtn" onclick="saveToCloud()">💾 Save to Cloud (存檔至雲端)</button>
+            <button class="btn-main btn-view" onclick="viewExcel()">📊 View Excel (檢視 Excel)</button>
+            <button class="btn-main btn-drive" onclick="viewDriveFolder()">📂 View Photos (檢視雲端照片)</button>
+        </div>
+    </div>
+
+    <div id="settings-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Settings (設定)</h3>
+                <button onclick="closeSettings()" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+            </div>
+            
+            <div class="modal-group" style="background: #f9f9f9; padding: 10px; border-radius: 8px; border: 1px dashed #ccc;">
+                <label style="color:#d63384;">🔑 Login Password (修改登入密碼)</label>
+                <input type="text" id="set-password" class="modal-input" placeholder="Current: 1234">
+            </div>
+
+            <div class="modal-group">
+                <label>1. Photo Aspect Ratio (照片比例)</label>
+                <select id="set-ratio" class="modal-input">
+                    <option value="4/3">4:3 (Standard)</option>
+                    <option value="16/9">16:9 (Wide)</option>
+                    <option value="9/16">9:16 (Vertical / 直式)</option>
+                    <option value="1/1">1:1 (Square)</option>
+                    <option value="FULL">FULL (Original / 全畫面)</option>
+                </select>
+                <div class="hint-text">* Applies auto-crop unless set to FULL.</div>
+            </div>
+
+            <div style="text-align: center; color: var(--primary-color); font-size: 0.9em; margin-top: 15px;">
+                <p>✅ Cloud Paths are Locked (System Mode)</p>
+            </div>
+
+            <button class="btn-main btn-save" onclick="saveSettings()">Save Settings (儲存設定)</button>
+        </div>
+    </div>
+
+<script>
+    // ================= 初始化與輔助函數 =================
+    const DEFAULT_PASS = "1234"; 
+    
+    // --- 這裡是你要求的寫死路徑 (FIXED PATHS) ---
+    const FIXED_SCRIPT_ID = "AKfycbwseWx2ioJ0K_jEqHvJQVeUGw65PGW8gsxvRiKs63DdXr-mGb-OeM324vwH-DL62ujm/exec";
+    const FIXED_SHEET_ID = "1LvIn4eRb8tzVOQfxiSwZIRnaiPD0zb2jrXsi0hP_2YA/edit?gid=0#gid=0";
+    const FIXED_FOLDER_ID = "13fk6iR1JP7mUrlhoQ4h9TsF_T6VUhe38";
+
+    let processedImageBase64 = ""; 
+
+    function initApp() {
+        if(!localStorage.getItem("app_password")) {
+            localStorage.setItem("app_password", DEFAULT_PASS);
+        }
+        const isLoggedIn = localStorage.getItem("isLoggedIn");
+        if(isLoggedIn === "true") {
+            showApp();
+        } else {
+            document.getElementById('login-screen').style.display = 'flex';
+        }
+        loadSettingsToUI();
+        // 初始化時帶入日期時間
+        insertDateTime();
+    }
+
+    // --- 新增函數：自動帶入日期和時間 ---
+    function insertDateTime() {
+        const now = new Date();
+        const dateString = now.toLocaleDateString('en-US', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '/'); // 格式 DD/MM/YYYY
+        const timeString = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }).replace(/^(\d):/,'0$1:'); // 格式 hh:mm
+
+        // 更新標題的日期
+        document.getElementById('machine-info-title').innerText = `2. Machine NG Information_ ${dateString}`;
+        
+        // 自動帶入日期
+        document.getElementById('input-date').value = dateString;
+        
+        // 自動帶入 Stop time 和 Start time (預設為當前時間)
+        document.getElementById('input-stop-time').value = timeString;
+        document.getElementById('input-start-time').value = timeString;
+    }
+
+    // ================= 登入與設定 =================
+    function checkLogin() {
+        const input = document.getElementById('loginPass').value;
+        const storedPass = localStorage.getItem("app_password");
+        if(input === storedPass) {
+            localStorage.setItem("isLoggedIn", "true");
+            showApp();
+        } else {
+            alert("Wrong Password! (密碼錯誤)");
+        }
+    }
+
+    function logout() {
+        if(confirm("Lock and logout?\n(確定要鎖定並登出嗎？)")) {
+            localStorage.removeItem("isLoggedIn"); 
+            document.getElementById('app-screen').style.display = 'none';
+            document.getElementById('login-screen').style.display = 'flex'; 
+            document.getElementById('loginPass').value = ""; 
+            closeSettings();
+        }
+    }
+
+    function showApp() {
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('app-screen').style.display = 'block';
+        applySettings(); 
+    }
+
+    function openSettings() {
+        loadSettingsToUI();
+        document.getElementById('settings-modal').style.display = 'flex';
+    }
+    function closeSettings() {
+        document.getElementById('settings-modal').style.display = 'none';
+    }
+
+    function saveSettings() {
+        const newPass = document.getElementById('set-password').value;
+        const ratio = document.getElementById('set-ratio').value;
+
+        if(newPass.trim() === "") { alert("Password cannot be empty!"); return; }
+
+        localStorage.setItem("app_password", newPass); 
+        localStorage.setItem("cfg_ratio", ratio);
+        
+        alert("Settings Saved!");
+        closeSettings();
+        applySettings();
+    }
+
+    function loadSettingsToUI() {
+        document.getElementById('set-password').value = localStorage.getItem("app_password");
+        document.getElementById('set-ratio').value = localStorage.getItem("cfg_ratio") || "4/3";
+    }
+
+    function applySettings() {
+        const ratio = localStorage.getItem("cfg_ratio") || "4/3";
+        const container = document.getElementById('preview-container');
+        const tag = document.getElementById('ratio-display-tag');
+        
+        container.className = ""; 
+        container.style.aspectRatio = "";
+
+        if(ratio === "4/3") container.classList.add("ratio-4-3");
+        else if(ratio === "16/9") container.classList.add("ratio-16-9");
+        else if(ratio === "9/16") container.classList.add("ratio-9-16");
+        else if(ratio === "1/1") container.classList.add("ratio-1-1");
+        else if(ratio === "FULL") container.classList.add("ratio-full");
+        
+        if(ratio === "FULL") tag.innerText = "Ratio: Full (Original)";
+        else tag.innerText = "Ratio: " + ratio.replace("/", ":");
+    }
+
+
+    // ================= 圖片處理 (保持不變) =================
+    function triggerCam() { document.getElementById('input-cam').click(); }
+    function triggerGallery() { document.getElementById('input-gallery').click(); }
+    function handleFile(input) {
+        if (input.files && input.files[0]) {
+            const file = input.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() { processImageWithCanvas(img); };
+                img.src = e.target.result;
+            }
+            reader.readAsDataURL(file);
+        }
+    }
+    function processImageWithCanvas(img) {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const ratioStr = localStorage.getItem("cfg_ratio") || "4/3";
+        
+        let targetRatio = 4/3;
+        let isFull = false;
+
+        if(ratioStr === "FULL") isFull = true;
+        else if(ratioStr === "16/9") targetRatio = 16/9;
+        else if(ratioStr === "9/16") targetRatio = 9/16;
+        else if(ratioStr === "1/1") targetRatio = 1;
+
+        let srcW = img.width; let srcH = img.height;
+        let drawW, drawH, startX, startY;
+
+        if (isFull) {
+            drawW = srcW; drawH = srcH; startX = 0; startY = 0;
+        } else {
+            let srcRatio = srcW / srcH;
+            if (srcRatio > targetRatio) {
+                drawH = srcH; drawW = srcH * targetRatio;
+                startX = (srcW - drawW) / 2; startY = 0;
+            } else {
+                drawW = srcW; drawH = srcW / targetRatio;
+                startX = 0; startY = (srcH - drawH) / 2;
+            }
+        }
+
+        const MAX_WIDTH = 1000; 
+        const scale = MAX_WIDTH / drawW;
+        canvas.width = MAX_WIDTH; canvas.height = drawH * scale;
+
+        ctx.drawImage(img, startX, startY, drawW, drawH, 0, 0, canvas.width, canvas.height);
+        processedImageBase64 = canvas.toDataURL('image/jpeg', 0.8);
+        
+        const preview = document.getElementById('preview-img');
+        preview.src = processedImageBase64;
+        preview.style.display = 'block';
+        document.querySelector('.placeholder').style.display = 'none';
+
+        if(isFull) {
+             const container = document.getElementById('preview-container');
+             container.className = ""; 
+             container.style.aspectRatio = `${canvas.width} / ${canvas.height}`;
+        }
+    }
+
+    // ================= 上傳與檢視 (修改 saveToCloud 蒐集所有新欄位) =================
+    function showStatus(type, title, subtitle) {
+        const modal = document.getElementById('status-modal');
+        const spinner = document.getElementById('status-spinner');
+        const icon = document.getElementById('status-icon');
+        const text = document.getElementById('status-text');
+        const sub = document.getElementById('status-subtext');
+        const closeBtn = document.getElementById('status-close-btn');
+
+        modal.style.display = 'flex';
+        text.innerText = title; sub.innerText = subtitle;
+
+        if(type === 'loading') {
+            spinner.style.display = 'block'; icon.style.display = 'none'; closeBtn.style.display = 'none';
+        } else if(type === 'success') {
+            spinner.style.display = 'none'; icon.style.display = 'block'; icon.innerText = '✅'; closeBtn.style.display = 'none';
+        } else if(type === 'error') {
+            spinner.style.display = 'none'; icon.style.display = 'block'; icon.innerText = '❌'; closeBtn.style.display = 'block';
+        }
+    }
+
+    function closeStatusModal() { document.getElementById('status-modal').style.display = 'none'; }
+
+    function saveToCloud() {
+        // 1. 蒐集所有欄位資料
+        const machine = document.getElementById('input-machine').value;
+        const date = document.getElementById('input-date').value;
+        const stopTime = document.getElementById('input-stop-time').value;
+        const startTime = document.getElementById('input-start-time').value;
+        const totalTime = document.getElementById('input-total-time').value;
+        const formNo = document.getElementById('input-form-no').value;
+        const reason = document.getElementById('input-reason').value;
+        const solution = document.getElementById('input-solution').value; // 新增 Solution 欄位
+
+        // 2. 檢查基本資料完整性
+        if(!processedImageBase64 && !machine && !reason && !solution) {
+            alert("Empty! Please fill in machine info/notes or take a photo."); return;
+        }
+
+        const folderId = FIXED_FOLDER_ID;
+        const scriptUrl = `https://script.google.com/macros/s/${FIXED_SCRIPT_ID}/exec`;
+
+        const btn = document.getElementById('saveBtn');
+        btn.disabled = true;
+        showStatus('loading', 'Uploading...', '資料上傳中...');
+
+        // 3. 準備傳輸的資料物件 (所有新欄位都包含在內)
+        const data = { 
+            image: processedImageBase64, 
+            machine: machine,
+            date: date,
+            stopTime: stopTime,
+            startTime: startTime,
+            totalTime: totalTime,
+            formNo: formNo,
+            reason: reason, 
+            solution: solution, // 新增 solution
+            folderId: folderId
+        };
+
+        fetch(scriptUrl, {
+            method: 'POST',
+            body: JSON.stringify(data)
+        })
+        .then(r => r.json())
+        .then(res => {
+            showStatus('success', 'Upload Success!', '上傳成功！');
+            // 清除欄位
+            document.getElementById('input-machine').value = "";
+            document.getElementById('input-total-time').value = "";
+            document.getElementById('input-form-no').value = "";
+            document.getElementById('input-reason').value = "";
+            document.getElementById('input-solution').value = "";
+
+            // 重設日期時間
+            insertDateTime();
+
+            // 清除圖片
+            processedImageBase64 = "";
+            document.getElementById('preview-img').style.display = 'none';
+            document.querySelector('.placeholder').style.display = 'block';
+            applySettings();
+            setTimeout(() => { closeStatusModal(); }, 2000);
+        })
+        .catch(e => {
+            console.error(e);
+            showStatus('error', 'Upload Failed', '上傳失敗，請檢查網路。');
+        })
+        .finally(() => {
+            btn.disabled = false;
+        });
+    }
+
+    function viewExcel() {
+        const url = `https://docs.google.com/spreadsheets/d/${FIXED_SHEET_ID}/edit`;
+        window.open(url, '_blank');
+    }
+
+    function viewDriveFolder() {
+        const folderId = FIXED_FOLDER_ID;
+        if(folderId && folderId.trim() !== "") {
+            window.open("https://drive.google.com/drive/folders/" + folderId, '_blank');
+        } else {
+            if(confirm("Folder ID not set. Open Google Drive Root?\n(尚未設定資料夾 ID，要開啟雲端硬碟根目錄嗎？)")) {
+                window.open("https://drive.google.com/drive/my-drive", '_blank');
+            }
+        }
+    }
+</script>
+
+</body>
+</html>
