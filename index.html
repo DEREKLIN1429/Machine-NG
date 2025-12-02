@@ -106,8 +106,16 @@
         .btn-view { background-color: var(--view-color); color: white; } 
         .btn-drive { background-color: var(--copy-color); } 
         
-        /* --- 設定內排版修正 (保持不變) --- */
-        #machine-list-container {
+        /* --- 設定內排版修正 --- */
+        .settings-content-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        
+        /* 機器列表優化為三欄顯示 */
+        #machine-list-container, #concern-section-list-container {
             display: grid;
             grid-template-columns: repeat(3, 1fr); 
             gap: 5px;
@@ -161,7 +169,7 @@
     </div>
 
     <div id="app-screen" style="display: none;">
-        <div class="author-header">Author: DERER LIN (v3.5)</div>
+        <div class="author-header">Author: DERER LIN (v3.6)</div>
 
         <div class="header">
             <div class="header-btn" onclick="logout()" title="Lock / Logout (鎖定/登出)">🔒</div>
@@ -340,7 +348,7 @@
                     <input type="text" id="new-concern-section" class="login-input" style="margin: 0 0 5px 0;" placeholder="Add new section (e.g., Electrical)">
                     <button type="button" class="btn-add-item" onclick="addConcernSection()">+ Add Section (新增)</button>
 
-                    <div id="concern-section-list-container" style="margin-top: 15px;">
+                    <div id="concern-section-list-container">
                         </div>
                 </div>
                 
@@ -369,10 +377,11 @@
     const DEFAULT_PASS = "12345"; 
     const MAX_IMAGE_WIDTH = 1000;
     const MACHINE_LIST_KEY = "cfg_machine_list";
-    const CONCERN_LIST_KEY = "cfg_concern_list"; // 新增 Concern Section Key
+    const CONCERN_LIST_KEY = "cfg_concern_list"; 
     const EMPLOYEE_ID_KEY = "cfg_employee_id"; 
     const DEFAULT_MACHINE_LIST = ["BM5", "BM6", "BM7", "BM21", "BM22", "BM23", "CA3", "CA4", "CM1", "CM2", "CM3"];
-    const DEFAULT_CONCERN_LIST = ["Mechanical", "Electrical", "Hydraulic", "Pneumatic", "Program (PLC)", "Process"]; // 預設部門
+    // 修正 Concern List 初始值
+    const DEFAULT_CONCERN_LIST = ["Mixing", "Extrusion", "Cutting", "Calendering"]; 
     const DEFAULT_VOICE_TIMEOUT = 1.5;
 
     // 你的固定路徑 (FIXED PATHS) - 已寫死
@@ -395,7 +404,6 @@
     });
 
     function initApp() {
-        // 初始化所有設定
         if(!localStorage.getItem("app_password")) {
             localStorage.setItem("app_password", DEFAULT_PASS);
         }
@@ -411,7 +419,7 @@
         
         loadSettingsToUI();
         loadMachineListToUI();
-        loadConcernSectionToUI(); // 新增：載入 Concern List
+        loadConcernSectionToUI(); 
         loadEmployeeID(); 
         
         document.getElementById('input-stop-time-full').value = "";
@@ -527,16 +535,15 @@
         saveConcernList(newList);
     }
 
-    // ================= 登入與設定管理 (調整 openSettings) =================
+    // ================= 登入與設定管理 (保持不變) =================
     
     function openSettings() {
         loadSettingsToUI();
         loadMachineListToUI();
-        loadConcernSectionToUI(); // 確保打開時載入 Concern List
+        loadConcernSectionToUI(); 
         document.getElementById('settings-modal').style.display = 'flex';
     }
     
-    // ... 其他登入/設定/機器管理函數 (保持不變) ...
     function checkLogin() {
         const input = document.getElementById('loginPass').value;
         const storedPass = localStorage.getItem("app_password"); 
@@ -620,6 +627,7 @@
         localStorage.setItem("cfg_lang", val);
     }
     
+    // ... 機器列表管理函數 (保持不變) ...
     function getMachineList() {
         try {
             return JSON.parse(localStorage.getItem(MACHINE_LIST_KEY)) || DEFAULT_MACHINE_LIST;
@@ -730,7 +738,6 @@
         const unitSelect = document.getElementById('total-time-unit');
         const unit = unitSelect ? unitSelect.value : 'h';
 
-        // 修正: 檢查是否任一欄位為空 -> 清空
         if (stopTimeStr === "" || startTimeStr === "") {
              totalTimeInput.value = "";
              totalTimeInput.style.backgroundColor = '#eee';
@@ -788,13 +795,13 @@
         const fullDateTime = getFullDateTimeString(new Date());
         
         if (targetElement) {
-             // 修正: 移除 confirm 彈窗
-             targetElement.value = fullDateTime;
-             calculateTotalStopTime();
+            // 修正: 移除 confirm 彈窗，直接更新
+            targetElement.value = fullDateTime;
+            calculateTotalStopTime();
         }
     }
     
-    // ================= 複製格式化訊息 (修正 Start Time/Total Time 邏輯) =================
+    // ================= 複製格式化訊息 (修正格式與內容) =================
     
     function extractDateAndTime(fullTimeStr) {
         const match = fullTimeStr.match(DATETIME_REGEX);
@@ -836,22 +843,21 @@
         // 修正 Start Time 顯示：如果 Start Time 為空，顯示空字串
         const startDisplay = startTimeFull === "" ? '' : startTimeFull;
 
-        // 3. 構建輸出字串 (最終格式)
+        // 3. 構建輸出字串 (最終格式: 去除所有 ":"，改為 ID:)
         const output = `
-Employee ID :
-- ${employeeId}
+ID : ${employeeId}
 
-Machine :- ${machine}
+Machine : ${machine}
 
-Concern Section :- ${concernSection}
+Concern Section : ${concernSection}
 
-Stop time :- ${stopTimeFull}
+Stop time : ${stopTimeFull}
 
-Start time :- ${startDisplay}
+Start time : ${startDisplay}
 
-Total stop time :- ${totalTimeFormat}
+Total stop time : ${totalTimeFormat}
 
-Repair Form No:- ${repairFormNo}
+Repair Form No: ${repairFormNo}
 
 Reason :
 - ${reason.replace(/\n/g, '\n- ')}
@@ -983,14 +989,8 @@ Self Actions:
         }
     }
     
-    // ================= 圖片/語音函數 (健壯性檢查) =================
-
-    /**
-     * 觸發檔案輸入 (相機或相簿)。
-     * @param {string} id - input 元素的 ID ('input-cam' 或 'input-gallery')
-     */
+    // ... 圖片/語音函數保持不變 ...
     function triggerFile(id) { 
-        // 增加檢查，引導使用者解決權限問題
         if (window.location.protocol === 'http:' && !window.location.hostname.includes('localhost')) {
             alert("❌ 相機功能需要 HTTPS 協定。請使用 Apps Script 網址開啟。");
             return;
@@ -1195,21 +1195,3 @@ Self Actions:
     }
 
     function closeStatusModal() { document.getElementById('status-modal').style.display = 'none'; }
-
-    function viewExcel() {
-        const url = `https://docs.google.com/spreadsheets/d/${FIXED_SHEET_ID}/edit#gid=0`;
-        window.open(url, '_blank');
-    }
-
-    function viewDriveFolder() {
-        if(FIXED_FOLDER_ID && FIXED_FOLDER_ID.trim() !== "") {
-            window.open(`https://drive.google.com/drive/folders/${FIXED_FOLDER_ID}`, '_blank');
-        } else {
-            alert("Folder ID not set.");
-        }
-    }
-    
-</script>
-
-</body>
-</html>
