@@ -161,7 +161,7 @@
     </div>
 
     <div id="app-screen" style="display: none;">
-        <div class="author-header">Author: DERER LIN (v3.3)</div>
+        <div class="author-header">Author: DERER LIN (v3.4)</div>
 
         <div class="header">
             <div class="header-btn" onclick="logout()" title="Lock / Logout (鎖定/登出)">🔒</div>
@@ -691,7 +691,7 @@
         }
     }
     
-    // ================= 複製格式化訊息 (最終格式保持不變) =================
+    // ================= 複製格式化訊息 (保持不變) =================
     
     function extractDateAndTime(fullTimeStr) {
         const match = fullTimeStr.match(DATETIME_REGEX);
@@ -767,7 +767,7 @@ Self Actions:
         });
     }
 
-    // ================= 上傳與清除邏輯 (修正) =================
+    // ================= 上傳與清除邏輯 (保持不變) =================
     function clearInputs() {
         document.getElementById('input-machine').value = ""; 
         document.getElementById('input-total-time').value = "";
@@ -866,6 +866,217 @@ Self Actions:
         });
     }
 
+    /**
+     * 觸發檔案輸入 (相機或相簿)。
+     * @param {string} id - input 元素的 ID ('input-cam' 或 'input-gallery')
+     */
+    function triggerFile(id) { 
+        if (window.isSecureContext) {
+            // 只有在安全環境下才嘗試調用
+            document.getElementById(id).click();
+        } else {
+            alert("❌ 相機功能被阻擋！請確保 App 是透過 HTTPS 網址開啟，而非本地檔案。");
+        }
+    }
+    
+    function handleFile(input) {
+        if (!input.files || !input.files[0]) return;
+        
+        const file = input.files[0];
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() { processImageWithCanvas(img); };
+            img.src = e.target.result;
+        }
+        reader.readAsDataURL(file);
+    }
+    
+    function processImageWithCanvas(img) {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const ratioStr = localStorage.getItem("cfg_ratio") || "4/3";
+        
+        let targetRatio = 4/3;
+        let isFull = ratioStr === "FULL";
+
+        if(ratioStr === "16/9") targetRatio = 16/9;
+        else if(ratioStr === "9/16") targetRatio = 9/16;
+        else if(ratioStr === "1/1") targetRatio = 1;
+
+        let srcW = img.width; let srcH = img.height;
+        let drawW, drawH, startX, startY;
+
+        if (isFull) {
+            drawW = srcW; drawH = srcH; startX = 0; startY = 0;
+        } else {
+            let srcRatio = srcW / srcH;
+            if (srcRatio > targetRatio) {
+                drawH = srcH; drawW = srcH * targetRatio;
+                startX = (srcW - drawW) / 2; startY = 0;
+            } else {
+                drawW = srcW; drawH = srcW / targetRatio;
+                startX = 0; startY = (srcH - drawH) / 2;
+            }
+        }
+
+        const scale = MAX_IMAGE_WIDTH / drawW;
+        canvas.width = MAX_IMAGE_WIDTH; 
+        canvas.height = drawH * scale;
+
+        ctx.drawImage(img, startX, startY, drawW, drawH, 0, 0, canvas.width, canvas.height);
+        processedImageBase64 = canvas.toDataURL('image/jpeg', 0.8);
+        
+        const preview = document.getElementById('preview-img');
+        preview.src = processedImageBase64;
+        preview.style.display = 'block';
+        document.querySelector('.placeholder').style.display = 'none';
+
+        if(isFull) {
+             const container = document.getElementById('preview-container');
+             container.classList.remove("ratio-4-3", "ratio-16-9", "ratio-9-16", "ratio-1-1"); 
+             container.style.aspectRatio = `${canvas.width} / ${canvas.height}`;
+        }
+    }
+
+    function toggleVoice(btn) {
+        if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+            alert("❌ 語音輸入被阻擋！瀏覽器不支援，或請確保 App 透過 HTTPS 網址開啟。");
+            return;
+        }
+        
+        const targetId = btn.getAttribute('data-target');
+        const targetArea = document.getElementById(targetId);
+
+        if (isRecording && activeTextAreaId === targetId) {
+            manualStopVoice(); 
+        } else if (isRecording && activeTextAreaId !== targetId) {
+             if(confirm(`目前正在錄製其他欄位，確定要切換到 [${targetArea.previousElementSibling.innerText.trim()}] 嗎？`)) {
+                manualStopVoice();
+                startVoice(btn, targetArea, targetId);
+             }
+        } else {
+            startVoice(btn, targetArea, targetId);
+        }
+    }
+    
+    function startVoice(btn, targetArea, targetId) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SpeechRecognition();
+        
+        recognition.lang = document.getElementById('voice-lang-select').value || 'cmn-Hant-TW';
+        recognition.continuous = true; 
+        recognition.interimResults = true; 
+
+        isRecording = true;
+        activeTextAreaId = targetId;
+        
+        document.querySelectorAll('.btn-voice').forEach(b => b.classList.remove('recording'));
+        btn.classList.add('recording');
+        btn.innerText = "🛑 停止錄音";
+        
+        snapshotText = targetArea.value;
+        if(snapshotText.length > 0 && !snapshotText.endsWith(" ")) {
+            snapshotText += " ";
+        }
+
+        recognition.onresult = function(event) {
+            let currentSessionText = ''; 
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                currentSessionText += event.results[i][0].transcript;
+            }
+
+            targetArea.value = snapshotText + currentSessionText;
+            targetArea.scrollTop = targetArea.scrollHeight;
+
+            if(punctuationTimer) clearTimeout(punctuationTimer);
+            
+            if(currentSessionText.trim().length > 0) {
+                const timeoutMs = parseFloat(localStorage.getItem("cfg_timeout") || DEFAULT_VOICE_TIMEOUT) * 1000;
+                punctuationTimer = setTimeout(() => {
+                    manualStopVoice(); 
+                }, timeoutMs); 
+            }
+        };
+
+        recognition.onend = function() {
+            if(punctuationTimer) clearTimeout(punctuationTimer);
+            resetVoiceUI();
+        };
+        
+        recognition.onerror = function(event) {
+            console.error("Speech Recognition Error:", event.error);
+            resetVoiceUI();
+            alert(`❌ 語音辨識發生錯誤！請檢查麥克風權限或 App 是否在 HTTPS 環境中。錯誤碼: ${event.error}`);
+        };
+        
+        try {
+            recognition.start();
+        } catch(e) {
+            console.error("Start error", e);
+            resetVoiceUI();
+            alert("❌ 語音 API 啟動失敗。請確認瀏覽器支援和權限。");
+        }
+    }
+
+    function manualStopVoice() {
+        if(isRecording && recognition) {
+            isRecording = false; 
+            if(punctuationTimer) clearTimeout(punctuationTimer);
+
+            const targetArea = document.getElementById(activeTextAreaId);
+            let currentVal = targetArea.value.trim();
+            if(currentVal.length > 0) {
+                const lastChar = currentVal.slice(-1);
+                const lang = document.getElementById('voice-lang-select').value;
+                const marks = lang.includes('en') ? [",", "."] : ["，", "。", "、", "？", "！"];
+                
+                if(!marks.includes(lastChar)) {
+                    const mark = lang.includes('en') ? ". " : "。";
+                    currentVal += mark;
+                    targetArea.value = currentVal;
+                }
+            }
+
+            recognition.stop();
+            resetVoiceUI();
+        }
+    }
+
+    function resetVoiceUI() {
+        if(punctuationTimer) clearTimeout(punctuationTimer);
+        
+        document.querySelectorAll('.btn-voice').forEach(b => {
+             b.classList.remove('recording');
+             b.innerText = "🎤 語音輸入";
+        });
+        
+        isRecording = false;
+        activeTextAreaId = null;
+    }
+
+    function showStatus(type, title, subtitle) {
+        const modal = document.getElementById('status-modal');
+        const spinner = document.getElementById('status-spinner');
+        const icon = document.getElementById('status-icon');
+        const text = document.getElementById('status-text');
+        const sub = document.getElementById('status-subtext');
+        const closeBtn = document.getElementById('status-close-btn');
+
+        modal.style.display = 'flex';
+        text.innerText = title; sub.innerText = subtitle;
+
+        spinner.style.display = (type === 'loading') ? 'block' : 'none';
+        icon.style.display = (type !== 'loading') ? 'block' : 'none';
+        closeBtn.style.display = (type === 'error') ? 'block' : 'none';
+
+        if(type === 'success') icon.innerText = '✅';
+        else if(type === 'error') icon.innerText = '❌';
+    }
+
+    function closeStatusModal() { document.getElementById('status-modal').style.display = 'none'; }
+
     function viewExcel() {
         const url = `https://docs.google.com/spreadsheets/d/${FIXED_SHEET_ID}/edit#gid=0`;
         window.open(url, '_blank');
@@ -879,7 +1090,6 @@ Self Actions:
         }
     }
     
-    // ... 圖片/語音函數省略 ...
 </script>
 
 </body>
