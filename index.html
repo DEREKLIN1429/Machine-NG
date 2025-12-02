@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -23,7 +23,7 @@
             display: flex; justify-content: center; min-height: 100vh;
         }
 
-        /* --- 模組化樣式 (保持不變) --- */
+        /* --- 模組化樣式 --- */
         #login-screen, #status-modal, #settings-modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.6); z-index: 9999;
@@ -106,15 +106,7 @@
         .btn-view { background-color: var(--view-color); color: white; } 
         .btn-drive { background-color: var(--copy-color); } 
         
-        /* --- 設定內排版修正 --- */
-        .settings-content-group {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            margin-top: 10px;
-        }
-        
-        /* 機器列表優化為三欄顯示 */
+        /* --- 設定內排版修正 (保持不變) --- */
         #machine-list-container, #concern-section-list-container {
             display: grid;
             grid-template-columns: repeat(3, 1fr); 
@@ -147,7 +139,7 @@
         .hidden { display: none !important; }
     </style>
 </head>
-<body onload="initApp()">
+<body>
 
     <div id="login-screen" style="display: none;">
         <div class="modal-box">
@@ -169,7 +161,7 @@
     </div>
 
     <div id="app-screen" style="display: none;">
-        <div class="author-header">Author: DERER LIN (v3.6)</div>
+        <div class="author-header">Author: DERER LIN (v3.7)</div>
 
         <div class="header">
             <div class="header-btn" onclick="logout()" title="Lock / Logout (鎖定/登出)">🔒</div>
@@ -335,8 +327,8 @@
                     <label style="font-weight: bold; margin-bottom: 5px; display: block;">3. Voice Language (語音辨識語言)</label>
                     <select id="set-lang" class="login-input" style="margin: 0;" onchange="syncLanguage()">
                         <option value="cmn-Hant-TW">Traditional Chinese (繁體中文)</option>
-                        <option value="en-US">English (英文)</option>
-                        <option value="ja-JP">Japanese (日文)</option>
+                        <option value="en-US">English</option>
+                        <option value="ja-JP">Japanese</option>
                         <option value="hi-IN">Hindi (印地語)</option>
                     </select>
                 </div>
@@ -426,7 +418,7 @@
         document.getElementById('input-start-time-full').value = "";
         document.getElementById('input-total-time').value = "";
         document.getElementById('input-total-time').style.backgroundColor = '#eee';
-        document.getElementById('total-time-unit').value = 'min'; 
+        document.getElementById('total-time-unit').value = 'min'; // 預設 Total Time 單位為分鐘
         
         const isLoggedIn = localStorage.getItem("isLoggedIn");
         if(isLoggedIn === "true") {
@@ -450,7 +442,7 @@
         localStorage.setItem(EMPLOYEE_ID_KEY, employeeId);
     }
 
-    // ================= Concern Section 管理 (新增) =================
+    // ================= Concern Section 管理 (保持邏輯) =================
     function getConcernList() {
         try {
             return JSON.parse(localStorage.getItem(CONCERN_LIST_KEY)) || DEFAULT_CONCERN_LIST;
@@ -795,9 +787,8 @@
         const fullDateTime = getFullDateTimeString(new Date());
         
         if (targetElement) {
-            // 修正: 移除 confirm 彈窗，直接更新
-            targetElement.value = fullDateTime;
-            calculateTotalStopTime();
+             targetElement.value = fullDateTime;
+             calculateTotalStopTime();
         }
     }
     
@@ -810,7 +801,7 @@
              const timePart = `${match[4]}:${match[5]}`; 
              return { date: datePart, time: timePart };
         }
-        return { date: '', time: '' }; // 如果無效，返回空字串
+        return { date: '', time: '' }; 
     }
     
     function copyFormattedInfo() {
@@ -823,7 +814,7 @@
             const totalTimeHours = (totalTimeMinutes / 60).toFixed(2);
             totalTimeFormat = `${totalTimeMinutes} Min / ${totalTimeHours} hr`;
         } else {
-            totalTimeFormat = ''; // 修正: 如果無效或為空，顯示空字串
+            totalTimeFormat = ''; 
         }
         
         // 1. 蒐集資料
@@ -838,12 +829,11 @@
         const selfActions = document.getElementById('input-self-actions').value || "N/A"; 
         
         // 2. 處理時間
-        const stopInfo = extractDateAndTime(stopTimeFull);
         
         // 修正 Start Time 顯示：如果 Start Time 為空，顯示空字串
         const startDisplay = startTimeFull === "" ? '' : startTimeFull;
 
-        // 3. 構建輸出字串 (最終格式: 去除所有 ":"，改為 ID:)
+        // 3. 構建輸出字串 (最終格式: 去除所有 "-" 符號)
         const output = `
 ID : ${employeeId}
 
@@ -860,13 +850,13 @@ Total stop time : ${totalTimeFormat}
 Repair Form No: ${repairFormNo}
 
 Reason :
-- ${reason.replace(/\n/g, '\n- ')}
+${reason.replace(/\n/g, '\n')}
 
 How to Solve Problem:
-- ${solution.replace(/\n/g, '\n- ')}
+${solution.replace(/\n/g, '\n')}
 
 Self Actions:
-- ${selfActions.replace(/\n/g, '\n- ')}
+${selfActions.replace(/\n/g, '\n')}
         `.trim();
 
         // 4. 複製到剪貼簿
@@ -914,13 +904,11 @@ Self Actions:
         const solution = document.getElementById('input-solution').value; 
         const selfActions = document.getElementById('input-self-actions').value;
         
-        // 檢查 Repair Form No
         if (formNo.trim() === "") {
             alert("請填寫 Repair Form No 以便追蹤。");
             return;
         }
 
-        // 檢查
         if(!processedImageBase64 && !machine && !reason && !solution && !concernSection && !selfActions) { 
             alert("Empty! Please fill in machine info/notes or take a photo."); return;
         }
@@ -1195,3 +1183,20 @@ Self Actions:
     }
 
     function closeStatusModal() { document.getElementById('status-modal').style.display = 'none'; }
+
+    function viewExcel() {
+        const url = `https://docs.google.com/spreadsheets/d/${FIXED_SHEET_ID}/edit#gid=0`;
+        window.open(url, '_blank');
+    }
+
+    function viewDriveFolder() {
+        if(FIXED_FOLDER_ID && FIXED_FOLDER_ID.trim() !== "") {
+            window.open(`https://drive.google.com/drive/folders/${FIXED_FOLDER_ID}`, '_blank');
+        } else {
+            alert("Folder ID not set.");
+        }
+    }
+</script>
+
+</body>
+</html>
