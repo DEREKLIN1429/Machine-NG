@@ -31,7 +31,7 @@
 
         .modal-box {
             background: white; padding: 30px; border-radius: 15px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center; width: 80%; max-width: 400px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center; width: 90%; max-width: 400px;
         }
         .login-input {
             width: 100%; padding: 12px; margin: 15px 0; border: 2px solid #ddd;
@@ -44,9 +44,9 @@
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        #app-screen { width: 100%; max-width: 500px; padding: 20px; box-sizing: border-box; }
+        #app-screen { width: 100%; max-width: 500px; padding: 15px; box-sizing: border-box; } /* 調整 padding */
         
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; } /* 調整 margin */
         .header-btn { 
             font-size: 26px; cursor: pointer; color: #555; padding: 8px; 
             border-radius: 50%; transition: background 0.2s;
@@ -54,78 +54,71 @@
         }
         .header-title h2 { margin: 0; color: #333; font-size: 1.3rem; line-height: 1.4; }
 
-        .card { background: var(--card-bg); padding: 20px; border-radius: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 15px; }
-        .section-title { font-weight: bold; color: #555; margin-bottom: 10px; display: block; font-size: 1rem; }
+        .card { background: var(--card-bg); padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 15px; } /* 調整 padding/border-radius/shadow */
+        .section-title { font-weight: bold; color: #555; margin-bottom: 8px; display: block; font-size: 1rem; }
 
         .photo-controls { display: flex; gap: 10px; margin-bottom: 10px; }
         .btn-half { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; gap: 5px;}
         .btn-cam { background-color: #ffc107; color: #333; }
         .btn-gallery { background-color: #fd7e14; }
 
+        /* --- 圖片預覽修正 --- */
+        #preview-container { 
+            width: 100%; 
+            background: #f0fff0; 
+            border: 2px solid var(--frame-color);
+            border-radius: 8px; 
+            display: flex; align-items: center; justify-content: center; 
+            overflow: hidden; 
+            position: relative;
+            box-sizing: border-box;
+            max-width: 100%; /* 確保不超出容器 */
+            height: auto;
+        }
+        #preview-img { 
+            max-width: 100%; /* 確保圖片寬度不會超過容器 */
+            max-height: 100%; /* 確保圖片高度不會超過容器 */
+            width: auto; /* 允許圖片根據比例調整 */
+            height: auto; 
+            object-fit: contain; 
+            display: none; 
+            z-index: 1; 
+        }
+
+        /* 移除預覽框其他樣式... */
+        .ratio-tag { position: absolute; top: 8px; left: 8px; padding: 4px 6px; border-radius: 4px; font-size: 0.7rem; }
+        .ratio-4-3 { aspect-ratio: 4/3; } .ratio-16-9 { aspect-ratio: 16/9; } .ratio-9-16 { aspect-ratio: 9/16; } .ratio-1-1 { aspect-ratio: 1/1; }
+
         /* --- 輸入/表單樣式 --- */
-        .input-group { margin-bottom: 12px; display: flex; flex-direction: column; }
+        .input-group { margin-bottom: 10px; display: flex; flex-direction: column; } /* 調整 margin */
         .input-label { font-weight: bold; font-size: 0.95rem; color: #333; margin-bottom: 4px; }
-        .text-input, textarea, select.text-input { /* 讓 select 也有樣式 */
+        .text-input, textarea, select.text-input { 
             width: 100%; padding: 10px; border: 1px solid var(--input-border); 
             border-radius: 6px; font-size: 15px; box-sizing: border-box;
             font-family: inherit; transition: border-color 0.3s;
         }
-        textarea { height: 120px; resize: vertical; } 
+        textarea { height: 100px; resize: vertical; } 
         
-        /* 移除 date-time-group 的 flex 屬性，改為 block/上下排列 */
-        .date-time-group { margin-bottom: 12px; } 
-        .time-component { display: flex; flex-direction: column; margin-bottom: 12px; }
+        .time-component { display: flex; flex-direction: column; margin-bottom: 10px; }
         .time-input-row { display: flex; align-items: center; gap: 5px; }
 
-        /* --- 語音/更新按鈕樣式 --- */
-        .voice-control-group { margin-top: 5px; display: flex; align-items: center; gap: 10px; }
-        .btn-voice { 
-            padding: 8px 12px; border: none; border-radius: 5px; 
-            background-color: #17a2b8; color: white; font-weight: bold; cursor: pointer;
-            transition: background 0.3s;
+        /* --- 底部按鈕優化 --- */
+        .footer-btns { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; padding-bottom: 30px;}
+        .btn-main { 
+            width: 100%; 
+            padding: 18px 15px; /* 增大點擊區域 */
+            border: none; 
+            border-radius: 10px; 
+            font-size: 18px; /* 增大字體 */
+            font-weight: bold; 
+            cursor: pointer; 
+            color: white; 
+            transition: background 0.2s;
         }
-        .btn-update-time {
-            background-color: #ffc107; 
-            color: #333; 
-            font-weight: bold;
-            padding: 8px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 0.85em;
-            flex-shrink: 0;
-            line-height: 1.2;
-        }
-        .btn-update-time:active { background-color: #e3a900; }
-        .recording { background-color: var(--danger-color) !important; animation: pulse 1s infinite; }
 
-        /* --- 設定管理清單樣式 (新增) --- */
-        .machine-list-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px;
-            margin-top: 5px;
-            background: #f1f1f1;
-            border-radius: 4px;
-        }
-        .btn-remove-item {
-            background: var(--danger-color);
-            color: white;
-            border: none;
-            padding: 4px 8px;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .btn-add-item {
-            background: var(--drive-color);
-            color: white;
-            padding: 8px 15px;
-            border: none;
-            border-radius: 6px;
-            margin-top: 10px;
-            cursor: pointer;
-        }
+        /* --- 設定管理清單樣式 (微調) --- */
+        .modal-box .login-input { padding: 10px; margin: 5px 0; }
+        .machine-list-item { padding: 6px; margin-top: 4px; font-size: 0.9em; } 
         .hidden { display: none !important; }
     </style>
 </head>
@@ -151,7 +144,7 @@
     </div>
 
     <div id="app-screen" style="display: none;">
-        <div class="author-header">Author: DERER LIN (v2.4)</div>
+        <div class="author-header">Author: DERER LIN (v2.5)</div>
 
         <div class="header">
             <div class="header-btn" onclick="logout()" title="Lock / Logout (鎖定/登出)">🔒</div>
@@ -164,13 +157,13 @@
         <div class="card">
             <span class="section-title">1. Photo (圖片紀錄)</span>
             <div class="photo-controls">
-                <button class="btn-half btn-cam" onclick="triggerFile('input-cam')">📷 Camera (拍照)</button>
-                <button class="btn-half btn-gallery" onclick="triggerFile('input-gallery')">🖼️ Gallery (相簿)</button>
+                <button class="btn-half btn-cam" onclick="triggerFile('input-cam')">📷 Camera</button>
+                <button class="btn-half btn-gallery" onclick="triggerFile('input-gallery')">🖼️ Gallery</button>
             </div>
             
             <div id="preview-container" class="ratio-4-3" onclick="triggerFile('input-cam')" title="Click to take photo">
                 <div class="ratio-tag" id="ratio-display-tag">Ratio: 4:3</div>
-                <span class="placeholder">Tap here to Take Photo<br>(點擊此處拍照)</span>
+                <span class="placeholder">Tap here to Take Photo</span>
                 <img id="preview-img">
             </div>
             
@@ -192,28 +185,26 @@
                 <input type="text" id="input-form-no" class="text-input" placeholder="e.g. RF20251202">
             </div>
 
-            <div class="date-time-group">
-                <div class="time-component">
-                    <label class="input-label" for="input-stop-time-full">Stop time : (DD/MM/YYYY hh:mm)</label>
-                    <div class="time-input-row">
-                        <input type="text" id="input-stop-time-full" class="text-input" 
-                               placeholder="請點右側按鈕或手動輸入" oninput="calculateTotalStopTime()">
-                        <button type="button" class="btn-update-time" 
-                                onclick="updateSingleTime('input-stop-time-full')" title="Set Current Time">
-                            <span style="font-size: 1.1em;">⏱️</span>
-                        </button>
-                    </div>
+            <div class="time-component">
+                <label class="input-label" for="input-stop-time-full">Stop time : (DD/MM/YYYY hh:mm)</label>
+                <div class="time-input-row">
+                    <input type="text" id="input-stop-time-full" class="text-input" 
+                           placeholder="請點右側按鈕或手動輸入" oninput="calculateTotalStopTime()">
+                    <button type="button" class="btn-update-time" 
+                            onclick="updateSingleTime('input-stop-time-full')" title="Set Current Time">
+                        <span style="font-size: 1.1em;">⏱️</span>
+                    </button>
                 </div>
-                <div class="time-component">
-                    <label class="input-label" for="input-start-time-full">Start time : (DD/MM/YYYY hh:mm)</label>
-                    <div class="time-input-row">
-                        <input type="text" id="input-start-time-full" class="text-input" 
-                               placeholder="請點右側按鈕或手動輸入" oninput="calculateTotalStopTime()">
-                        <button type="button" class="btn-update-time" 
-                                onclick="updateSingleTime('input-start-time-full')" title="Set Current Time">
-                            <span style="font-size: 1.1em;">⏱️</span>
-                        </button>
-                    </div>
+            </div>
+            <div class="time-component">
+                <label class="input-label" for="input-start-time-full">Start time : (DD/MM/YYYY hh:mm)</label>
+                <div class="time-input-row">
+                    <input type="text" id="input-start-time-full" class="text-input" 
+                           placeholder="請點右側按鈕或手動輸入" oninput="calculateTotalStopTime()">
+                    <button type="button" class="btn-update-time" 
+                            onclick="updateSingleTime('input-start-time-full')" title="Set Current Time">
+                        <span style="font-size: 1.1em;">⏱️</span>
+                    </button>
                 </div>
             </div>
 
@@ -252,9 +243,9 @@
         </div>
 
         <div class="footer-btns">
-            <button class="btn-main btn-save" id="saveBtn" onclick="saveToCloud()">💾 Save to Cloud (存檔至雲端)</button>
-            <button class="btn-main btn-view" onclick="viewExcel()">📊 View Excel (檢視 Excel)</button>
-            <button class="btn-main btn-drive" onclick="viewDriveFolder()">📂 View Photos (檢視雲端照片)</button>
+            <button class="btn-main btn-save" id="saveBtn" onclick="saveToCloud()">💾 Save to Cloud</button>
+            <button class="btn-main btn-view" onclick="viewExcel()">📊 View Excel</button>
+            <button class="btn-main btn-drive" onclick="viewDriveFolder()">📂 View Photos</button>
         </div>
     </div>
 
@@ -269,36 +260,42 @@
                 <label style="color:#d63384; font-weight: bold; margin-bottom: 5px; display: block;">🔑 Login Password (修改登入密碼) (Default: 12345)</label>
                 <input type="text" id="set-password" class="login-input" style="margin: 0;" placeholder="Current: 12345">
             </div>
-
-            <div class="modal-group" style="margin-top: 20px; border: 1px solid #ddd; padding: 10px; border-radius: 8px;">
-                <label style="font-weight: bold; margin-bottom: 10px; display: block; color: var(--drive-color);">3. Machine List Management (機器列表管理)</label>
-                
-                <input type="text" id="new-machine-name" class="login-input" style="margin: 0 0 5px 0;" placeholder="Add new machine name (e.g., CM4)">
-                <button type="button" class="btn-add-item" onclick="addMachine()">+ Add Machine (新增)</button>
-
-                <div id="machine-list-container" style="margin-top: 15px;">
-                    </div>
+            
+            <div class="modal-group">
+                <label style="font-weight: bold; margin-bottom: 5px; display: block;">1. Voice Timeout (錄音靜默秒數)</label>
+                <input type="number" id="set-timeout" class="login-input" style="margin: 0;" placeholder="Default: 1.5 (seconds)">
             </div>
 
-            <div class="modal-group" style="margin-top: 15px;">
-                <label style="font-weight: bold; margin-bottom: 5px; display: block;">1. Photo Aspect Ratio (照片比例)</label>
+            <div class="modal-group">
+                <label style="font-weight: bold; margin-bottom: 5px; display: block;">2. Photo Aspect Ratio (照片比例)</label>
                 <select id="set-ratio" class="login-input" style="margin: 0;">
                     <option value="4/3">4:3 (Standard)</option>
                     <option value="16/9">16:9 (Wide)</option>
                     <option value="9/16">9:16 (Vertical / 直式)</option>
                     <option value="1/1">1:1 (Square)</option>
                 </select>
-                <div style="font-size: 0.8rem; color: #888; margin-top: 3px;">* Applies auto-crop unless set to FULL.</div>
+                <div style="font-size: 0.8rem; color: #888; margin-top: 3px;">* Applies auto-crop.</div>
             </div>
             
             <div class="modal-group">
-                <label style="font-weight: bold; margin-bottom: 5px; display: block;">2. Voice Language (語音辨識語言)</label>
+                <label style="font-weight: bold; margin-bottom: 5px; display: block;">3. Voice Language (語音辨識語言)</label>
                 <select id="set-lang" class="login-input" style="margin: 0;" onchange="syncLanguage()">
                     <option value="cmn-Hant-TW">Traditional Chinese (繁體中文)</option>
                     <option value="en-US">English (英文)</option>
                     <option value="ja-JP">Japanese (日文)</option>
                     <option value="hi-IN">Hindi (印地語)</option>
                 </select>
+            </div>
+
+
+            <div class="modal-group" style="margin-top: 20px; border: 1px solid #ddd; padding: 10px; border-radius: 8px;">
+                <label style="font-weight: bold; margin-bottom: 10px; display: block; color: var(--drive-color);">4. Machine List Management (機器列表管理)</label>
+                
+                <input type="text" id="new-machine-name" class="login-input" style="margin: 0 0 5px 0;" placeholder="Add new machine name (e.g., CM4)">
+                <button type="button" class="btn-add-item" onclick="addMachine()">+ Add Machine (新增)</button>
+
+                <div id="machine-list-container" style="margin-top: 15px;">
+                    </div>
             </div>
 
 
@@ -314,10 +311,10 @@
     // ================= 參數與初始化 =================
     const DEFAULT_PASS = "12345"; 
     const MAX_IMAGE_WIDTH = 1000;
-    const MACHINE_LIST_KEY = "cfg_machine_list"; // 新增 Key 儲存機器列表
-    
-    // 預設機器清單
+    const MACHINE_LIST_KEY = "cfg_machine_list";
     const DEFAULT_MACHINE_LIST = ["BM5", "BM6", "BM7", "BM21", "BM22", "BM23", "CA3", "CA4", "CM1", "CM2", "CM3"];
+    // 新增預設設定值
+    const DEFAULT_VOICE_TIMEOUT = 1.5; // seconds
 
     // 你的固定路徑 (FIXED PATHS)
     const FIXED_SCRIPT_ID = "AKfycbwseWx2ioJ0K_jEqHvJQVeUGw65PGW8gsxvRiKs63DdXr-mGb-OeM324vwH-DL62ujm/exec";
@@ -339,18 +336,19 @@
     });
 
     function initApp() {
-        // 1. 初始化密碼
         if(!localStorage.getItem("app_password")) {
             localStorage.setItem("app_password", DEFAULT_PASS);
         }
-        // 2. 初始化機器列表
         if(!localStorage.getItem(MACHINE_LIST_KEY)) {
             localStorage.setItem(MACHINE_LIST_KEY, JSON.stringify(DEFAULT_MACHINE_LIST));
         }
+        // 增加語音設定的初始化
+        if(!localStorage.getItem("cfg_timeout")) {
+            localStorage.setItem("cfg_timeout", DEFAULT_VOICE_TIMEOUT);
+        }
         
         loadSettingsToUI();
-        loadMachineListToUI(); // 載入機器列表到主畫面
-        // 3. 初始值設定: 確保時間和總時間為空
+        loadMachineListToUI();
         document.getElementById('input-stop-time-full').value = "";
         document.getElementById('input-start-time-full').value = "";
         document.getElementById('input-total-time').value = "";
@@ -365,111 +363,7 @@
         }
     }
 
-    // ================= 機器列表管理功能 =================
-    
-    /** 獲取機器列表 (從 localStorage) */
-    function getMachineList() {
-        try {
-            return JSON.parse(localStorage.getItem(MACHINE_LIST_KEY)) || DEFAULT_MACHINE_LIST;
-        } catch (e) {
-            console.error("Failed to parse machine list", e);
-            return DEFAULT_MACHINE_LIST;
-        }
-    }
-
-    /** 儲存機器列表 (到 localStorage) */
-    function saveMachineList(list) {
-        // 排序並去重，確保清單整潔
-        const uniqueSortedList = [...new Set(list)].sort((a, b) => a.localeCompare(b));
-        localStorage.setItem(MACHINE_LIST_KEY, JSON.stringify(uniqueSortedList));
-        return uniqueSortedList;
-    }
-
-    /** 載入機器列表到主畫面的 Select */
-    function loadMachineListToUI() {
-        const select = document.getElementById('input-machine');
-        const list = getMachineList();
-        
-        select.innerHTML = '';
-        
-        // 增加一個預設的選項
-        const defaultOption = document.createElement('option');
-        defaultOption.value = "";
-        defaultOption.textContent = "--- Select Machine ---";
-        select.appendChild(defaultOption);
-
-        list.forEach(machine => {
-            const option = document.createElement('option');
-            option.value = machine;
-            option.textContent = machine;
-            select.appendChild(option);
-        });
-        
-        // 如果設定視窗開啟，同時更新設定清單
-        if (document.getElementById('settings-modal').style.display === 'flex') {
-            renderMachineListSettings();
-        }
-    }
-    
-    /** 渲染設定畫面的機器列表 */
-    function renderMachineListSettings() {
-        const container = document.getElementById('machine-list-container');
-        const list = getMachineList();
-        container.innerHTML = '';
-
-        list.forEach((machine, index) => {
-            const item = document.createElement('div');
-            item.className = 'machine-list-item';
-            item.innerHTML = `
-                <span>${machine}</span>
-                <button type="button" class="btn-remove-item" onclick="removeMachine('${machine}')">刪除</button>
-            `;
-            container.appendChild(item);
-        });
-    }
-
-    /** 新增機器 */
-    function addMachine() {
-        const input = document.getElementById('new-machine-name');
-        const newMachine = input.value.trim().toUpperCase();
-
-        if (newMachine === "" || newMachine === "--- SELECT MACHINE ---") {
-            alert("請輸入有效的機器名稱。");
-            return;
-        }
-
-        let list = getMachineList();
-        if (list.includes(newMachine)) {
-            alert(`機器 ${newMachine} 已經存在於清單中。`);
-            return;
-        }
-
-        list.push(newMachine);
-        saveMachineList(list);
-        
-        input.value = "";
-        loadMachineListToUI(); // 更新主畫面和設定畫面
-    }
-
-    /** 刪除機器 */
-    function removeMachine(name) {
-        if (!confirm(`確定要從清單中刪除機器 ${name} 嗎？`)) return;
-
-        let list = getMachineList();
-        const newList = list.filter(m => m !== name);
-        saveMachineList(newList);
-        loadMachineListToUI(); // 更新主畫面和設定畫面
-    }
-
-    // ================= 登入與設定管理 (調整 openSettings) =================
-    
-    function openSettings() {
-        loadSettingsToUI();
-        renderMachineListSettings(); // 確保打開時渲染機器列表
-        document.getElementById('settings-modal').style.display = 'flex';
-    }
-    
-    // ... (其他登入/登出/設定函數保持不變) ...
+    // ================= 登入與設定管理 (修正 loadSettingsToUI & saveSettings) =================
     function checkLogin() {
         const input = document.getElementById('loginPass').value;
         const storedPass = localStorage.getItem("app_password"); 
@@ -484,42 +378,38 @@
         }
     }
     
-    function logout() {
-        if(confirm("Lock and logout?\n(確定要鎖定並登出嗎？)")) {
-            localStorage.removeItem("isLoggedIn"); 
-            document.getElementById('app-screen').style.display = 'none';
-            document.getElementById('login-screen').style.display = 'flex'; 
-            document.getElementById('loginPass').value = ""; 
-            closeSettings();
-        }
+    function openSettings() {
+        loadSettingsToUI();
+        renderMachineListSettings();
+        document.getElementById('settings-modal').style.display = 'flex';
     }
     
-    function closeSettings() {
-        document.getElementById('settings-modal').style.display = 'none';
-    }
-    function syncLanguage() {
-        const val = document.getElementById('set-lang').value;
-        document.getElementById('voice-lang-select').value = val;
-        localStorage.setItem("cfg_lang", val);
-    }
     function saveSettings() {
         const newPass = document.getElementById('set-password').value;
         const ratio = document.getElementById('set-ratio').value;
         const lang = document.getElementById('set-lang').value;
+        const timeout = document.getElementById('set-timeout').value; // 新增：獲取 timeout
 
         if(newPass.trim() === "") { alert("Password cannot be empty!"); return; }
+        if(isNaN(parseFloat(timeout)) || parseFloat(timeout) <= 0) {
+            alert("錄音靜默秒數必須是有效的數字 (大於 0)。");
+            return;
+        }
 
         localStorage.setItem("app_password", newPass); 
         localStorage.setItem("cfg_ratio", ratio);
         localStorage.setItem("cfg_lang", lang);
+        localStorage.setItem("cfg_timeout", timeout); // 新增：儲存 timeout
 
         alert("Settings Saved!");
         closeSettings();
         applySettings();
     }
+
     function loadSettingsToUI() {
         document.getElementById('set-password').value = localStorage.getItem("app_password") || DEFAULT_PASS;
         document.getElementById('set-ratio').value = localStorage.getItem("cfg_ratio") || "4/3";
+        document.getElementById('set-timeout').value = localStorage.getItem("cfg_timeout") || DEFAULT_VOICE_TIMEOUT; // 新增：載入 timeout
         const savedLang = localStorage.getItem("cfg_lang") || "cmn-Hant-TW";
         document.getElementById('set-lang').value = savedLang;
         document.getElementById('voice-lang-select').value = savedLang;
@@ -540,10 +430,113 @@
         } else {
              tag.innerText = "Ratio: Full (Original)";
         }
+        
+        // 確保重新計算機時總時長
+        calculateTotalStopTime();
+    }
+    
+    // ... (其他登入、登出、機器列表管理函數保持不變) ...
+    function logout() {
+        if(confirm("Lock and logout?\n(確定要鎖定並登出嗎？)")) {
+            localStorage.removeItem("isLoggedIn"); 
+            document.getElementById('app-screen').style.display = 'none';
+            document.getElementById('login-screen').style.display = 'flex'; 
+            document.getElementById('loginPass').value = ""; 
+            closeSettings();
+        }
+    }
+    
+    function closeSettings() {
+        document.getElementById('settings-modal').style.display = 'none';
+    }
+    function syncLanguage() {
+        const val = document.getElementById('set-lang').value;
+        document.getElementById('voice-lang-select').value = val;
+        localStorage.setItem("cfg_lang", val);
+    }
+    function getMachineList() {
+        try {
+            return JSON.parse(localStorage.getItem(MACHINE_LIST_KEY)) || DEFAULT_MACHINE_LIST;
+        } catch (e) {
+            console.error("Failed to parse machine list", e);
+            return DEFAULT_MACHINE_LIST;
+        }
+    }
+    function saveMachineList(list) {
+        const uniqueSortedList = [...new Set(list)].sort((a, b) => a.localeCompare(b));
+        localStorage.setItem(MACHINE_LIST_KEY, JSON.stringify(uniqueSortedList));
+        return uniqueSortedList;
+    }
+    function loadMachineListToUI() {
+        const select = document.getElementById('input-machine');
+        const list = getMachineList();
+        
+        select.innerHTML = '';
+        
+        const defaultOption = document.createElement('option');
+        defaultOption.value = "";
+        defaultOption.textContent = "--- Select Machine ---";
+        select.appendChild(defaultOption);
+
+        list.forEach(machine => {
+            const option = document.createElement('option');
+            option.value = machine;
+            option.textContent = machine;
+            select.appendChild(option);
+        });
+        
+        if (document.getElementById('settings-modal').style.display === 'flex') {
+            renderMachineListSettings();
+        }
+    }
+    function renderMachineListSettings() {
+        const container = document.getElementById('machine-list-container');
+        const list = getMachineList();
+        container.innerHTML = '';
+
+        list.forEach((machine, index) => {
+            const item = document.createElement('div');
+            item.className = 'machine-list-item';
+            item.innerHTML = `
+                <span>${machine}</span>
+                <button type="button" class="btn-remove-item" onclick="removeMachine('${machine}')">刪除</button>
+            `;
+            container.appendChild(item);
+        });
+    }
+    function addMachine() {
+        const input = document.getElementById('new-machine-name');
+        const newMachine = input.value.trim().toUpperCase();
+
+        if (newMachine === "" || newMachine === "--- SELECT MACHINE ---") {
+            alert("請輸入有效的機器名稱。");
+            return;
+        }
+
+        let list = getMachineList();
+        if (list.includes(newMachine)) {
+            alert(`機器 ${newMachine} 已經存在於清單中。`);
+            return;
+        }
+
+        list.push(newMachine);
+        saveMachineList(list);
+        
+        input.value = "";
+        loadMachineListToUI(); 
+    }
+
+    function removeMachine(name) {
+        if (!confirm(`確定要從清單中刪除機器 ${name} 嗎？`)) return;
+
+        let list = getMachineList();
+        const newList = list.filter(m => m !== name);
+        saveMachineList(newList);
+        loadMachineListToUI(); 
     }
 
 
-    // ================= 時間處理函數 (移除自動帶入) =================
+    // ================= 時間處理函數 (與計算) =================
 
     const DATETIME_REGEX = /^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})$/;
 
@@ -566,47 +559,37 @@
         return date;
     }
     
-    /** 計算總停機時間 (Total stop time) 並填入欄位 */
     function calculateTotalStopTime() {
         const stopTimeStr = document.getElementById('input-stop-time-full').value.trim();
         const startTimeStr = document.getElementById('input-start-time-full').value.trim();
         const totalTimeInput = document.getElementById('input-total-time');
-
         const stopDate = parseCustomDateTime(stopTimeStr);
         const startDate = parseCustomDateTime(startTimeStr);
 
-        // 修正: 欄位為空時，總時間顯示為 0.00h
         if (stopTimeStr === "" && startTimeStr === "") {
              totalTimeInput.value = "0.00 h";
              totalTimeInput.style.backgroundColor = '#eee';
              return;
         }
         
-        // 檢查時間是否有效
         if (!stopDate || !startDate) {
             totalTimeInput.value = "Invalid Time";
             totalTimeInput.style.backgroundColor = '#fff0f0';
             return;
         }
 
-        // 開始時間必須晚於停止時間
         if (startDate.getTime() <= stopDate.getTime()) {
             totalTimeInput.value = "0.00 h (時間順序錯誤)";
             totalTimeInput.style.backgroundColor = '#fff0f0';
             return;
         }
 
-        // 計算時間差 (毫秒)
         const diffMs = startDate.getTime() - stopDate.getTime();
-        
-        // 轉換為小時 (帶小數點兩位)
         const diffHours = diffMs / (1000 * 60 * 60);
-        
-        // 格式化為兩位小數 (例如 2.50h)
         const totalHoursFormatted = diffHours.toFixed(2) + " h";
 
         totalTimeInput.value = totalHoursFormatted;
-        totalTimeInput.style.backgroundColor = '#e6ffed'; // 計算成功顯示綠色背景
+        totalTimeInput.style.backgroundColor = '#e6ffed';
     }
 
 
@@ -620,7 +603,6 @@
         return `${datePart} ${timePart}`;
     }
     
-    /** 專門更新單一時間欄位的按鈕函數 */
     function updateSingleTime(targetId) {
         const targetElement = document.getElementById(targetId);
         const fullDateTime = getFullDateTimeString(new Date());
@@ -629,14 +611,13 @@
             const timeType = targetId.includes('stop') ? "Stop time" : "Start time";
             if(confirm(`確定將 [${timeType}] 更新為現在時間：${fullDateTime} 嗎？`)) {
                  targetElement.value = fullDateTime;
-                 // 觸發重新計算
                  calculateTotalStopTime();
             }
         }
     }
 
 
-    // ================= 圖片/語音/上傳函數 (保持穩定) =================
+    // ================= 圖片/語音/上傳函數 (修正語音定時) =================
     
     function triggerFile(id) { document.getElementById(id).click(); }
     
@@ -655,6 +636,7 @@
     }
     
     function processImageWithCanvas(img) {
+        // ... (圖片處理邏輯保持不變) ...
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         const ratioStr = localStorage.getItem("cfg_ratio") || "4/3";
@@ -753,9 +735,11 @@
             if(punctuationTimer) clearTimeout(punctuationTimer);
             
             if(currentSessionText.trim().length > 0) {
+                // *** 修正: 使用儲存在 localStorage 的秒數 ***
+                const timeoutMs = parseFloat(localStorage.getItem("cfg_timeout") || DEFAULT_VOICE_TIMEOUT) * 1000;
                 punctuationTimer = setTimeout(() => {
                     manualStopVoice(); 
-                }, 1500); 
+                }, timeoutMs); 
             }
         };
 
@@ -836,17 +820,15 @@
     function closeStatusModal() { document.getElementById('status-modal').style.display = 'none'; }
 
     function clearInputs() {
-        document.getElementById('input-machine').value = ""; // 清除選單
+        document.getElementById('input-machine').value = ""; 
         document.getElementById('input-total-time').value = "";
         document.getElementById('input-form-no').value = "";
         document.getElementById('input-reason').value = "";
         document.getElementById('input-solution').value = "";
 
-        // 清除時間
         document.getElementById('input-stop-time-full').value = "";
         document.getElementById('input-start-time-full').value = "";
         
-        // 清除計算狀態
         document.getElementById('input-total-time').style.backgroundColor = '#eee';
         calculateTotalStopTime(); 
 
@@ -859,7 +841,6 @@
     function saveToCloud() {
         if(isRecording) manualStopVoice();
 
-        // 機台使用選單值
         const machine = document.getElementById('input-machine').value; 
         const stopTimeFull = document.getElementById('input-stop-time-full').value; 
         const startTimeFull = document.getElementById('input-start-time-full').value; 
@@ -872,7 +853,6 @@
             alert("Empty! Please fill in machine info/notes or take a photo."); return;
         }
         
-        // 增加一個機台未選取的檢查
         if (machine.trim() === "") {
             alert("請選擇 Machine (機台)。");
             return;
