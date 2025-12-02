@@ -65,10 +65,9 @@
         .section-title { font-weight: bold; color: #555; margin-bottom: 8px; display: block; font-size: 1rem; }
 
         .photo-controls { display: flex; gap: 10px; margin-bottom: 10px; }
-        /* 拍照/相簿按鈕顏色調整 */
         .btn-half { flex: 1; padding: 10px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; gap: 5px;}
-        .btn-cam { background-color: #FF5722; color: white; } /* 深橘色 */
-        .btn-gallery { background-color: #FFC107; color: #333; } /* 淺橘色 */
+        .btn-cam { background-color: #FF5722; color: white; } 
+        .btn-gallery { background-color: #FFC107; color: #333; } 
 
         /* --- 輸入/表單樣式 --- */
         .input-group { margin-bottom: 8px; display: flex; flex-direction: column; }
@@ -106,16 +105,16 @@
         .btn-main:active { transform: scale(0.99); }
         
         /* 黑、橘、綠配色 */
-        .btn-copy { background-color: var(--copy-color); } /* 橘色 */
+        .btn-copy { background-color: var(--copy-color); } 
         .btn-copy:hover { background-color: #f57c00; }
 
-        .btn-save { background-color: var(--primary-color); } /* 綠色 */
+        .btn-save { background-color: var(--primary-color); } 
         .btn-save:hover { background-color: #43a047; }
 
-        .btn-view { background-color: var(--view-color); color: white; } /* 黑色 */
+        .btn-view { background-color: var(--view-color); color: white; } 
         .btn-view:hover { background-color: #000000; }
 
-        .btn-drive { background-color: var(--copy-color); } /* 橘色 */
+        .btn-drive { background-color: var(--copy-color); } 
         .btn-drive:hover { background-color: #f57c00; }
         
         /* --- 設定內排版修正 --- */
@@ -129,7 +128,7 @@
         /* 機器列表優化為三欄顯示 */
         #machine-list-container {
             display: grid;
-            grid-template-columns: repeat(3, 1fr); /* 3 欄平均分佈 */
+            grid-template-columns: repeat(3, 1fr); 
             gap: 5px;
             margin-top: 10px;
         }
@@ -352,7 +351,7 @@
 
 
                 <div class="modal-group" style="border: 1px solid #ddd; padding: 10px; border-radius: 8px;">
-                    <label style="font-weight: bold; margin-bottom: 10px; display: block; color: var(--copy-color);">4. Machine List Management (機器列表管理)</label>
+                    <label style="font-weight: bold; margin-bottom: 10px; display: block; color: var(--copy-color);">4. Machine List Management<br>(機器列表管理)</label>
                     
                     <input type="text" id="new-machine-name" class="login-input" style="margin: 0 0 5px 0;" placeholder="Add new machine name (e.g., CM4)">
                     <button type="button" class="btn-add-item" onclick="addMachine()">+ Add Machine (新增)</button>
@@ -376,13 +375,13 @@
     const DEFAULT_PASS = "12345"; 
     const MAX_IMAGE_WIDTH = 1000;
     const MACHINE_LIST_KEY = "cfg_machine_list";
-    const EMPLOYEE_ID_KEY = "cfg_employee_id"; // 新增員工 ID Key
+    const EMPLOYEE_ID_KEY = "cfg_employee_id"; 
     const DEFAULT_MACHINE_LIST = ["BM5", "BM6", "BM7", "BM21", "BM22", "BM23", "CA3", "CA4", "CM1", "CM2", "CM3"];
     const DEFAULT_VOICE_TIMEOUT = 1.5;
 
-    // 你的固定路徑 (FIXED PATHS)
+    // 你的固定路徑 (FIXED PATHS) - 已寫死
     const FIXED_SCRIPT_ID = "AKfycbzfPzPODQjp_phrHPwjsoBYeA8-VgeaoYly6hr3Mx09Wj-o5tWHMPa-nTHfaHyloiH8zg/exec";
-    const FIXED_SHEET_ID = "1sDKZBJfasUbZSGNAfz9GIWfRdrdXxQMrXrxM3x9RlCY/edit?gid=0#gid=0;
+    const FIXED_SHEET_ID = "1sDKZBJfasUbZSGNAfz9GIWfRdrdXxQMrXrxM3x9RlCY"; 
     const FIXED_FOLDER_ID = "1VPfLCMIuJPA66RjN8isrC4xq3luPMJe4";
 
     // 狀態變數
@@ -412,7 +411,7 @@
         
         loadSettingsToUI();
         loadMachineListToUI();
-        loadEmployeeID(); // 載入員工 ID
+        loadEmployeeID(); 
         
         document.getElementById('input-stop-time-full').value = "";
         document.getElementById('input-start-time-full').value = "";
@@ -614,7 +613,7 @@
     }
 
 
-    // ================= 時間處理函數 (計算邏輯保持不變) =================
+    // ================= 時間處理函數 (保持不變) =================
     const DATETIME_REGEX = /^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})$/;
 
     function parseCustomDateTime(dtStr) {
@@ -668,7 +667,7 @@
         }
 
         const diffMs = startDate.getTime() - stopDate.getTime();
-        const diffMinutes = Math.round(diffMs / (1000 * 60)); // 總分鐘數
+        const diffMinutes = Math.round(diffMs / (1000 * 60)); 
         totalTimeInput.dataset.diffMinutes = diffMinutes; 
 
         let totalTimeFormatted;
@@ -712,8 +711,8 @@
     function extractDateAndTime(fullTimeStr) {
         const match = fullTimeStr.match(DATETIME_REGEX);
         if (match) {
-             const datePart = `${match[1]}/${match[2]}/${match[3]}`; // DD/MM/YYYY
-             const timePart = `${match[4]}:${match[5]}`; // hh:mm
+             const datePart = `${match[1]}/${match[2]}/${match[3]}`; 
+             const timePart = `${match[4]}:${match[5]}`; 
              return { date: datePart, time: timePart };
         }
         return { date: 'N/A', time: 'N/A' };
@@ -733,15 +732,15 @@
         const startTimeFull = document.getElementById('input-start-time-full').value.trim();
         const repairFormNo = document.getElementById('input-form-no').value || "N/A";
         const reason = document.getElementById('input-reason').value || "N/A";
-        const concernSection = document.getElementById('input-concern-section').value || "N/A"; // 新增
+        const concernSection = document.getElementById('input-concern-section').value || "N/A"; 
         const solution = document.getElementById('input-solution').value || "N/A";
-        const selfActions = document.getElementById('input-self-actions').value || "N/A"; // 新增
+        const selfActions = document.getElementById('input-self-actions').value || "N/A"; 
         
         // 2. 處理時間
         const stopInfo = extractDateAndTime(stopTimeFull);
         const startInfo = extractDateAndTime(startTimeFull);
         
-        // 3. 構建輸出字串 (調整 Concern Section 位置)
+        // 3. 構建輸出字串 (Concern Section 放在 Machine 之後)
         const output = `
 Employee ID :- ${employeeId}
 
@@ -777,7 +776,7 @@ Self Actions:- ${selfActions}
 
     // ================= 上傳與清除邏輯 (修正) =================
     function clearInputs() {
-        // 移除員工 ID 的清除，但其他欄位清除
+        // Employee ID 不清除
         document.getElementById('input-machine').value = ""; 
         document.getElementById('input-total-time').value = "";
         document.getElementById('input-form-no').value = "";
@@ -802,7 +801,7 @@ Self Actions:- ${selfActions}
         if(isRecording) manualStopVoice();
 
         // 獲取所有欄位
-        const employeeId = document.getElementById('input-employee-id').value; // 新增
+        const employeeId = document.getElementById('input-employee-id').value; 
         const machine = document.getElementById('input-machine').value; 
         const stopTimeFull = document.getElementById('input-stop-time-full').value; 
         const startTimeFull = document.getElementById('input-start-time-full').value; 
@@ -833,7 +832,7 @@ Self Actions:- ${selfActions}
 
         const data = { 
             image: processedImageBase64, 
-            employeeId: employeeId, // 傳輸 Employee ID
+            employeeId: employeeId, 
             machine: machine,
             stopTimeFull: stopTimeFull,
             startTimeFull: startTimeFull,
@@ -869,67 +868,18 @@ Self Actions:- ${selfActions}
         });
     }
 
-    // ... (其他函數省略，請替換完整) ...
-    function triggerFile(id) { document.getElementById(id).click(); }
-    
-    function handleFile(input) {
-        if (!input.files || !input.files[0]) return;
-        
-        const file = input.files[0];
-        const reader = new FileReader();
-        
-        reader.onload = function(e) {
-            const img = new Image();
-            img.onload = function() { processImageWithCanvas(img); };
-            img.src = e.target.result;
-        }
-        reader.readAsDataURL(file);
+    function viewExcel() {
+        // 使用寫死的 ID 重建網址
+        const url = `https://docs.google.com/spreadsheets/d/${FIXED_SHEET_ID}/edit#gid=0`;
+        window.open(url, '_blank');
     }
-    
-    function processImageWithCanvas(img) {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const ratioStr = localStorage.getItem("cfg_ratio") || "4/3";
-        
-        let targetRatio = 4/3;
-        let isFull = ratioStr === "FULL";
 
-        if(ratioStr === "16/9") targetRatio = 16/9;
-        else if(ratioStr === "9/16") targetRatio = 9/16;
-        else if(ratioStr === "1/1") targetRatio = 1;
-
-        let srcW = img.width; let srcH = img.height;
-        let drawW, drawH, startX, startY;
-
-        if (isFull) {
-            drawW = srcW; drawH = srcH; startX = 0; startY = 0;
+    function viewDriveFolder() {
+        if(FIXED_FOLDER_ID && FIXED_FOLDER_ID.trim() !== "") {
+            // 使用寫死的 ID 重建網址
+            window.open("https://drive.google.com/drive/folders/" + FIXED_FOLDER_ID, '_blank');
         } else {
-            let srcRatio = srcW / srcH;
-            if (srcRatio > targetRatio) {
-                drawH = srcH; drawW = srcH * targetRatio;
-                startX = (srcW - drawW) / 2; startY = 0;
-            } else {
-                drawW = srcW; drawH = srcW / targetRatio;
-                startX = 0; startY = (srcH - drawH) / 2;
-            }
-        }
-
-        const scale = MAX_IMAGE_WIDTH / drawW;
-        canvas.width = MAX_IMAGE_WIDTH; 
-        canvas.height = drawH * scale;
-
-        ctx.drawImage(img, startX, startY, drawW, drawH, 0, 0, canvas.width, canvas.height);
-        processedImageBase64 = canvas.toDataURL('image/jpeg', 0.8);
-        
-        const preview = document.getElementById('preview-img');
-        preview.src = processedImageBase64;
-        preview.style.display = 'block';
-        document.querySelector('.placeholder').style.display = 'none';
-
-        if(isFull) {
-             const container = document.getElementById('preview-container');
-             container.classList.remove("ratio-4-3", "ratio-16-9", "ratio-9-16", "ratio-1-1"); 
-             container.style.aspectRatio = `${canvas.width} / ${canvas.height}`;
+            alert("Folder ID not set.");
         }
     }
 
@@ -1067,17 +1017,68 @@ Self Actions:- ${selfActions}
     }
 
     function closeStatusModal() { document.getElementById('status-modal').style.display = 'none'; }
-
-    function viewExcel() {
-        const url = `https://docs.google.com/spreadsheets/d/${FIXED_SHEET_ID}`;
-        window.open(url, '_blank');
+    
+    // 以下為圖片處理相關函數 (保持不變)
+    function triggerFile(id) { document.getElementById(id).click(); }
+    
+    function handleFile(input) {
+        if (!input.files || !input.files[0]) return;
+        
+        const file = input.files[0];
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() { processImageWithCanvas(img); };
+            img.src = e.target.result;
+        }
+        reader.readAsDataURL(file);
     }
+    
+    function processImageWithCanvas(img) {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const ratioStr = localStorage.getItem("cfg_ratio") || "4/3";
+        
+        let targetRatio = 4/3;
+        let isFull = ratioStr === "FULL";
 
-    function viewDriveFolder() {
-        if(FIXED_FOLDER_ID && FIXED_FOLDER_ID.trim() !== "") {
-            window.open("https://drive.google.com/drive/folders/" + FIXED_FOLDER_ID, '_blank');
+        if(ratioStr === "16/9") targetRatio = 16/9;
+        else if(ratioStr === "9/16") targetRatio = 9/16;
+        else if(ratioStr === "1/1") targetRatio = 1;
+
+        let srcW = img.width; let srcH = img.height;
+        let drawW, drawH, startX, startY;
+
+        if (isFull) {
+            drawW = srcW; drawH = srcH; startX = 0; startY = 0;
         } else {
-            alert("Folder ID not set.");
+            let srcRatio = srcW / srcH;
+            if (srcRatio > targetRatio) {
+                drawH = srcH; drawW = srcH * targetRatio;
+                startX = (srcW - drawW) / 2; startY = 0;
+            } else {
+                drawW = srcW; drawH = srcW / targetRatio;
+                startX = 0; startY = (srcH - drawH) / 2;
+            }
+        }
+
+        const scale = MAX_IMAGE_WIDTH / drawW;
+        canvas.width = MAX_IMAGE_WIDTH; 
+        canvas.height = drawH * scale;
+
+        ctx.drawImage(img, startX, startY, drawW, drawH, 0, 0, canvas.width, canvas.height);
+        processedImageBase64 = canvas.toDataURL('image/jpeg', 0.8);
+        
+        const preview = document.getElementById('preview-img');
+        preview.src = processedImageBase64;
+        preview.style.display = 'block';
+        document.querySelector('.placeholder').style.display = 'none';
+
+        if(isFull) {
+             const container = document.getElementById('preview-container');
+             container.classList.remove("ratio-4-3", "ratio-16-9", "ratio-9-16", "ratio-1-1"); 
+             container.style.aspectRatio = `${canvas.width} / ${canvas.height}`;
         }
     }
 </script>
