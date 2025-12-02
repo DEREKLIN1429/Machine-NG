@@ -161,7 +161,7 @@
     </div>
 
     <div id="app-screen" style="display: none;">
-        <div class="author-header">Author: DERER LIN (v3.4)</div>
+        <div class="author-header">Author: DERER LIN (v3.5)</div>
 
         <div class="header">
             <div class="header-btn" onclick="logout()" title="Lock / Logout (鎖定/登出)">🔒</div>
@@ -243,7 +243,8 @@
             
             <div class="input-group">
                 <label class="input-label" for="input-concern-section">Concern Section :</label>
-                <input type="text" id="input-concern-section" class="text-input" placeholder="e.g. Mechanical and Electric maintanence">
+                <select id="input-concern-section" class="text-input">
+                    </select>
             </div>
 
             <div class="input-group">
@@ -334,7 +335,17 @@
 
 
                 <div class="modal-group" style="border: 1px solid #ddd; padding: 10px; border-radius: 8px;">
-                    <label style="font-weight: bold; margin-bottom: 10px; display: block; color: var(--copy-color);">4. Machine List Management<br>(機器列表管理)</label>
+                    <label style="font-weight: bold; margin-bottom: 10px; display: block; color: var(--copy-color);">4. Concern Section List Management<br>(相關部門列表管理)</label>
+                    
+                    <input type="text" id="new-concern-section" class="login-input" style="margin: 0 0 5px 0;" placeholder="Add new section (e.g., Electrical)">
+                    <button type="button" class="btn-add-item" onclick="addConcernSection()">+ Add Section (新增)</button>
+
+                    <div id="concern-section-list-container" style="margin-top: 15px;">
+                        </div>
+                </div>
+                
+                 <div class="modal-group" style="border: 1px solid #ddd; padding: 10px; border-radius: 8px;">
+                    <label style="font-weight: bold; margin-bottom: 10px; display: block; color: var(--copy-color);">5. Machine List Management<br>(機器列表管理)</label>
                     
                     <input type="text" id="new-machine-name" class="login-input" style="margin: 0 0 5px 0;" placeholder="Add new machine name (e.g., CM4)">
                     <button type="button" class="btn-add-item" onclick="addMachine()">+ Add Machine (新增)</button>
@@ -358,8 +369,10 @@
     const DEFAULT_PASS = "12345"; 
     const MAX_IMAGE_WIDTH = 1000;
     const MACHINE_LIST_KEY = "cfg_machine_list";
+    const CONCERN_LIST_KEY = "cfg_concern_list"; // 新增 Concern Section Key
     const EMPLOYEE_ID_KEY = "cfg_employee_id"; 
     const DEFAULT_MACHINE_LIST = ["BM5", "BM6", "BM7", "BM21", "BM22", "BM23", "CA3", "CA4", "CM1", "CM2", "CM3"];
+    const DEFAULT_CONCERN_LIST = ["Mechanical", "Electrical", "Hydraulic", "Pneumatic", "Program (PLC)", "Process"]; // 預設部門
     const DEFAULT_VOICE_TIMEOUT = 1.5;
 
     // 你的固定路徑 (FIXED PATHS) - 已寫死
@@ -382,11 +395,15 @@
     });
 
     function initApp() {
+        // 初始化所有設定
         if(!localStorage.getItem("app_password")) {
             localStorage.setItem("app_password", DEFAULT_PASS);
         }
         if(!localStorage.getItem(MACHINE_LIST_KEY)) {
             localStorage.setItem(MACHINE_LIST_KEY, JSON.stringify(DEFAULT_MACHINE_LIST));
+        }
+        if(!localStorage.getItem(CONCERN_LIST_KEY)) { // 初始化 Concern List
+            localStorage.setItem(CONCERN_LIST_KEY, JSON.stringify(DEFAULT_CONCERN_LIST));
         }
         if(!localStorage.getItem("cfg_timeout")) {
             localStorage.setItem("cfg_timeout", DEFAULT_VOICE_TIMEOUT);
@@ -394,13 +411,14 @@
         
         loadSettingsToUI();
         loadMachineListToUI();
+        loadConcernSectionToUI(); // 新增：載入 Concern List
         loadEmployeeID(); 
         
         document.getElementById('input-stop-time-full').value = "";
         document.getElementById('input-start-time-full').value = "";
         document.getElementById('input-total-time').value = "";
         document.getElementById('input-total-time').style.backgroundColor = '#eee';
-        document.getElementById('total-time-unit').value = 'min'; // 預設 Total Time 單位為分鐘
+        document.getElementById('total-time-unit').value = 'min'; 
         
         const isLoggedIn = localStorage.getItem("isLoggedIn");
         if(isLoggedIn === "true") {
@@ -411,7 +429,7 @@
         }
     }
 
-    // ================= 員工 ID 持久化 =================
+    // ================= 員工 ID 持久化 (保持不變) =================
     function loadEmployeeID() {
         const savedId = localStorage.getItem(EMPLOYEE_ID_KEY);
         if (savedId) {
@@ -424,8 +442,101 @@
         localStorage.setItem(EMPLOYEE_ID_KEY, employeeId);
     }
 
+    // ================= Concern Section 管理 (新增) =================
+    function getConcernList() {
+        try {
+            return JSON.parse(localStorage.getItem(CONCERN_LIST_KEY)) || DEFAULT_CONCERN_LIST;
+        } catch (e) {
+            console.error("Failed to parse concern list", e);
+            return DEFAULT_CONCERN_LIST;
+        }
+    }
 
-    // ================= 登入與設定管理 (保持不變) =================
+    function saveConcernList(list) {
+        const uniqueSortedList = [...new Set(list)].sort((a, b) => a.localeCompare(b));
+        localStorage.setItem(CONCERN_LIST_KEY, JSON.stringify(uniqueSortedList));
+        loadConcernSectionToUI();
+        return uniqueSortedList;
+    }
+
+    function loadConcernSectionToUI() {
+        const select = document.getElementById('input-concern-section');
+        const list = getConcernList();
+        
+        select.innerHTML = '';
+        
+        const defaultOption = document.createElement('option');
+        defaultOption.value = "";
+        defaultOption.textContent = "--- Select Section ---";
+        select.appendChild(defaultOption);
+
+        list.forEach(section => {
+            const option = document.createElement('option');
+            option.value = section;
+            option.textContent = section;
+            select.appendChild(option);
+        });
+        
+        if (document.getElementById('settings-modal').style.display === 'flex') {
+            renderConcernListSettings();
+        }
+    }
+
+    function renderConcernListSettings() {
+        const container = document.getElementById('concern-section-list-container');
+        const list = getConcernList();
+        container.innerHTML = '';
+
+        list.forEach((section, index) => {
+            const item = document.createElement('div');
+            item.className = 'machine-list-item';
+            item.innerHTML = `
+                <span style="font-weight: bold;">${section}</span>
+                <button type="button" class="btn-remove-item" onclick="removeConcernSection('${section}')">X</button>
+            `;
+            container.appendChild(item);
+        });
+    }
+
+    function addConcernSection() {
+        const input = document.getElementById('new-concern-section');
+        const newSection = input.value.trim();
+
+        if (newSection === "" || newSection === "--- SELECT SECTION ---") {
+            alert("請輸入有效的部門名稱。");
+            return;
+        }
+
+        let list = getConcernList();
+        if (list.includes(newSection)) {
+            alert(`部門 ${newSection} 已經存在於清單中。`);
+            return;
+        }
+
+        list.push(newSection);
+        saveConcernList(list);
+        
+        input.value = "";
+    }
+
+    function removeConcernSection(name) {
+        if (!confirm(`確定要從清單中刪除部門 ${name} 嗎？`)) return;
+
+        let list = getConcernList();
+        const newList = list.filter(m => m !== name);
+        saveConcernList(newList);
+    }
+
+    // ================= 登入與設定管理 (調整 openSettings) =================
+    
+    function openSettings() {
+        loadSettingsToUI();
+        loadMachineListToUI();
+        loadConcernSectionToUI(); // 確保打開時載入 Concern List
+        document.getElementById('settings-modal').style.display = 'flex';
+    }
+    
+    // ... 其他登入/設定/機器管理函數 (保持不變) ...
     function checkLogin() {
         const input = document.getElementById('loginPass').value;
         const storedPass = localStorage.getItem("app_password"); 
@@ -438,12 +549,6 @@
         } else {
             alert("Wrong Password! (密碼錯誤)");
         }
-    }
-    
-    function openSettings() {
-        loadSettingsToUI();
-        renderMachineListSettings();
-        document.getElementById('settings-modal').style.display = 'flex';
     }
     
     function saveSettings() {
@@ -515,7 +620,6 @@
         localStorage.setItem("cfg_lang", val);
     }
     
-    // ... 機器列表管理函數保持不變 ...
     function getMachineList() {
         try {
             return JSON.parse(localStorage.getItem(MACHINE_LIST_KEY)) || DEFAULT_MACHINE_LIST;
@@ -626,6 +730,7 @@
         const unitSelect = document.getElementById('total-time-unit');
         const unit = unitSelect ? unitSelect.value : 'h';
 
+        // 修正: 檢查是否任一欄位為空 -> 清空
         if (stopTimeStr === "" || startTimeStr === "") {
              totalTimeInput.value = "";
              totalTimeInput.style.backgroundColor = '#eee';
@@ -683,15 +788,13 @@
         const fullDateTime = getFullDateTimeString(new Date());
         
         if (targetElement) {
-            const timeType = targetId.includes('stop') ? "Stop time" : "Start time";
-            if(confirm(`確定將 [${timeType}] 更新為現在時間：${fullDateTime} 嗎？`)) {
-                 targetElement.value = fullDateTime;
-                 calculateTotalStopTime();
-            }
+             // 修正: 移除 confirm 彈窗
+             targetElement.value = fullDateTime;
+             calculateTotalStopTime();
         }
     }
     
-    // ================= 複製格式化訊息 (保持不變) =================
+    // ================= 複製格式化訊息 (修正 Start Time/Total Time 邏輯) =================
     
     function extractDateAndTime(fullTimeStr) {
         const match = fullTimeStr.match(DATETIME_REGEX);
@@ -700,19 +803,20 @@
              const timePart = `${match[4]}:${match[5]}`; 
              return { date: datePart, time: timePart };
         }
-        return { date: 'N/A', time: 'N/A' };
+        return { date: '', time: '' }; // 如果無效，返回空字串
     }
     
     function copyFormattedInfo() {
         const totalTimeInput = document.getElementById('input-total-time');
         const totalTimeMinutes = totalTimeInput.dataset.diffMinutes;
         
+        // 修正 Total Time 格式: 只有在有有效分鐘數時才顯示格式
         let totalTimeFormat;
-        if (totalTimeMinutes === undefined || totalTimeMinutes === '0' || totalTimeMinutes === '') {
-            totalTimeFormat = 'N/A';
-        } else {
+        if (totalTimeMinutes && totalTimeMinutes > 0) {
             const totalTimeHours = (totalTimeMinutes / 60).toFixed(2);
             totalTimeFormat = `${totalTimeMinutes} Min / ${totalTimeHours} hr`;
+        } else {
+            totalTimeFormat = ''; // 修正: 如果無效或為空，顯示空字串
         }
         
         // 1. 蒐集資料
@@ -729,7 +833,8 @@
         // 2. 處理時間
         const stopInfo = extractDateAndTime(stopTimeFull);
         
-        const startDisplay = startTimeFull === "" ? `N/A (- ${stopTimeFull})` : startTimeFull;
+        // 修正 Start Time 顯示：如果 Start Time 為空，顯示空字串
+        const startDisplay = startTimeFull === "" ? '' : startTimeFull;
 
         // 3. 構建輸出字串 (最終格式)
         const output = `
@@ -789,7 +894,6 @@ Self Actions:
         applySettings();
     }
 
-    /** 提交到雲端 (自動判斷新增或覆蓋) */
     function saveToCloud() {
         if(isRecording) manualStopVoice();
 
@@ -866,17 +970,32 @@ Self Actions:
         });
     }
 
+    function viewExcel() {
+        const url = `https://docs.google.com/spreadsheets/d/${FIXED_SHEET_ID}/edit#gid=0`;
+        window.open(url, '_blank');
+    }
+
+    function viewDriveFolder() {
+        if(FIXED_FOLDER_ID && FIXED_FOLDER_ID.trim() !== "") {
+            window.open(`https://drive.google.com/drive/folders/${FIXED_FOLDER_ID}`, '_blank');
+        } else {
+            alert("Folder ID not set.");
+        }
+    }
+    
+    // ================= 圖片/語音函數 (健壯性檢查) =================
+
     /**
      * 觸發檔案輸入 (相機或相簿)。
      * @param {string} id - input 元素的 ID ('input-cam' 或 'input-gallery')
      */
     function triggerFile(id) { 
-        if (window.isSecureContext) {
-            // 只有在安全環境下才嘗試調用
-            document.getElementById(id).click();
-        } else {
-            alert("❌ 相機功能被阻擋！請確保 App 是透過 HTTPS 網址開啟，而非本地檔案。");
+        // 增加檢查，引導使用者解決權限問題
+        if (window.location.protocol === 'http:' && !window.location.hostname.includes('localhost')) {
+            alert("❌ 相機功能需要 HTTPS 協定。請使用 Apps Script 網址開啟。");
+            return;
         }
+        document.getElementById(id).click();
     }
     
     function handleFile(input) {
