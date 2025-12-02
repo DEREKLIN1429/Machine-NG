@@ -23,7 +23,7 @@
             display: flex; justify-content: center; min-height: 100vh;
         }
 
-        /* --- 模組化樣式 (保持不變) --- */
+        /* --- 模組化樣式 --- */
         #login-screen, #status-modal, #settings-modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.6); z-index: 9999;
@@ -69,10 +69,6 @@
         .btn-cam { background-color: #FF5722; color: white; } 
         .btn-gallery { background-color: #FFC107; color: #333; } 
 
-        /* --- 圖片預覽 (保持修正) --- */
-        #preview-container { max-width: 100%; height: auto; }
-        #preview-img { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; }
-
         /* --- 輸入/表單樣式 (保持不變) --- */
         .input-group { margin-bottom: 8px; display: flex; flex-direction: column; }
         .input-label { font-weight: bold; font-size: 0.9rem; color: #333; margin-bottom: 4px; }
@@ -85,31 +81,6 @@
         
         .time-component { display: flex; flex-direction: column; margin-bottom: 8px; }
         .time-input-row { display: flex; align-items: center; gap: 5px; }
-
-        /* --- 查詢欄位樣式 --- */
-        .query-group {
-            margin-top: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: #e0e0e0;
-            padding: 10px;
-            border-radius: 8px;
-        }
-        .query-group > input {
-            flex-grow: 1;
-            border: 1px solid #aaa;
-        }
-        .btn-query {
-            background-color: var(--copy-color);
-            color: white;
-            padding: 8px 12px;
-            border: none;
-            border-radius: 6px;
-            font-weight: bold;
-            flex-shrink: 0;
-            cursor: pointer;
-        }
 
         /* --- 底部按鈕美學優化 (保持不變) --- */
         .footer-btns { display: flex; flex-direction: column; gap: 8px; margin-top: 15px; padding-bottom: 20px;}
@@ -130,6 +101,43 @@
         .btn-save { background-color: var(--primary-color); } 
         .btn-view { background-color: var(--view-color); color: white; } 
         .btn-drive { background-color: var(--copy-color); } 
+        
+        /* --- 設定內排版修正 (保持不變) --- */
+        .settings-content-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        
+        #machine-list-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 5px;
+            margin-top: 10px;
+        }
+        .machine-list-item {
+            display: flex;
+            flex-direction: column; 
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px;
+            background: #f1f1f1;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 0.8em;
+            word-break: break-all;
+        }
+        .btn-remove-item {
+            background: var(--danger-color);
+            color: white;
+            border: none;
+            padding: 2px 5px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-top: 3px;
+            font-weight: bold;
+        }
         
         .hidden { display: none !important; }
     </style>
@@ -156,7 +164,7 @@
     </div>
 
     <div id="app-screen" style="display: none;">
-        <div class="author-header">Author: DERER LIN (v3.1)</div>
+        <div class="author-header">Author: DERER LIN (v3.2)</div>
 
         <div class="header">
             <div class="header-btn" onclick="logout()" title="Lock / Logout (鎖定/登出)">🔒</div>
@@ -275,17 +283,6 @@
             </select>
         </div>
         
-        <div class="card">
-            <span class="section-title">3. Search & Overwrite (查詢與覆蓋)</span>
-            <div class="query-group">
-                 <input type="text" id="query-form-no" class="text-input" placeholder="Repair Form No (查詢單號)">
-                 <button class="btn-query" onclick="queryData()">Go</button>
-            </div>
-            <p style="text-align: center; font-size: 0.8em; color: var(--danger-color); margin-top: 10px;">
-                * 點擊 Go 載入資料。若修改後點擊 Save，將 **覆蓋** 該筆資料。
-            </p>
-            <input type="hidden" id="queried-row-index" value="-1"> </div>
-
         <div class="footer-btns">
             <button class="btn-main btn-copy" onclick="copyFormattedInfo()">📋 Copy Info</button>
             <button class="btn-main btn-save" id="saveBtn" onclick="saveToCloud()">💾 Save to Cloud</button>
@@ -516,7 +513,7 @@
         localStorage.setItem("cfg_lang", val);
     }
     
-    // ... 機器列表管理函數保持不變 ...
+    // ... 機器列表管理函數 (保持不變) ...
     function getMachineList() {
         try {
             return JSON.parse(localStorage.getItem(MACHINE_LIST_KEY)) || DEFAULT_MACHINE_LIST;
@@ -598,7 +595,7 @@
     }
 
 
-    // ================= 時間處理函數 (Total Stop Time 修正) =================
+    // ================= 時間處理函數 (保持不變) =================
     const DATETIME_REGEX = /^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})$/;
 
     function parseCustomDateTime(dtStr) {
@@ -620,7 +617,6 @@
         return date;
     }
     
-    /** 計算總停機時間 (Total stop time) 並填入欄位 */
     function calculateTotalStopTime() {
         const stopTimeStr = document.getElementById('input-stop-time-full').value.trim();
         const startTimeStr = document.getElementById('input-start-time-full').value.trim();
@@ -628,11 +624,10 @@
         const unitSelect = document.getElementById('total-time-unit');
         const unit = unitSelect ? unitSelect.value : 'h';
 
-        // 修正: 檢查是否任一欄位為空 -> 清空
         if (stopTimeStr === "" || startTimeStr === "") {
              totalTimeInput.value = "";
              totalTimeInput.style.backgroundColor = '#eee';
-             totalTimeInput.dataset.diffMinutes = ''; // 清除分鐘數
+             totalTimeInput.dataset.diffMinutes = ''; 
              return;
         }
         
@@ -647,7 +642,7 @@
         }
 
         const diffMs = startDate.getTime() - stopDate.getTime();
-        const diffMinutes = Math.round(diffMs / (1000 * 60)); // 總分鐘數
+        const diffMinutes = Math.round(diffMs / (1000 * 60)); 
         
         if (diffMinutes <= 0) {
             totalTimeInput.value = "0 min / 0.00 hr";
@@ -694,7 +689,7 @@
         }
     }
     
-    // ================= 複製格式化訊息 (最終格式修正) =================
+    // ================= 複製格式化訊息 (最終格式保持不變) =================
     
     function extractDateAndTime(fullTimeStr) {
         const match = fullTimeStr.match(DATETIME_REGEX);
@@ -771,102 +766,52 @@ Self Actions:
         });
     }
 
-    // ================= 查詢與覆蓋邏輯 (修正) =================
-    
-    function setQueryState(rowIndex, machine, photoUrl) {
-        document.getElementById('queried-row-index').value = rowIndex;
+    // ================= 上傳與清除邏輯 (修正) =================
+    function clearInputs() {
+        document.getElementById('input-machine').value = ""; 
+        document.getElementById('input-total-time').value = "";
+        document.getElementById('input-form-no').value = "";
+        document.getElementById('input-reason').value = "";
+        document.getElementById('input-concern-section').value = "";
+        document.getElementById('input-solution').value = "";
+        document.getElementById('input-self-actions').value = "";
+
+        document.getElementById('input-stop-time-full').value = "";
+        document.getElementById('input-start-time-full').value = "";
         
-        const saveBtn = document.getElementById('saveBtn');
-        if (rowIndex > 0) {
-             saveBtn.innerText = "💾 Save (OVERWRITE Row " + rowIndex + ")";
-             saveBtn.classList.add('btn-copy'); 
-             saveBtn.classList.remove('btn-save');
-        } else {
-             saveBtn.innerText = "💾 Save to Cloud";
-             saveBtn.classList.remove('btn-copy');
-             saveBtn.classList.add('btn-save');
-        }
-        
-        if (photoUrl) {
-            alert("該筆紀錄帶有圖片，若儲存將覆蓋原圖。");
-        }
+        document.getElementById('input-total-time').style.backgroundColor = '#eee';
+        calculateTotalStopTime(); 
+
+        processedImageBase64 = "";
+        document.getElementById('preview-img').style.display = 'none';
+        document.querySelector('.placeholder').style.display = 'block';
+        applySettings();
     }
 
-    /** 查詢資料並帶入表單 */
-    function queryData() {
-        const formNo = document.getElementById('query-form-no').value.trim();
-        if (!formNo) {
-            alert("請輸入 Repair Form No 進行查詢。");
-            return;
-        }
-
-        setQueryState(-1);
-        showStatus('loading', 'Searching...', '資料查詢中...');
-        
-        // 修正: 呼叫 Apps Script 的 doGet 服務
-        const scriptUrl = `https://script.google.com/macros/s/${FIXED_SCRIPT_ID}/exec?action=query&formNo=${encodeURIComponent(formNo)}`;
-
-        fetch(scriptUrl)
-            .then(r => r.json())
-            .then(res => {
-                if (res.result === 'success' && res.data) {
-                    const data = res.data;
-                    
-                    if (data.rowIndex && data.rowIndex > 0) {
-                        
-                        // 1. 設置查詢狀態
-                        setQueryState(data.rowIndex, data.machine, data.photoUrl);
-                        
-                        // 2. 載入資料到表單 (假設 Apps Script 返回的 Key 與前端 ID 對應)
-                        document.getElementById('input-employee-id').value = data.employeeId || '';
-                        document.getElementById('input-machine').value = data.machine || '';
-                        document.getElementById('input-form-no').value = data.formNo || '';
-                        document.getElementById('input-stop-time-full').value = data.stopTimeFull || '';
-                        document.getElementById('input-start-time-full').value = data.startTimeFull || '';
-                        document.getElementById('input-concern-section').value = data.concernSection || '';
-                        document.getElementById('input-reason').value = data.reason || '';
-                        document.getElementById('input-solution').value = data.solution || '';
-                        document.getElementById('input-self-actions').value = data.selfActions || '';
-
-                        // 3. 觸發計算
-                        calculateTotalStopTime();
-                        
-                        showStatus('success', 'Search Success!', `找到 Repair Form ${formNo} (Row ${data.rowIndex})`);
-
-                    } else {
-                        showStatus('error', 'Search Failed', `找不到單號 ${formNo} 的紀錄。`);
-                    }
-                } else {
-                    showStatus('error', 'Search Failed', `查詢失敗: ${res.error || '未知的 Apps Script 錯誤。'}`);
-                }
-            })
-            .catch(e => {
-                console.error(e);
-                showStatus('error', 'Network Error', '查詢時發生網路錯誤。');
-            })
-            .finally(() => {
-                setTimeout(() => { closeStatusModal(); }, 3000);
-            });
-    }
-
-    /** 提交到雲端 (新增或覆蓋) */
+    /** 提交到雲端 (自動判斷新增或覆蓋) */
     function saveToCloud() {
         if(isRecording) manualStopVoice();
 
+        // 獲取所有欄位
         const employeeId = document.getElementById('input-employee-id').value; 
         const machine = document.getElementById('input-machine').value; 
         const stopTimeFull = document.getElementById('input-stop-time-full').value; 
         const startTimeFull = document.getElementById('input-start-time-full').value; 
         const totalTime = document.getElementById('input-total-time').value; 
-        const formNo = document.getElementById('input-form-no').value;
+        const formNo = document.getElementById('input-form-no').value; // 關鍵欄位
         const reason = document.getElementById('input-reason').value;
         const concernSection = document.getElementById('input-concern-section').value;
         const solution = document.getElementById('input-solution').value; 
         const selfActions = document.getElementById('input-self-actions').value;
-        const rowIndex = document.getElementById('queried-row-index').value;
+        
+        // 檢查 Repair Form No
+        if (formNo.trim() === "") {
+            alert("請填寫 Repair Form No 以便追蹤。");
+            return;
+        }
 
         // 檢查
-        if(!processedImageBase64 && !machine && !reason && !solution && !concernSection && !selfActions) { // 修正：檢查所有文字欄位
+        if(!processedImageBase64 && !machine && !reason && !solution && !concernSection && !selfActions) { 
             alert("Empty! Please fill in machine info/notes or take a photo."); return;
         }
         if (machine.trim() === "") {
@@ -883,8 +828,7 @@ Self Actions:
         showStatus('loading', 'Uploading...', '資料上傳中...');
 
         const data = { 
-            action: rowIndex > 0 ? 'overwrite' : 'append', 
-            rowIndex: rowIndex,
+            // 不再需要 action 或 rowIndex，交給後端判斷
             image: processedImageBase64, 
             employeeId: employeeId, 
             machine: machine,
@@ -905,10 +849,10 @@ Self Actions:
         })
         .then(r => r.json())
         .then(res => {
+            const action = res.action || '新增'; // Apps Script 會回傳動作 (append/overwrite)
             if (res.result === 'success') {
-                showStatus('success', 'Upload Success!', `資料已成功 ${rowIndex > 0 ? '覆蓋' : '新增'}！`);
+                showStatus('success', 'Upload Success!', `資料已成功 ${action}！`);
                 clearInputs();
-                setQueryState(-1);
                 setTimeout(() => { closeStatusModal(); }, 2000);
             } else {
                 showStatus('error', 'Upload Failed', `上傳失敗：${res.error || '未知的錯誤。'}`);
@@ -923,37 +867,12 @@ Self Actions:
         });
     }
 
-    function clearInputs() {
-        document.getElementById('input-machine').value = ""; 
-        document.getElementById('input-total-time').value = "";
-        document.getElementById('input-form-no').value = "";
-        document.getElementById('input-reason').value = "";
-        document.getElementById('input-concern-section').value = "";
-        document.getElementById('input-solution').value = "";
-        document.getElementById('input-self-actions').value = "";
-
-        document.getElementById('input-stop-time-full').value = "";
-        document.getElementById('input-start-time-full').value = "";
-        
-        document.getElementById('input-total-time').style.backgroundColor = '#eee';
-        calculateTotalStopTime(); 
-        
-        document.getElementById('query-form-no').value = ""; 
-        setQueryState(-1);
-
-        processedImageBase64 = "";
-        document.getElementById('preview-img').style.display = 'none';
-        document.querySelector('.placeholder').style.display = 'block';
-        applySettings();
-    }
-
     function viewExcel() {
         const url = `https://docs.google.com/spreadsheets/d/${FIXED_SHEET_ID}/edit#gid=0`;
         window.open(url, '_blank');
     }
 
     function viewDriveFolder() {
-        // 修正: 確保 URL 正確
         if(FIXED_FOLDER_ID && FIXED_FOLDER_ID.trim() !== "") {
             window.open(`https://drive.google.com/drive/folders/${FIXED_FOLDER_ID}`, '_blank');
         } else {
@@ -961,7 +880,7 @@ Self Actions:
         }
     }
     
-    // ... 其他圖片/語音函數保持不變 ...
+    // ... 圖片/語音函數省略 ...
 </script>
 
 </body>
