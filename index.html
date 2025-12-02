@@ -6,13 +6,15 @@
     <title>MC-repair-history (重點事項紀錄)</title>
     <style>
         :root {
-            --primary-color: #007bff;
-            --bg-color: #f4f7f6;
-            --card-bg: #ffffff;
-            --danger-color: #dc3545;
-            --drive-color: #198754; 
-            --frame-color: #00e600; 
-            --input-border: #ccc;
+            /* 現代配色優化 */
+            --primary-color: #4CAF50; /* 綠色 - 主要/成功 */
+            --bg-color: #f7f9fc; /* 淺灰色背景 */
+            --card-bg: #ffffff; /* 白色卡片 */
+            --danger-color: #e53935; /* 紅色 - 警告/停止 */
+            --drive-color: #1a73e8; /* 藍色 - Google Drive/Copy */
+            --view-color: #607D8B; /* 灰色 - View/其他按鈕 */
+            --frame-color: #4CAF50; /* 綠色邊框 */
+            --input-border: #ddd;
         }
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
@@ -30,12 +32,15 @@
         #login-screen { background: var(--bg-color); }
 
         .modal-box {
-            background: white; padding: 30px; border-radius: 15px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center; width: 90%; max-width: 400px;
+            background: white; padding: 25px; border-radius: 12px; /* 略微縮小圓角 */
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center; width: 90%; max-width: 450px;
+            max-height: 90vh; /* 確保內容不會超出畫面 */
+            overflow-y: auto; /* 允許滾動 */
         }
         .login-input {
-            width: 100%; padding: 12px; margin: 15px 0; border: 2px solid #ddd;
-            border-radius: 8px; font-size: 18px; text-align: center;
+            width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; /* 略微縮小 padding/margin */
+            border-radius: 8px; font-size: 16px; text-align: left; /* 靠左對齊 */
+            box-sizing: border-box;
         }
         .spinner {
             border: 4px solid #f3f3f3; border-top: 4px solid var(--primary-color);
@@ -44,81 +49,137 @@
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        #app-screen { width: 100%; max-width: 500px; padding: 15px; box-sizing: border-box; } /* 調整 padding */
+        #app-screen { width: 100%; max-width: 500px; padding: 10px; box-sizing: border-box; } /* 縮小 padding */
         
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; } /* 調整 margin */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .header-btn { 
-            font-size: 26px; cursor: pointer; color: #555; padding: 8px; 
+            font-size: 24px; /* 略微縮小 */
+            cursor: pointer; color: #555; padding: 6px; 
             border-radius: 50%; transition: background 0.2s;
-            width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+            width: 36px; height: 36px; 
+            display: flex; align-items: center; justify-content: center;
         }
-        .header-title h2 { margin: 0; color: #333; font-size: 1.3rem; line-height: 1.4; }
+        .header-title h2 { margin: 0; color: #333; font-size: 1.2rem; line-height: 1.4; } /* 縮小標題 */
 
-        .card { background: var(--card-bg); padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 15px; } /* 調整 padding/border-radius/shadow */
+        .card { background: var(--card-bg); padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 12px; }
         .section-title { font-weight: bold; color: #555; margin-bottom: 8px; display: block; font-size: 1rem; }
 
         .photo-controls { display: flex; gap: 10px; margin-bottom: 10px; }
-        .btn-half { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; gap: 5px;}
-        .btn-cam { background-color: #ffc107; color: #333; }
-        .btn-gallery { background-color: #fd7e14; }
+        .btn-half { flex: 1; padding: 10px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; gap: 5px;}
+        .btn-cam { background-color: #ffb300; color: #333; }
+        .btn-gallery { background-color: #fb8c00; }
 
-        /* --- 圖片預覽修正 --- */
-        #preview-container { 
-            width: 100%; 
-            background: #f0fff0; 
-            border: 2px solid var(--frame-color);
-            border-radius: 8px; 
-            display: flex; align-items: center; justify-content: center; 
-            overflow: hidden; 
-            position: relative;
-            box-sizing: border-box;
-            max-width: 100%; /* 確保不超出容器 */
-            height: auto;
-        }
-        #preview-img { 
-            max-width: 100%; /* 確保圖片寬度不會超過容器 */
-            max-height: 100%; /* 確保圖片高度不會超過容器 */
-            width: auto; /* 允許圖片根據比例調整 */
-            height: auto; 
-            object-fit: contain; 
-            display: none; 
-            z-index: 1; 
-        }
-
-        /* 移除預覽框其他樣式... */
-        .ratio-tag { position: absolute; top: 8px; left: 8px; padding: 4px 6px; border-radius: 4px; font-size: 0.7rem; }
-        .ratio-4-3 { aspect-ratio: 4/3; } .ratio-16-9 { aspect-ratio: 16/9; } .ratio-9-16 { aspect-ratio: 9/16; } .ratio-1-1 { aspect-ratio: 1/1; }
+        /* --- 圖片預覽 (保持修正後的邏輯) --- */
+        #preview-container { max-width: 100%; height: auto; }
+        #preview-img { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; }
 
         /* --- 輸入/表單樣式 --- */
-        .input-group { margin-bottom: 10px; display: flex; flex-direction: column; } /* 調整 margin */
-        .input-label { font-weight: bold; font-size: 0.95rem; color: #333; margin-bottom: 4px; }
+        .input-group { margin-bottom: 8px; display: flex; flex-direction: column; } /* 調整 margin */
+        .input-label { font-weight: bold; font-size: 0.9rem; color: #333; margin-bottom: 4px; }
         .text-input, textarea, select.text-input { 
             width: 100%; padding: 10px; border: 1px solid var(--input-border); 
             border-radius: 6px; font-size: 15px; box-sizing: border-box;
             font-family: inherit; transition: border-color 0.3s;
         }
-        textarea { height: 100px; resize: vertical; } 
+        textarea { height: 80px; resize: vertical; } 
         
-        .time-component { display: flex; flex-direction: column; margin-bottom: 10px; }
+        .time-component { display: flex; flex-direction: column; margin-bottom: 8px; } /* 調整 margin */
         .time-input-row { display: flex; align-items: center; gap: 5px; }
 
-        /* --- 底部按鈕優化 --- */
-        .footer-btns { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; padding-bottom: 30px;}
+        /* --- Total Stop Time 選項 --- */
+        .total-time-input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .total-time-input-group > input {
+            flex-grow: 1;
+        }
+        .total-time-input-group > select {
+            width: 80px;
+            padding: 8px;
+            border-radius: 6px;
+        }
+        
+        /* --- 語音/更新按鈕樣式 --- */
+        .btn-update-time {
+            background-color: #ffb300; 
+            color: #333; 
+            font-weight: bold;
+            padding: 7px; /* 略微縮小 */
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.85em;
+            flex-shrink: 0;
+        }
+        .btn-update-time:active { background-color: #e3a900; }
+        
+        /* --- 底部按鈕美學優化 --- */
+        .footer-btns { display: flex; flex-direction: column; gap: 8px; margin-top: 15px; padding-bottom: 20px;}
         .btn-main { 
             width: 100%; 
-            padding: 18px 15px; /* 增大點擊區域 */
+            padding: 14px 15px; /* 縮小 padding */
             border: none; 
-            border-radius: 10px; 
-            font-size: 18px; /* 增大字體 */
-            font-weight: bold; 
+            border-radius: 8px; /* 圓角調整 */
+            font-size: 16px; 
+            font-weight: 600; /* 調整字體粗細 */
             cursor: pointer; 
             color: white; 
-            transition: background 0.2s;
+            transition: background 0.2s, transform 0.1s;
         }
+        .btn-main:active { transform: scale(0.99); }
+        
+        /* 新配色 */
+        .btn-copy { background-color: var(--drive-color); }
+        .btn-copy:hover { background-color: #1565c0; }
 
-        /* --- 設定管理清單樣式 (微調) --- */
-        .modal-box .login-input { padding: 10px; margin: 5px 0; }
-        .machine-list-item { padding: 6px; margin-top: 4px; font-size: 0.9em; } 
+        .btn-save { background-color: var(--primary-color); }
+        .btn-save:hover { background-color: #43a047; }
+
+        .btn-view { background-color: var(--view-color); }
+        .btn-view:hover { background-color: #455a64; }
+
+        .btn-drive { background-color: #00897b; } /* 另一種綠色 */
+        .btn-drive:hover { background-color: #00695c; }
+        
+        /* --- 設定內排版修正 --- */
+        .settings-content-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        
+        /* 機器列表優化為多欄顯示 */
+        #machine-list-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr); /* 3 欄平均分佈 */
+            gap: 5px;
+            margin-top: 10px;
+        }
+        .machine-list-item {
+            display: flex;
+            flex-direction: column; /* 讓內容和刪除按鈕垂直排列 */
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px;
+            background: #f1f1f1;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 0.8em;
+            word-break: break-all;
+        }
+        .btn-remove-item {
+            background: var(--danger-color);
+            color: white;
+            border: none;
+            padding: 2px 5px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-top: 3px;
+        }
+        
         .hidden { display: none !important; }
     </style>
 </head>
@@ -144,7 +205,7 @@
     </div>
 
     <div id="app-screen" style="display: none;">
-        <div class="author-header">Author: DERER LIN (v2.5)</div>
+        <div class="author-header">Author: DERER LIN (v2.7)</div>
 
         <div class="header">
             <div class="header-btn" onclick="logout()" title="Lock / Logout (鎖定/登出)">🔒</div>
@@ -182,7 +243,7 @@
             
             <div class="input-group">
                 <label class="input-label" for="input-form-no">Repair Form No:</label>
-                <input type="text" id="input-form-no" class="text-input" placeholder="e.g. RF20251202">
+                <input type="text" id="input-form-no" class="text-input" placeholder="e.g. A69304">
             </div>
 
             <div class="time-component">
@@ -210,12 +271,18 @@
 
             <div class="input-group">
                 <label class="input-label" for="input-total-time">Total stop time : (自動計算)</label>
-                <input type="text" id="input-total-time" class="text-input" placeholder="0.00 h (自動計算)" readonly style="background-color: #eee;">
+                <div class="total-time-input-group">
+                    <input type="text" id="input-total-time" class="text-input" placeholder="" readonly style="background-color: #eee; font-weight: bold;">
+                    <select id="total-time-unit" onchange="calculateTotalStopTime()" class="text-input" style="width: auto;">
+                        <option value="h">h (小時)</option>
+                        <option value="min">min (分鐘)</option>
+                    </select>
+                </div>
             </div>
             
             <div class="input-group">
                 <label class="input-label" for="input-reason">Reason :</label>
-                <textarea id="input-reason" placeholder="Describe the reason for the failure... (請描述故障原因...)"></textarea>
+                <textarea id="input-reason" placeholder="e.g. dischrge door not open"></textarea>
                 <div class="voice-control-group">
                     <button type="button" class="btn-voice" data-target="input-reason" onclick="toggleVoice(this)">
                         🎤 語音輸入
@@ -225,8 +292,13 @@
             </div>
             
             <div class="input-group">
+                <label class="input-label" for="input-concern-section">Concern Section :</label>
+                <input type="text" id="input-concern-section" class="text-input" placeholder="e.g. Mechanical and Electric maintanence">
+            </div>
+
+            <div class="input-group">
                 <label class="input-label" for="input-solution">How to Solve Problem:</label>
-                <textarea id="input-solution" placeholder="Describe the solution taken... (請描述採取的解決方案...)"></textarea>
+                <textarea id="input-solution" placeholder="e.g. hydraulic pressure set"></textarea>
                 <div class="voice-control-group">
                     <button type="button" class="btn-voice" data-target="input-solution" onclick="toggleVoice(this)">
                         🎤 語音輸入
@@ -234,15 +306,21 @@
                 </div>
             </div>
             
+             <div class="input-group">
+                <label class="input-label" for="input-self-actions">Self Actions:</label>
+                <textarea id="input-self-actions" placeholder="e.g. check and inform maintenance team"></textarea>
+            </div>
+            
             <select id="voice-lang-select" class="hidden">
                 <option value="cmn-Hant-TW">中文 (繁體)</option>
                 <option value="en-US">English</option>
-                <option value="ja-JP">Japanese</option>
+                <option value="ja-JP">日本語</option>
                 <option value="hi-IN">Hindi (印地語)</option>
             </select>
         </div>
 
         <div class="footer-btns">
+            <button class="btn-main btn-copy" onclick="copyFormattedInfo()">📋 Copy Info</button>
             <button class="btn-main btn-save" id="saveBtn" onclick="saveToCloud()">💾 Save to Cloud</button>
             <button class="btn-main btn-view" onclick="viewExcel()">📊 View Excel</button>
             <button class="btn-main btn-drive" onclick="viewDriveFolder()">📂 View Photos</button>
@@ -256,46 +334,48 @@
                 <button onclick="closeSettings()" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
             </div>
             
-            <div class="modal-group" style="background: #f9f9f9; padding: 10px; border-radius: 8px; border: 1px dashed #ccc; margin-bottom: 15px;">
-                <label style="color:#d63384; font-weight: bold; margin-bottom: 5px; display: block;">🔑 Login Password (修改登入密碼) (Default: 12345)</label>
-                <input type="text" id="set-password" class="login-input" style="margin: 0;" placeholder="Current: 12345">
-            </div>
-            
-            <div class="modal-group">
-                <label style="font-weight: bold; margin-bottom: 5px; display: block;">1. Voice Timeout (錄音靜默秒數)</label>
-                <input type="number" id="set-timeout" class="login-input" style="margin: 0;" placeholder="Default: 1.5 (seconds)">
-            </div>
+            <div class="settings-content-group">
+                <div class="modal-group" style="background: #f9f9f9; padding: 10px; border-radius: 8px; border: 1px dashed #ccc;">
+                    <label style="color:#d63384; font-weight: bold; margin-bottom: 5px; display: block;">🔑 Login Password (修改登入密碼) (Default: 12345)</label>
+                    <input type="text" id="set-password" class="login-input" style="margin: 0;" placeholder="Current: 12345">
+                </div>
 
-            <div class="modal-group">
-                <label style="font-weight: bold; margin-bottom: 5px; display: block;">2. Photo Aspect Ratio (照片比例)</label>
-                <select id="set-ratio" class="login-input" style="margin: 0;">
-                    <option value="4/3">4:3 (Standard)</option>
-                    <option value="16/9">16:9 (Wide)</option>
-                    <option value="9/16">9:16 (Vertical / 直式)</option>
-                    <option value="1/1">1:1 (Square)</option>
-                </select>
-                <div style="font-size: 0.8rem; color: #888; margin-top: 3px;">* Applies auto-crop.</div>
-            </div>
-            
-            <div class="modal-group">
-                <label style="font-weight: bold; margin-bottom: 5px; display: block;">3. Voice Language (語音辨識語言)</label>
-                <select id="set-lang" class="login-input" style="margin: 0;" onchange="syncLanguage()">
-                    <option value="cmn-Hant-TW">Traditional Chinese (繁體中文)</option>
-                    <option value="en-US">English (英文)</option>
-                    <option value="ja-JP">Japanese (日文)</option>
-                    <option value="hi-IN">Hindi (印地語)</option>
-                </select>
-            </div>
+                <div class="modal-group">
+                    <label style="font-weight: bold; margin-bottom: 5px; display: block;">1. Voice Timeout (錄音靜默秒數)</label>
+                    <input type="number" id="set-timeout" class="login-input" style="margin: 0;" placeholder="Default: 1.5 (seconds)">
+                </div>
 
-
-            <div class="modal-group" style="margin-top: 20px; border: 1px solid #ddd; padding: 10px; border-radius: 8px;">
-                <label style="font-weight: bold; margin-bottom: 10px; display: block; color: var(--drive-color);">4. Machine List Management (機器列表管理)</label>
+                <div class="modal-group">
+                    <label style="font-weight: bold; margin-bottom: 5px; display: block;">2. Photo Aspect Ratio (照片比例)</label>
+                    <select id="set-ratio" class="login-input" style="margin: 0;">
+                        <option value="4/3">4:3 (Standard)</option>
+                        <option value="16/9">16:9 (Wide)</option>
+                        <option value="9/16">9:16 (Vertical / 直式)</option>
+                        <option value="1/1">1:1 (Square)</option>
+                    </select>
+                    <div style="font-size: 0.8rem; color: #888; margin-top: 3px;">* Applies auto-crop.</div>
+                </div>
                 
-                <input type="text" id="new-machine-name" class="login-input" style="margin: 0 0 5px 0;" placeholder="Add new machine name (e.g., CM4)">
-                <button type="button" class="btn-add-item" onclick="addMachine()">+ Add Machine (新增)</button>
+                <div class="modal-group">
+                    <label style="font-weight: bold; margin-bottom: 5px; display: block;">3. Voice Language (語音辨識語言)</label>
+                    <select id="set-lang" class="login-input" style="margin: 0;" onchange="syncLanguage()">
+                        <option value="cmn-Hant-TW">Traditional Chinese (繁體中文)</option>
+                        <option value="en-US">English (英文)</option>
+                        <option value="ja-JP">Japanese (日文)</option>
+                        <option value="hi-IN">Hindi (印地語)</option>
+                    </select>
+                </div>
 
-                <div id="machine-list-container" style="margin-top: 15px;">
-                    </div>
+
+                <div class="modal-group" style="border: 1px solid #ddd; padding: 10px; border-radius: 8px;">
+                    <label style="font-weight: bold; margin-bottom: 10px; display: block; color: var(--drive-color);">4. Machine List Management (機器列表管理)</label>
+                    
+                    <input type="text" id="new-machine-name" class="login-input" style="margin: 0 0 5px 0;" placeholder="Add new machine name (e.g., CM4)">
+                    <button type="button" class="btn-add-item" onclick="addMachine()">+ Add Machine (新增)</button>
+
+                    <div id="machine-list-container">
+                        </div>
+                </div>
             </div>
 
 
@@ -313,8 +393,7 @@
     const MAX_IMAGE_WIDTH = 1000;
     const MACHINE_LIST_KEY = "cfg_machine_list";
     const DEFAULT_MACHINE_LIST = ["BM5", "BM6", "BM7", "BM21", "BM22", "BM23", "CA3", "CA4", "CM1", "CM2", "CM3"];
-    // 新增預設設定值
-    const DEFAULT_VOICE_TIMEOUT = 1.5; // seconds
+    const DEFAULT_VOICE_TIMEOUT = 1.5;
 
     // 你的固定路徑 (FIXED PATHS)
     const FIXED_SCRIPT_ID = "AKfycbwseWx2ioJ0K_jEqHvJQVeUGw65PGW8gsxvRiKs63DdXr-mGb-OeM324vwH-DL62ujm/exec";
@@ -342,7 +421,6 @@
         if(!localStorage.getItem(MACHINE_LIST_KEY)) {
             localStorage.setItem(MACHINE_LIST_KEY, JSON.stringify(DEFAULT_MACHINE_LIST));
         }
-        // 增加語音設定的初始化
         if(!localStorage.getItem("cfg_timeout")) {
             localStorage.setItem("cfg_timeout", DEFAULT_VOICE_TIMEOUT);
         }
@@ -363,7 +441,7 @@
         }
     }
 
-    // ================= 登入與設定管理 (修正 loadSettingsToUI & saveSettings) =================
+    // ================= 登入與設定管理 (優化排版) =================
     function checkLogin() {
         const input = document.getElementById('loginPass').value;
         const storedPass = localStorage.getItem("app_password"); 
@@ -388,7 +466,7 @@
         const newPass = document.getElementById('set-password').value;
         const ratio = document.getElementById('set-ratio').value;
         const lang = document.getElementById('set-lang').value;
-        const timeout = document.getElementById('set-timeout').value; // 新增：獲取 timeout
+        const timeout = document.getElementById('set-timeout').value; 
 
         if(newPass.trim() === "") { alert("Password cannot be empty!"); return; }
         if(isNaN(parseFloat(timeout)) || parseFloat(timeout) <= 0) {
@@ -399,7 +477,7 @@
         localStorage.setItem("app_password", newPass); 
         localStorage.setItem("cfg_ratio", ratio);
         localStorage.setItem("cfg_lang", lang);
-        localStorage.setItem("cfg_timeout", timeout); // 新增：儲存 timeout
+        localStorage.setItem("cfg_timeout", timeout); 
 
         alert("Settings Saved!");
         closeSettings();
@@ -409,7 +487,7 @@
     function loadSettingsToUI() {
         document.getElementById('set-password').value = localStorage.getItem("app_password") || DEFAULT_PASS;
         document.getElementById('set-ratio').value = localStorage.getItem("cfg_ratio") || "4/3";
-        document.getElementById('set-timeout').value = localStorage.getItem("cfg_timeout") || DEFAULT_VOICE_TIMEOUT; // 新增：載入 timeout
+        document.getElementById('set-timeout').value = localStorage.getItem("cfg_timeout") || DEFAULT_VOICE_TIMEOUT; 
         const savedLang = localStorage.getItem("cfg_lang") || "cmn-Hant-TW";
         document.getElementById('set-lang').value = savedLang;
         document.getElementById('voice-lang-select').value = savedLang;
@@ -431,11 +509,9 @@
              tag.innerText = "Ratio: Full (Original)";
         }
         
-        // 確保重新計算機時總時長
         calculateTotalStopTime();
     }
     
-    // ... (其他登入、登出、機器列表管理函數保持不變) ...
     function logout() {
         if(confirm("Lock and logout?\n(確定要鎖定並登出嗎？)")) {
             localStorage.removeItem("isLoggedIn"); 
@@ -454,6 +530,8 @@
         document.getElementById('voice-lang-select').value = val;
         localStorage.setItem("cfg_lang", val);
     }
+    
+    // ================= 機器列表管理 (多欄位顯示) =================
     function getMachineList() {
         try {
             return JSON.parse(localStorage.getItem(MACHINE_LIST_KEY)) || DEFAULT_MACHINE_LIST;
@@ -465,6 +543,7 @@
     function saveMachineList(list) {
         const uniqueSortedList = [...new Set(list)].sort((a, b) => a.localeCompare(b));
         localStorage.setItem(MACHINE_LIST_KEY, JSON.stringify(uniqueSortedList));
+        loadMachineListToUI(); // 確保每次修改都同步更新 UI
         return uniqueSortedList;
     }
     function loadMachineListToUI() {
@@ -498,8 +577,8 @@
             const item = document.createElement('div');
             item.className = 'machine-list-item';
             item.innerHTML = `
-                <span>${machine}</span>
-                <button type="button" class="btn-remove-item" onclick="removeMachine('${machine}')">刪除</button>
+                <span style="font-weight: bold;">${machine}</span>
+                <button type="button" class="btn-remove-item" onclick="removeMachine('${machine}')">X</button>
             `;
             container.appendChild(item);
         });
@@ -523,7 +602,6 @@
         saveMachineList(list);
         
         input.value = "";
-        loadMachineListToUI(); 
     }
 
     function removeMachine(name) {
@@ -532,11 +610,10 @@
         let list = getMachineList();
         const newList = list.filter(m => m !== name);
         saveMachineList(newList);
-        loadMachineListToUI(); 
     }
 
 
-    // ================= 時間處理函數 (與計算) =================
+    // ================= 時間處理函數 (修正計算邏輯與單位) =================
 
     const DATETIME_REGEX = /^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})$/;
 
@@ -559,36 +636,52 @@
         return date;
     }
     
+    /** 計算總停機時間 (Total stop time) 並填入欄位 */
     function calculateTotalStopTime() {
         const stopTimeStr = document.getElementById('input-stop-time-full').value.trim();
         const startTimeStr = document.getElementById('input-start-time-full').value.trim();
         const totalTimeInput = document.getElementById('input-total-time');
-        const stopDate = parseCustomDateTime(stopTimeStr);
-        const startDate = parseCustomDateTime(startTimeStr);
+        const unitSelect = document.getElementById('total-time-unit');
+        const unit = unitSelect ? unitSelect.value : 'h';
 
-        if (stopTimeStr === "" && startTimeStr === "") {
-             totalTimeInput.value = "0.00 h";
+        // 修正: 如果任何一個時間欄位為空，則清空總時間
+        if (stopTimeStr === "" || startTimeStr === "") {
+             totalTimeInput.value = "";
              totalTimeInput.style.backgroundColor = '#eee';
+             totalTimeInput.dataset.diffMinutes = 0;
              return;
         }
         
+        const stopDate = parseCustomDateTime(stopTimeStr);
+        const startDate = parseCustomDateTime(startTimeStr);
+
         if (!stopDate || !startDate) {
             totalTimeInput.value = "Invalid Time";
             totalTimeInput.style.backgroundColor = '#fff0f0';
+            totalTimeInput.dataset.diffMinutes = 0;
             return;
         }
 
         if (startDate.getTime() <= stopDate.getTime()) {
-            totalTimeInput.value = "0.00 h (時間順序錯誤)";
+            totalTimeInput.value = "0 min / 0.00 h (時間順序錯誤)";
             totalTimeInput.style.backgroundColor = '#fff0f0';
+            totalTimeInput.dataset.diffMinutes = 0;
             return;
         }
 
         const diffMs = startDate.getTime() - stopDate.getTime();
-        const diffHours = diffMs / (1000 * 60 * 60);
-        const totalHoursFormatted = diffHours.toFixed(2) + " h";
+        const diffMinutes = Math.round(diffMs / (1000 * 60)); // 總分鐘數
+        totalTimeInput.dataset.diffMinutes = diffMinutes; 
 
-        totalTimeInput.value = totalHoursFormatted;
+        let totalTimeFormatted;
+        if (unit === 'h') {
+             const diffHours = diffMs / (1000 * 60 * 60);
+             totalTimeFormatted = diffHours.toFixed(2) + " h";
+        } else {
+             totalTimeFormatted = diffMinutes + " min";
+        }
+        
+        totalTimeInput.value = totalTimeFormatted;
         totalTimeInput.style.backgroundColor = '#e6ffed';
     }
 
@@ -615,10 +708,74 @@
             }
         }
     }
-
-
-    // ================= 圖片/語音/上傳函數 (修正語音定時) =================
     
+    // ================= 複製格式化訊息 (使用 dataset 儲存分鐘數) =================
+    function extractDateAndTime(fullTimeStr) {
+        const match = fullTimeStr.match(DATETIME_REGEX);
+        if (match) {
+             const datePart = `${match[1]}/${match[2]}/${match[3]}`; // DD/MM/YYYY
+             const timePart = `${match[4]}:${match[5]}`; // hh:mm
+             return { date: datePart, time: timePart };
+        }
+        return { date: 'N/A', time: 'N/A' };
+    }
+    
+    function copyFormattedInfo() {
+        const totalTimeInput = document.getElementById('input-total-time');
+        const totalTimeMinutes = totalTimeInput.dataset.diffMinutes || 'N/A';
+        const totalTimeFormat = totalTimeMinutes !== 'N/A' && totalTimeMinutes > 0
+                              ? `${totalTimeMinutes} min`
+                              : totalTimeInput.value.includes('Invalid') || totalTimeInput.value === '' ? 'N/A' : totalTimeInput.value;
+
+        // 1. 蒐集資料
+        const machine = document.getElementById('input-machine').value || "N/A";
+        const stopTimeFull = document.getElementById('input-stop-time-full').value.trim();
+        const startTimeFull = document.getElementById('input-start-time-full').value.trim();
+        const repairFormNo = document.getElementById('input-form-no').value || "N/A";
+        const reason = document.getElementById('input-reason').value || "N/A";
+        const concernSection = document.getElementById('input-concern-section').value || "N/A";
+        const solution = document.getElementById('input-solution').value || "N/A";
+        const selfActions = document.getElementById('input-self-actions').value || "N/A";
+        
+        // 2. 處理時間
+        const stopInfo = extractDateAndTime(stopTimeFull);
+        const startInfo = extractDateAndTime(startTimeFull);
+        
+        // 3. 構建輸出字串
+        const output = `
+Machine :- ${machine}
+
+Date :- ${stopInfo.date}
+
+Stop time :- ${stopInfo.time}
+
+Start time :- ${startInfo.time}
+
+Total stop time :- ${totalTimeFormat}
+
+Repair Form No:- ${repairFormNo}
+
+Reason :- ${reason}
+
+Concern Section :- ${concernSection}
+
+How to Solve Problem:- ${solution}
+
+Self Actions:- ${selfActions}
+        `.trim();
+
+        // 4. 複製到剪貼簿
+        navigator.clipboard.writeText(output).then(() => {
+            alert("✅ 整合訊息已複製到剪貼簿！");
+        }).catch(err => {
+            console.error('無法複製文字:', err);
+            alert("❌ 無法複製文字，請檢查瀏覽器權限。");
+        });
+    }
+
+    // ... (其他圖片/語音/上傳函數保持不變) ...
+    // 由於其他函數未修改核心邏輯，在此省略，但請確保你替換時使用完整的程式碼。
+    // ...
     function triggerFile(id) { document.getElementById(id).click(); }
     
     function handleFile(input) {
@@ -636,7 +793,6 @@
     }
     
     function processImageWithCanvas(img) {
-        // ... (圖片處理邏輯保持不變) ...
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         const ratioStr = localStorage.getItem("cfg_ratio") || "4/3";
@@ -735,7 +891,6 @@
             if(punctuationTimer) clearTimeout(punctuationTimer);
             
             if(currentSessionText.trim().length > 0) {
-                // *** 修正: 使用儲存在 localStorage 的秒數 ***
                 const timeoutMs = parseFloat(localStorage.getItem("cfg_timeout") || DEFAULT_VOICE_TIMEOUT) * 1000;
                 punctuationTimer = setTimeout(() => {
                     manualStopVoice(); 
@@ -824,7 +979,9 @@
         document.getElementById('input-total-time').value = "";
         document.getElementById('input-form-no').value = "";
         document.getElementById('input-reason').value = "";
+        document.getElementById('input-concern-section').value = "";
         document.getElementById('input-solution').value = "";
+        document.getElementById('input-self-actions').value = "";
 
         document.getElementById('input-stop-time-full').value = "";
         document.getElementById('input-start-time-full').value = "";
@@ -847,7 +1004,9 @@
         const totalTime = document.getElementById('input-total-time').value; 
         const formNo = document.getElementById('input-form-no').value;
         const reason = document.getElementById('input-reason').value;
+        const concernSection = document.getElementById('input-concern-section').value;
         const solution = document.getElementById('input-solution').value; 
+        const selfActions = document.getElementById('input-self-actions').value;
 
         if(!processedImageBase64 && !machine && !reason && !solution) {
             alert("Empty! Please fill in machine info/notes or take a photo."); return;
@@ -872,7 +1031,9 @@
             totalTime: totalTime, 
             formNo: formNo,
             reason: reason, 
+            concernSection: concernSection,
             solution: solution, 
+            selfActions: selfActions,
             folderId: FIXED_FOLDER_ID
         };
 
