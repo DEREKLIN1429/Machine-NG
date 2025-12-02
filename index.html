@@ -18,7 +18,7 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
             background-color: var(--bg-color); 
             margin: 0; padding: 0;
-            display: flex; justify-content: center; min-height: 100vh; /* 修正: 使用 min-height */
+            display: flex; justify-content: center; min-height: 100vh;
         }
 
         /* --- 模組化樣式 --- */
@@ -89,16 +89,32 @@
             font-family: inherit; transition: border-color 0.3s;
         }
         textarea { height: 120px; resize: vertical; } 
-        .date-time-group { display: flex; gap: 10px; flex-wrap: wrap; }
-        .date-time-group > div { flex: 1 1 45%; min-width: 100px; }
         
-        /* --- 語音專用樣式 --- */
+        .date-time-group { display: flex; gap: 10px; flex-wrap: wrap; }
+        .time-component { display: flex; flex-direction: column; flex: 1 1 45%; min-width: 100px; }
+        .time-input-row { display: flex; align-items: center; gap: 5px; }
+
+        /* --- 語音/更新按鈕樣式 --- */
         .voice-control-group { margin-top: 5px; display: flex; align-items: center; gap: 10px; }
         .btn-voice { 
             padding: 8px 12px; border: none; border-radius: 5px; 
             background-color: #17a2b8; color: white; font-weight: bold; cursor: pointer;
             transition: background 0.3s;
         }
+        .btn-update-time {
+            background-color: #ffc107; 
+            color: #333; 
+            font-weight: bold;
+            padding: 8px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.85em;
+            flex-shrink: 0;
+            line-height: 1.2;
+        }
+        .btn-update-time:active { background-color: #e3a900; }
+
         @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.05); opacity: 0.7; } 100% { transform: scale(1); opacity: 1; } }
         .recording { background-color: var(--danger-color) !important; animation: pulse 1s infinite; }
 
@@ -116,7 +132,7 @@
     <div id="login-screen" style="display: none;">
         <div class="modal-box">
             <h3>🔒 Login (登入)</h3>
-            <p style="color:#666; font-size:0.9em;">Please enter password<br>(請輸入密碼)</p>
+            <p style="color:#666; font-size:0.9em;">Default Password: 12345<br>(請輸入密碼)</p>
             <input type="password" id="loginPass" class="login-input" placeholder="Password">
             <button class="btn-main btn-save" onclick="checkLogin()">Login (進入)</button>
         </div>
@@ -133,7 +149,7 @@
     </div>
 
     <div id="app-screen" style="display: none;">
-        <div class="author-header">Author: DERER LIN (v2.0)</div>
+        <div class="author-header">Author: DERER LIN (v2.3)</div>
 
         <div class="header">
             <div class="header-btn" onclick="logout()" title="Lock / Logout (鎖定/登出)">🔒</div>
@@ -174,26 +190,33 @@
             </div>
 
             <div class="date-time-group">
-                <div>
+                <div class="time-component">
                     <label class="input-label" for="input-stop-time-full">Stop time : (DD/MM/YYYY hh:mm)</label>
-                    <input type="text" id="input-stop-time-full" class="text-input" placeholder="e.g. 02/12/2025 15:30">
+                    <div class="time-input-row">
+                        <input type="text" id="input-stop-time-full" class="text-input" 
+                               placeholder="e.g. 02/12/2025 15:30" oninput="calculateTotalStopTime()">
+                        <button type="button" class="btn-update-time" 
+                                onclick="updateSingleTime('input-stop-time-full')" title="Set Current Time">
+                            <span style="font-size: 1.1em;">⏱️</span>
+                        </button>
+                    </div>
                 </div>
-                <div>
+                <div class="time-component">
                     <label class="input-label" for="input-start-time-full">Start time : (DD/MM/YYYY hh:mm)</label>
-                    <input type="text" id="input-start-time-full" class="text-input" placeholder="e.g. 02/12/2025 18:00">
+                    <div class="time-input-row">
+                         <input type="text" id="input-start-time-full" class="text-input" 
+                               placeholder="e.g. 02/12/2025 18:00" oninput="calculateTotalStopTime()">
+                        <button type="button" class="btn-update-time" 
+                                onclick="updateSingleTime('input-start-time-full')" title="Set Current Time">
+                            <span style="font-size: 1.1em;">⏱️</span>
+                        </button>
+                    </div>
                 </div>
-            </div>
-            
-            <div class="input-group">
-                <button type="button" class="btn-main btn-view" onclick="updateTimeNow()" 
-                        style="background-color: #ffc107; color: #333; padding: 10px; margin-top: 5px; font-size: 0.95em;">
-                    🔄 更新為現在時間 (自動填入 Stop/Start time)
-                </button>
             </div>
 
             <div class="input-group">
-                <label class="input-label" for="input-total-time">Total stop time :</label>
-                <input type="text" id="input-total-time" class="text-input" placeholder="e.g. 2.5h (手動計算)">
+                <label class="input-label" for="input-total-time">Total stop time : (自動計算)</label>
+                <input type="text" id="input-total-time" class="text-input" placeholder="0.00 h (自動計算)" readonly style="background-color: #eee;">
             </div>
             
             <div class="input-group">
@@ -220,8 +243,8 @@
             <select id="voice-lang-select" class="hidden">
                 <option value="cmn-Hant-TW">中文 (繁體)</option>
                 <option value="en-US">English</option>
-                <option value="ja-JP">日本語</option>
-                <option value="hi-IN">हिन्दी (Hindi)</option>
+                <option value="ja-JP">Japanese</option>
+                <option value="hi-IN">Hindi (印地語)</option>
             </select>
         </div>
 
@@ -240,8 +263,8 @@
             </div>
             
             <div class="modal-group" style="background: #f9f9f9; padding: 10px; border-radius: 8px; border: 1px dashed #ccc;">
-                <label style="color:#d63384; font-weight: bold; margin-bottom: 5px; display: block;">🔑 Login Password (修改登入密碼)</label>
-                <input type="text" id="set-password" class="login-input" style="margin: 0;" placeholder="Current: 1234">
+                <label style="color:#d63384; font-weight: bold; margin-bottom: 5px; display: block;">🔑 Login Password (修改登入密碼) (Default: 12345)</label>
+                <input type="text" id="set-password" class="login-input" style="margin: 0;" placeholder="Current: 12345">
             </div>
 
             <div class="modal-group" style="margin-top: 15px;">
@@ -276,15 +299,15 @@
 
 <script>
     // ================= 參數與初始化 =================
-    const DEFAULT_PASS = "1234"; 
-    const MAX_IMAGE_WIDTH = 1000; // 圖片壓縮最大寬度
+    const DEFAULT_PASS = "12345"; 
+    const MAX_IMAGE_WIDTH = 1000;
     
     // 你的固定路徑 (FIXED PATHS)
-    const FIXED_SCRIPT_ID = "AKfycbwseWx2ioJ0K_jEqHvJQVeUGw65PGW8gsxvRiKs63DdXr-mGb-OeM324vwH-DL62ujm/exec";
-    const FIXED_SHEET_ID = "1LvIn4eRb8tzVOQfxiSwZIRnaiPD0zb2jrXsi0hP_2YA/edit?gid=0#gid=0";
-    const FIXED_FOLDER_ID = "13fk6iR1JP7mUrlhoQ4h9TsF_T6VUhe38";
+    const FIXED_SCRIPT_ID = "AKfycbzfPzPODQjp_phrHPwjsoBYeA8-VgeaoYly6hr3Mx09Wj-o5tWHMPa-nTHfaHyloiH8zg/exec";
+    const FIXED_SHEET_ID = "1sDKZBJfasUbZSGNAfz9GIWfRdrdXxQMrXrxM3x9RlCY/edit?gid=0#gid=0";
+    const FIXED_FOLDER_ID = "1VPfLCMIuJPA66RjN8isrC4xq3luPMJe4";
 
-    // 狀態變數 (使用 let)
+    // 狀態變數
     let processedImageBase64 = ""; 
     let recognition = null;
     let isRecording = false; 
@@ -293,20 +316,19 @@
     let punctuationTimer = null; 
 
     document.addEventListener('DOMContentLoaded', () => {
-        // 使用 DOMContentLoaded 確保在 body onload 之後執行
         if (typeof initApp === 'function') {
             initApp();
         }
     });
 
     function initApp() {
-        // 確保密碼預設值
         if(!localStorage.getItem("app_password")) {
             localStorage.setItem("app_password", DEFAULT_PASS);
         }
         
         loadSettingsToUI();
         setInitialDateTime();
+        calculateTotalStopTime(); // 應用程式啟動時計算一次 (通常為 0.00h)
 
         const isLoggedIn = localStorage.getItem("isLoggedIn");
         if(isLoggedIn === "true") {
@@ -317,10 +339,10 @@
         }
     }
 
-    // ================= 登入與設定管理 =================
+    // ================= 登入與設定管理 (保持不變) =================
     function checkLogin() {
         const input = document.getElementById('loginPass').value;
-        const storedPass = localStorage.getItem("app_password");
+        const storedPass = localStorage.getItem("app_password"); 
         
         if(input === storedPass) {
             localStorage.setItem("isLoggedIn", "true");
@@ -331,7 +353,7 @@
             alert("Wrong Password! (密碼錯誤)");
         }
     }
-
+    
     function logout() {
         if(confirm("Lock and logout?\n(確定要鎖定並登出嗎？)")) {
             localStorage.removeItem("isLoggedIn"); 
@@ -342,7 +364,6 @@
         }
     }
     
-    // 設定相關函數... (openSettings, closeSettings, syncLanguage, saveSettings, loadSettingsToUI 保持上一步驟的邏輯)
     function openSettings() {
         loadSettingsToUI();
         document.getElementById('settings-modal').style.display = 'flex';
@@ -386,20 +407,85 @@
         container.className = ""; 
         container.style.aspectRatio = "";
 
-        // 僅應用非 Full 的比例類別
         if(ratio !== "FULL") {
             const ratioClass = `ratio-${ratio.replace("/", "-")}`;
             container.classList.add(ratioClass);
             tag.innerText = `Ratio: ${ratio.replace("/", ":")}`;
         } else {
-             // 移除預覽時強制 aspect-ratio 的 class
              tag.innerText = "Ratio: Full (Original)";
         }
     }
 
-    // ================= 時間處理函數 (優化) =================
+    // ================= 時間處理函數 (核心修改) =================
 
-    /** 取得 DD/MM/YYYY hh:mm 格式字串 */
+    // 格式: DD/MM/YYYY hh:mm
+    const DATETIME_REGEX = /^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})$/;
+
+    /**
+     * 將 DD/MM/YYYY hh:mm 格式字串轉換為 Date 物件。
+     * @param {string} dtStr - 格式為 DD/MM/YYYY hh:mm 的字串。
+     * @returns {Date|null} 
+     */
+    function parseCustomDateTime(dtStr) {
+        const match = dtStr.match(DATETIME_REGEX);
+        if (!match) return null;
+
+        // 注意: JavaScript 的月份是 0-11
+        const day = parseInt(match[1], 10);
+        const month = parseInt(match[2], 10) - 1; 
+        const year = parseInt(match[3], 10);
+        const hour = parseInt(match[4], 10);
+        const minute = parseInt(match[5], 10);
+
+        // 使用 UTC 函數避免瀏覽器時區偏差，但由於輸入的時區不明確，這裡使用 Date(year, month, ...)
+        // 為了確保計算準確，我們假設輸入的時間是使用者當地的時間
+        const date = new Date(year, month, day, hour, minute);
+
+        // 檢查日期是否有效 (例如 2月30日會被轉成 3月2日)
+        if (date.getFullYear() !== year || date.getMonth() !== month || date.getDate() !== day) {
+             return null;
+        }
+
+        return date;
+    }
+    
+    /** 計算總停機時間 (Total stop time) 並填入欄位 */
+    function calculateTotalStopTime() {
+        const stopTimeStr = document.getElementById('input-stop-time-full').value.trim();
+        const startTimeStr = document.getElementById('input-start-time-full').value.trim();
+        const totalTimeInput = document.getElementById('input-total-time');
+
+        const stopDate = parseCustomDateTime(stopTimeStr);
+        const startDate = parseCustomDateTime(startTimeStr);
+
+        // 檢查時間是否有效
+        if (!stopDate || !startDate) {
+            totalTimeInput.value = "Invalid Time";
+            totalTimeInput.style.backgroundColor = '#fff0f0';
+            return;
+        }
+
+        // 開始時間必須晚於停止時間
+        if (startDate.getTime() <= stopDate.getTime()) {
+            totalTimeInput.value = "0.00 h";
+            totalTimeInput.style.backgroundColor = '#fff0f0';
+            return;
+        }
+
+        // 計算時間差 (毫秒)
+        const diffMs = startDate.getTime() - stopDate.getTime();
+        
+        // 轉換為小時 (帶小數點兩位)
+        const diffHours = diffMs / (1000 * 60 * 60);
+        
+        // 格式化為兩位小數 (例如 2.50h)
+        const totalHoursFormatted = diffHours.toFixed(2) + " h";
+
+        totalTimeInput.value = totalHoursFormatted;
+        totalTimeInput.style.backgroundColor = '#e6ffed'; // 計算成功顯示綠色背景
+    }
+
+
     function getFullDateTimeString(dateObj) {
         const dateOptions = { day: '2-digit', month: '2-digit', year: 'numeric' };
         const timeOptions = { hour: '2-digit', minute: '2-digit', hour12: false };
@@ -410,21 +496,36 @@
         return `${datePart} ${timePart}`;
     }
 
-    /** 應用程式啟動或按鈕點擊時，設定初始/當前時間 */
+    /** 應用程式啟動時，設定初始時間 */
     function setInitialDateTime() {
         const fullDateTime = getFullDateTimeString(new Date());
-        document.getElementById('input-stop-time-full').value = fullDateTime;
-        document.getElementById('input-start-time-full').value = fullDateTime;
+
+        // 僅在欄位為空時設置初始值
+        if (!document.getElementById('input-stop-time-full').value) {
+            document.getElementById('input-stop-time-full').value = fullDateTime;
+        }
+        if (!document.getElementById('input-start-time-full').value) {
+            document.getElementById('input-start-time-full').value = fullDateTime;
+        }
     }
     
-    /** 更新時間按鈕呼叫的函數 */
-    function updateTimeNow() {
-        // 不需要 confirm，使用者已經點擊了明確的按鈕
-        setInitialDateTime(); 
+    /** 專門更新單一時間欄位的按鈕函數 */
+    function updateSingleTime(targetId) {
+        const targetElement = document.getElementById(targetId);
+        const fullDateTime = getFullDateTimeString(new Date());
+        
+        if (targetElement) {
+            const timeType = targetId.includes('stop') ? "Stop time" : "Start time";
+            if(confirm(`確定將 [${timeType}] 更新為現在時間：${fullDateTime} 嗎？`)) {
+                 targetElement.value = fullDateTime;
+                 // 觸發重新計算
+                 calculateTotalStopTime();
+            }
+        }
     }
 
 
-    // ================= 圖片處理 =================
+    // ================= 圖片/語音/上傳函數 (保持不變) =================
     
     function triggerFile(id) { document.getElementById(id).click(); }
     
@@ -482,17 +583,13 @@
         preview.style.display = 'block';
         document.querySelector('.placeholder').style.display = 'none';
 
-        // 動態調整預覽框的 aspect-ratio (僅在 Full 模式下)
         if(isFull) {
              const container = document.getElementById('preview-container');
-             // 清除所有類別，然後設定動態比例
              container.classList.remove("ratio-4-3", "ratio-16-9", "ratio-9-16", "ratio-1-1"); 
              container.style.aspectRatio = `${canvas.width} / ${canvas.height}`;
         }
     }
 
-
-    // ================= 語音功能 =================
     function toggleVoice(btn) {
         if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
             alert("Browser not supported / 瀏覽器不支援語音輸入功能。"); return;
@@ -545,7 +642,6 @@
             if(punctuationTimer) clearTimeout(punctuationTimer);
             
             if(currentSessionText.trim().length > 0) {
-                // 停頓 1.5 秒後自動停止
                 punctuationTimer = setTimeout(() => {
                     manualStopVoice(); 
                 }, 1500); 
@@ -583,7 +679,6 @@
                 const lang = document.getElementById('voice-lang-select').value;
                 const marks = lang.includes('en') ? [",", "."] : ["，", "。", "、", "？", "！"];
                 
-                // 如果最後一個字不是標點，加上句號或句點
                 if(!marks.includes(lastChar)) {
                     const mark = lang.includes('en') ? ". " : "。";
                     currentVal += mark;
@@ -608,9 +703,6 @@
         activeTextAreaId = null;
     }
 
-
-    // ================= 上傳與檢視 =================
-    
     function showStatus(type, title, subtitle) {
         const modal = document.getElementById('status-modal');
         const spinner = document.getElementById('status-spinner');
@@ -633,17 +725,21 @@
     function closeStatusModal() { document.getElementById('status-modal').style.display = 'none'; }
 
     function clearInputs() {
-        // 清除所有文字輸入
         document.getElementById('input-machine').value = "";
         document.getElementById('input-total-time').value = "";
         document.getElementById('input-form-no').value = "";
         document.getElementById('input-reason').value = "";
         document.getElementById('input-solution').value = "";
-
+        
         // 重設日期時間
+        document.getElementById('input-stop-time-full').value = "";
+        document.getElementById('input-start-time-full').value = "";
         setInitialDateTime();
+        
+        // 清除計算狀態
+        document.getElementById('input-total-time').style.backgroundColor = '#eee';
+        calculateTotalStopTime(); // 重新計算，結果應為 0.00h 或 Invalid Time
 
-        // 清除圖片
         processedImageBase64 = "";
         document.getElementById('preview-img').style.display = 'none';
         document.querySelector('.placeholder').style.display = 'block';
@@ -651,19 +747,16 @@
     }
 
     function saveToCloud() {
-        // 1. 確保語音輸入已結束
         if(isRecording) manualStopVoice();
 
-        // 2. 蒐集所有欄位資料
         const machine = document.getElementById('input-machine').value;
         const stopTimeFull = document.getElementById('input-stop-time-full').value; 
         const startTimeFull = document.getElementById('input-start-time-full').value; 
-        const totalTime = document.getElementById('input-total-time').value;
+        const totalTime = document.getElementById('input-total-time').value; // 傳送自動計算的值
         const formNo = document.getElementById('input-form-no').value;
         const reason = document.getElementById('input-reason').value;
         const solution = document.getElementById('input-solution').value; 
 
-        // 3. 檢查基本資料完整性
         if(!processedImageBase64 && !machine && !reason && !solution) {
             alert("Empty! Please fill in machine info/notes or take a photo."); return;
         }
@@ -674,13 +767,12 @@
         btn.disabled = true;
         showStatus('loading', 'Uploading...', '資料上傳中...');
 
-        // 4. 準備傳輸的資料物件 (Key 保持不變，對應 Apps Script)
         const data = { 
             image: processedImageBase64, 
             machine: machine,
             stopTimeFull: stopTimeFull,
             startTimeFull: startTimeFull,
-            totalTime: totalTime,
+            totalTime: totalTime, // 傳送計算結果
             formNo: formNo,
             reason: reason, 
             solution: solution, 
