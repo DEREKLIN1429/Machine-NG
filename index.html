@@ -1,1087 +1,172 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MC-repair-history (重點事項紀錄)</title>
-    <style>
-        :root {
-            /* 主體配色：黑、橘、綠 */
-            --primary-color: #4CAF50; /* 綠色 - 主要/成功/儲存 */
-            --bg-color: #f7f9fc; 
-            --card-bg: #ffffff;
-            --danger-color: #e53935; 
-            --copy-color: #FF9800; /* 橘色 - Copy/Drive */
-            --view-color: #212121; /* 黑色 - View/次要 */
-            --frame-color: #4CAF50; 
-            --input-border: #ddd;
-        }
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background-color: var(--bg-color); 
-            margin: 0; padding: 0;
-            display: flex; justify-content: center; min-height: 100vh;
-        }
+/**
+ * 核心函數：處理來自前端的 POST/GET 請求。
+ * 支援操作: append (新增), overwrite (覆蓋), query (查詢)。
+ * @param {object} e - 包含請求資料的事件物件。
+ */
+function doPost(e) {
+  var result = {"result": "error", "error": "Unknown error."};
+  
+  try {
+    var data = JSON.parse(e.postData.contents);
+    var action = data.action || 'append'; // 預設為新增
+    
+    result = handleDataSubmission(data, action);
+    
+  } catch (error) {
+    result.error = "Request processing error: " + error.message + " Stack: " + error.stack;
+  }
+  
+  return ContentService.createTextOutput(JSON.stringify(result))
+    .setMimeType(ContentService.MimeType.JSON);
+}
 
-        /* --- 模組化樣式 --- */
-        #login-screen, #status-modal, #settings-modal {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6); z-index: 9999;
-            display: none; align-items: center; justify-content: center;
-        }
-        #login-screen { background: var(--bg-color); }
+function doGet(e) {
+  var result = {"result": "error", "error": "Unknown error."};
+  
+  try {
+    var action = e.parameter.action;
+    var formNo = e.parameter.formNo;
 
-        .modal-box {
-            background: white; padding: 25px; border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center; width: 90%; max-width: 450px;
-            max-height: 90vh; 
-            overflow-y: auto; 
-        }
-        .login-input {
-            width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; 
-            border-radius: 8px; font-size: 16px; text-align: left; 
-            box-sizing: border-box;
-        }
-        .spinner {
-            border: 4px solid #f3f3f3; border-top: 4px solid var(--primary-color);
-            border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite;
-            margin: 0 auto 15px auto;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
-        #app-screen { width: 100%; max-width: 500px; padding: 10px; box-sizing: border-box; }
-        
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .header-btn { 
-            font-size: 24px; 
-            cursor: pointer; color: #555; padding: 6px; 
-            border-radius: 50%; transition: background 0.2s;
-            width: 36px; height: 36px; 
-            display: flex; align-items: center; justify-content: center;
-        }
-        .header-title h2 { margin: 0; color: #333; font-size: 1.2rem; line-height: 1.4; }
-
-        .card { background: var(--card-bg); padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 12px; }
-        .section-title { font-weight: bold; color: #555; margin-bottom: 8px; display: block; font-size: 1rem; }
-
-        .photo-controls { display: flex; gap: 10px; margin-bottom: 10px; }
-        .btn-half { flex: 1; padding: 10px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; gap: 5px;}
-        .btn-cam { background-color: #FF5722; color: white; } 
-        .btn-gallery { background-color: #FFC107; color: #333; } 
-
-        /* --- 輸入/表單樣式 --- */
-        .input-group { margin-bottom: 8px; display: flex; flex-direction: column; }
-        .input-label { font-weight: bold; font-size: 0.9rem; color: #333; margin-bottom: 4px; }
-        .text-input, textarea, select.text-input { 
-            width: 100%; padding: 10px; border: 1px solid var(--input-border); 
-            border-radius: 6px; font-size: 15px; box-sizing: border-box;
-            font-family: inherit; transition: border-color 0.3s;
-        }
-        textarea { height: 80px; resize: vertical; } 
-        
-        .time-component { display: flex; flex-direction: column; margin-bottom: 8px; }
-        .time-input-row { display: flex; align-items: center; gap: 5px; }
-
-        /* --- Total Stop Time 選項 --- */
-        .total-time-input-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        /* --- 底部按鈕美學優化 --- */
-        .footer-btns { display: flex; flex-direction: column; gap: 8px; margin-top: 15px; padding-bottom: 20px;}
-        .btn-main { 
-            width: 100%; 
-            padding: 14px 15px; 
-            border: none; 
-            border-radius: 8px; 
-            font-size: 16px; 
-            font-weight: 600; 
-            cursor: pointer; 
-            color: white; 
-            transition: background 0.2s, transform 0.1s;
-        }
-        .btn-main:active { transform: scale(0.99); }
-        
-        /* 黑、橘、綠配色 */
-        .btn-copy { background-color: var(--copy-color); } 
-        .btn-copy:hover { background-color: #f57c00; }
-
-        .btn-save { background-color: var(--primary-color); } 
-        .btn-save:hover { background-color: #43a047; }
-
-        .btn-view { background-color: var(--view-color); color: white; } 
-        .btn-view:hover { background-color: #000000; }
-
-        .btn-drive { background-color: var(--copy-color); } 
-        .btn-drive:hover { background-color: #f57c00; }
-        
-        /* --- 設定內排版修正 --- */
-        .settings-content-group {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            margin-top: 10px;
-        }
-        
-        /* 機器列表優化為三欄顯示 */
-        #machine-list-container {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr); 
-            gap: 5px;
-            margin-top: 10px;
-        }
-        .machine-list-item {
-            display: flex;
-            flex-direction: column; 
-            justify-content: space-between;
-            align-items: center;
-            padding: 6px;
-            background: #f1f1f1;
-            border-radius: 4px;
-            text-align: center;
-            font-size: 0.8em;
-            word-break: break-all;
-        }
-        .btn-remove-item {
-            background: var(--danger-color);
-            color: white;
-            border: none;
-            padding: 2px 5px;
-            border-radius: 3px;
-            cursor: pointer;
-            margin-top: 3px;
-            font-weight: bold;
-        }
-        
-        .hidden { display: none !important; }
-    </style>
-</head>
-<body onload="initApp()">
-
-    <div id="login-screen" style="display: none;">
-        <div class="modal-box">
-            <h3>🔒 Login (登入)</h3>
-            <p style="color:#666; font-size:0.9em;">Default Password: 12345<br>(請輸入密碼)</p>
-            <input type="password" id="loginPass" class="login-input" placeholder="Password">
-            <button class="btn-main btn-save" onclick="checkLogin()">Login (進入)</button>
-        </div>
-    </div>
-
-    <div id="status-modal" style="display: none;">
-        <div class="modal-box">
-            <div id="status-spinner" class="spinner"></div>
-            <div id="status-icon" class="status-icon" style="display:none; font-size: 40px;"></div>
-            <h3 id="status-text" style="color:#333; margin:0;">Uploading...</h3>
-            <p id="status-subtext" style="color:#666; font-size:0.9em; margin-top:5px;">(資料上傳中...)</p>
-            <button id="status-close-btn" onclick="closeStatusModal()" class="btn-main btn-view" style="margin-top: 15px; display: none;">OK</button>
-        </div>
-    </div>
-
-    <div id="app-screen" style="display: none;">
-        <div class="author-header">Author: DERER LIN (v2.8)</div>
-
-        <div class="header">
-            <div class="header-btn" onclick="logout()" title="Lock / Logout (鎖定/登出)">🔒</div>
-            <div class="header-title">
-                <h2>MC-repair-history<br>重點事項紀錄</h2>
-            </div>
-            <div class="header-btn" onclick="openSettings()" title="Settings (設定)">⚙️</div>
-        </div>
-
-        <div class="card">
-            <span class="section-title">0. Employee Info (員工資訊)</span>
-            <div class="input-group">
-                <label class="input-label" for="input-employee-id">Employee ID (員工編號):</label>
-                <input type="text" id="input-employee-id" class="text-input" placeholder="儲存後不會清除">
-            </div>
-        </div>
-
-        <div class="card">
-            <span class="section-title">1. Photo (圖片紀錄)</span>
-            <div class="photo-controls">
-                <button class="btn-half btn-cam" onclick="triggerFile('input-cam')">📷 Camera</button>
-                <button class="btn-half btn-gallery" onclick="triggerFile('input-gallery')">🖼️ Gallery</button>
-            </div>
-            
-            <div id="preview-container" class="ratio-4-3" onclick="triggerFile('input-cam')" title="Click to take photo">
-                <div class="ratio-tag" id="ratio-display-tag">Ratio: 4:3</div>
-                <span class="placeholder">Tap here to Take Photo</span>
-                <img id="preview-img">
-            </div>
-            
-            <input type="file" id="input-cam" accept="image/*" capture="environment" class="hidden" onchange="handleFile(this)">
-            <input type="file" id="input-gallery" accept="image/*" class="hidden" onchange="handleFile(this)">
-        </div>
-
-        <div class="card" id="info-card">
-            <span class="section-title" id="machine-info-title">2. Machine NG Information</span>
-            
-            <div class="input-group">
-                <label class="input-label" for="input-machine">Machine :</label>
-                <select id="input-machine" class="text-input">
-                    </select>
-            </div>
-            
-            <div class="input-group">
-                <label class="input-label" for="input-form-no">Repair Form No:</label>
-                <input type="text" id="input-form-no" class="text-input" placeholder="e.g. A69304">
-            </div>
-
-            <div class="time-component">
-                <label class="input-label" for="input-stop-time-full">Stop time : (DD/MM/YYYY hh:mm)</label>
-                <div class="time-input-row">
-                    <input type="text" id="input-stop-time-full" class="text-input" 
-                           placeholder="請點右側按鈕或手動輸入" oninput="calculateTotalStopTime()">
-                    <button type="button" class="btn-update-time" 
-                            onclick="updateSingleTime('input-stop-time-full')" title="Set Current Time">
-                        <span style="font-size: 1.1em;">⏱️</span>
-                    </button>
-                </div>
-            </div>
-            <div class="time-component">
-                <label class="input-label" for="input-start-time-full">Start time : (DD/MM/YYYY hh:mm)</label>
-                <div class="time-input-row">
-                    <input type="text" id="input-start-time-full" class="text-input" 
-                           placeholder="請點右側按鈕或手動輸入" oninput="calculateTotalStopTime()">
-                    <button type="button" class="btn-update-time" 
-                            onclick="updateSingleTime('input-start-time-full')" title="Set Current Time">
-                        <span style="font-size: 1.1em;">⏱️</span>
-                    </button>
-                </div>
-            </div>
-
-            <div class="input-group">
-                <label class="input-label" for="input-total-time">Total stop time : (自動計算)</label>
-                <div class="total-time-input-group">
-                    <input type="text" id="input-total-time" class="text-input" placeholder="" readonly style="background-color: #eee; font-weight: bold;">
-                    <select id="total-time-unit" onchange="calculateTotalStopTime()" class="text-input" style="width: auto;">
-                        <option value="h">h (小時)</option>
-                        <option value="min">min (分鐘)</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div class="input-group">
-                <label class="input-label" for="input-concern-section">Concern Section :</label>
-                <input type="text" id="input-concern-section" class="text-input" placeholder="e.g. Mechanical and Electric maintanence">
-            </div>
-
-            <div class="input-group">
-                <label class="input-label" for="input-reason">Reason :</label>
-                <textarea id="input-reason" placeholder="e.g. dischrge door not open"></textarea>
-                <div class="voice-control-group">
-                    <button type="button" class="btn-voice" data-target="input-reason" onclick="toggleVoice(this)">
-                        🎤 語音輸入
-                    </button>
-                    <span style="font-size: 0.8em; color: #666;"> (靜默 1.5 秒自動停止)</span>
-                </div>
-            </div>
-            
-            <div class="input-group">
-                <label class="input-label" for="input-solution">How to Solve Problem:</label>
-                <textarea id="input-solution" placeholder="e.g. hydraulic pressure set"></textarea>
-                <div class="voice-control-group">
-                    <button type="button" class="btn-voice" data-target="input-solution" onclick="toggleVoice(this)">
-                        🎤 語音輸入
-                    </button>
-                </div>
-            </div>
-            
-             <div class="input-group">
-                <label class="input-label" for="input-self-actions">Self Actions:</label>
-                <textarea id="input-self-actions" placeholder="e.g. check and inform maintenance team"></textarea>
-            </div>
-            
-            <select id="voice-lang-select" class="hidden">
-                <option value="cmn-Hant-TW">中文 (繁體)</option>
-                <option value="en-US">English</option>
-                <option value="ja-JP">Japanese</option>
-                <option value="hi-IN">Hindi (印地語)</option>
-            </select>
-        </div>
-
-        <div class="footer-btns">
-            <button class="btn-main btn-copy" onclick="copyFormattedInfo()">📋 Copy Info</button>
-            <button class="btn-main btn-save" id="saveBtn" onclick="saveToCloud()">💾 Save to Cloud</button>
-            <button class="btn-main btn-view" onclick="viewExcel()">📊 View Excel</button>
-            <button class="btn-main btn-drive" onclick="viewDriveFolder()">📂 View Photos</button>
-        </div>
-    </div>
-
-    <div id="settings-modal" style="display: none;">
-        <div class="modal-box">
-            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
-                <h3>Settings (設定)</h3>
-                <button onclick="closeSettings()" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
-            </div>
-            
-            <div class="settings-content-group">
-                <div class="modal-group" style="background: #f9f9f9; padding: 10px; border-radius: 8px; border: 1px dashed #ccc;">
-                    <label style="color:#d63384; font-weight: bold; margin-bottom: 5px; display: block;">🔑 Login Password (修改登入密碼) (Default: 12345)</label>
-                    <input type="text" id="set-password" class="login-input" style="margin: 0;" placeholder="Current: 12345">
-                </div>
-
-                <div class="modal-group">
-                    <label style="font-weight: bold; margin-bottom: 5px; display: block;">1. Voice Timeout (錄音靜默秒數)</label>
-                    <input type="number" id="set-timeout" class="login-input" style="margin: 0;" placeholder="Default: 1.5 (seconds)">
-                </div>
-
-                <div class="modal-group">
-                    <label style="font-weight: bold; margin-bottom: 5px; display: block;">2. Photo Aspect Ratio (照片比例)</label>
-                    <select id="set-ratio" class="login-input" style="margin: 0;">
-                        <option value="4/3">4:3 (Standard)</option>
-                        <option value="16/9">16:9 (Wide)</option>
-                        <option value="9/16">9:16 (Vertical / 直式)</option>
-                        <option value="1/1">1:1 (Square)</option>
-                    </select>
-                    <div style="font-size: 0.8rem; color: #888; margin-top: 3px;">* Applies auto-crop.</div>
-                </div>
-                
-                <div class="modal-group">
-                    <label style="font-weight: bold; margin-bottom: 5px; display: block;">3. Voice Language (語音辨識語言)</label>
-                    <select id="set-lang" class="login-input" style="margin: 0;" onchange="syncLanguage()">
-                        <option value="cmn-Hant-TW">Traditional Chinese (繁體中文)</option>
-                        <option value="en-US">English (英文)</option>
-                        <option value="ja-JP">Japanese (日文)</option>
-                        <option value="hi-IN">Hindi (印地語)</option>
-                    </select>
-                </div>
-
-
-                <div class="modal-group" style="border: 1px solid #ddd; padding: 10px; border-radius: 8px;">
-                    <label style="font-weight: bold; margin-bottom: 10px; display: block; color: var(--copy-color);">4. Machine List Management<br>(機器列表管理)</label>
-                    
-                    <input type="text" id="new-machine-name" class="login-input" style="margin: 0 0 5px 0;" placeholder="Add new machine name (e.g., CM4)">
-                    <button type="button" class="btn-add-item" onclick="addMachine()">+ Add Machine (新增)</button>
-
-                    <div id="machine-list-container">
-                        </div>
-                </div>
-            </div>
-
-
-            <div style="text-align: center; color: var(--primary-color); font-size: 0.9em; margin-top: 15px;">
-                <p>✅ Cloud Paths are Locked (System Mode)</p>
-            </div>
-
-            <button class="btn-main btn-save" onclick="saveSettings()">Save Settings (儲存設定)</button>
-        </div>
-    </div>
-
-<script>
-    // ================= 參數與初始化 =================
-    const DEFAULT_PASS = "12345"; 
-    const MAX_IMAGE_WIDTH = 1000;
-    const MACHINE_LIST_KEY = "cfg_machine_list";
-    const EMPLOYEE_ID_KEY = "cfg_employee_id"; 
-    const DEFAULT_MACHINE_LIST = ["BM5", "BM6", "BM7", "BM21", "BM22", "BM23", "CA3", "CA4", "CM1", "CM2", "CM3"];
-    const DEFAULT_VOICE_TIMEOUT = 1.5;
-
-    // 你的固定路徑 (FIXED PATHS) - 已寫死
-    const FIXED_SCRIPT_ID = "AKfycbzfPzPODQjp_phrHPwjsoBYeA8-VgeaoYly6hr3Mx09Wj-o5tWHMPa-nTHfaHyloiH8zg/exec";
-    const FIXED_SHEET_ID = "1sDKZBJfasUbZSGNAfz9GIWfRdrdXxQMrXrxM3x9RlCY"; 
-    const FIXED_FOLDER_ID = "1VPfLCMIuJPA66RjN8isrC4xq3luPMJe4";
-
-    // 狀態變數
-    let processedImageBase64 = ""; 
-    let recognition = null;
-    let isRecording = false; 
-    let activeTextAreaId = null; 
-    let snapshotText = "";       
-    let punctuationTimer = null; 
-
-    document.addEventListener('DOMContentLoaded', () => {
-        if (typeof initApp === 'function') {
-            initApp();
-        }
-    });
-
-    function initApp() {
-        if(!localStorage.getItem("app_password")) {
-            localStorage.setItem("app_password", DEFAULT_PASS);
-        }
-        if(!localStorage.getItem(MACHINE_LIST_KEY)) {
-            localStorage.setItem(MACHINE_LIST_KEY, JSON.stringify(DEFAULT_MACHINE_LIST));
-        }
-        if(!localStorage.getItem("cfg_timeout")) {
-            localStorage.setItem("cfg_timeout", DEFAULT_VOICE_TIMEOUT);
-        }
-        
-        loadSettingsToUI();
-        loadMachineListToUI();
-        loadEmployeeID(); 
-        
-        document.getElementById('input-stop-time-full').value = "";
-        document.getElementById('input-start-time-full').value = "";
-        document.getElementById('input-total-time').value = "";
-        document.getElementById('input-total-time').style.backgroundColor = '#eee';
-        
-        const isLoggedIn = localStorage.getItem("isLoggedIn");
-        if(isLoggedIn === "true") {
-            document.getElementById('app-screen').style.display = 'block';
-            applySettings();
-        } else {
-            document.getElementById('login-screen').style.display = 'flex';
-        }
-    }
-
-    // ================= 員工 ID 持久化 =================
-    function loadEmployeeID() {
-        const savedId = localStorage.getItem(EMPLOYEE_ID_KEY);
-        if (savedId) {
-            document.getElementById('input-employee-id').value = savedId;
-        }
-    }
-
-    function saveEmployeeID() {
-        const employeeId = document.getElementById('input-employee-id').value.trim();
-        localStorage.setItem(EMPLOYEE_ID_KEY, employeeId);
-    }
-
-
-    // ================= 登入與設定管理 (保持不變) =================
-    function checkLogin() {
-        const input = document.getElementById('loginPass').value;
-        const storedPass = localStorage.getItem("app_password"); 
-        
-        if(input === storedPass) {
-            localStorage.setItem("isLoggedIn", "true");
-            document.getElementById('login-screen').style.display = 'none';
-            document.getElementById('app-screen').style.display = 'block';
-            applySettings();
-        } else {
-            alert("Wrong Password! (密碼錯誤)");
-        }
+    if (action === 'query' && formNo) {
+      result = queryData(formNo);
+    } else {
+      result.error = "Invalid GET parameters or missing action/formNo.";
     }
     
-    function openSettings() {
-        loadSettingsToUI();
-        renderMachineListSettings();
-        document.getElementById('settings-modal').style.display = 'flex';
+  } catch (error) {
+    result.error = "GET processing error: " + error.message;
+  }
+  
+  return ContentService.createTextOutput(JSON.stringify(result))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+/**
+ * 處理資料新增或覆蓋的核心邏輯。
+ */
+function handleDataSubmission(data, action) {
+  var result = {"result": "error"};
+  
+  // --- 接收所有欄位 ---
+  var employeeId = data.employeeId || "";
+  var machine = data.machine || "";
+  var stopTimeFull = data.stopTimeFull || "";
+  var startTimeFull = data.startTimeFull || "";
+  var totalTime = data.totalTime || ""; 
+  var formNo = data.formNo || "";
+  var reason = data.reason || "";
+  var concernSection = data.concernSection || ""; 
+  var solution = data.solution || "";
+  var selfActions = data.selfActions || ""; 
+  
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getActiveSheet();
+  
+  // --- 圖片處理部分 ---
+  var now = new Date();
+  var fileName = Utilities.formatDate(now, "GMT+8", "yyyyMMddHHmmss") + ".jpg";
+
+  var imageCell = "No Image";
+  var viewUrl = "";
+
+  if (data.image && data.image !== "") {
+    var folder = DriveApp.getRootFolder();
+    if (data.folderId && data.folderId.trim() !== "") {
+      try {
+        folder = DriveApp.getFolderById(data.folderId.trim());
+      } catch (err) {}
     }
+
+    var contentType = data.image.substring(5, data.image.indexOf(';'));
+    var base64Data = data.image.substr(data.image.indexOf('base64,') + 7);
+    var bytes = Utilities.base64Decode(base64Data);
+    var blob = Utilities.newBlob(bytes, contentType, fileName); 
     
-    function saveSettings() {
-        const newPass = document.getElementById('set-password').value;
-        const ratio = document.getElementById('set-ratio').value;
-        const lang = document.getElementById('set-lang').value;
-        const timeout = document.getElementById('set-timeout').value; 
-
-        if(newPass.trim() === "") { alert("Password cannot be empty!"); return; }
-        if(isNaN(parseFloat(timeout)) || parseFloat(timeout) <= 0) {
-            alert("錄音靜默秒數必須是有效的數字 (大於 0)。");
-            return;
-        }
-
-        localStorage.setItem("app_password", newPass); 
-        localStorage.setItem("cfg_ratio", ratio);
-        localStorage.setItem("cfg_lang", lang);
-        localStorage.setItem("cfg_timeout", timeout); 
-
-        alert("Settings Saved!");
-        closeSettings();
-        applySettings();
-    }
-
-    function loadSettingsToUI() {
-        document.getElementById('set-password').value = localStorage.getItem("app_password") || DEFAULT_PASS;
-        document.getElementById('set-ratio').value = localStorage.getItem("cfg_ratio") || "4/3";
-        document.getElementById('set-timeout').value = localStorage.getItem("cfg_timeout") || DEFAULT_VOICE_TIMEOUT; 
-        const savedLang = localStorage.getItem("cfg_lang") || "cmn-Hant-TW";
-        document.getElementById('set-lang').value = savedLang;
-        document.getElementById('voice-lang-select').value = savedLang;
-    }
+    // 如果是覆蓋模式，並且存在舊檔案，則這裡需要刪除/替換舊檔案
+    // 為了簡化，目前邏輯是：覆蓋模式下也上傳新檔案，如果需要刪除舊檔案，則需要更多前端資料來判斷舊檔案 ID。
+    var file = folder.createFile(blob);
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
     
-    function applySettings() {
-        const ratio = localStorage.getItem("cfg_ratio") || "4/3";
-        const container = document.getElementById('preview-container');
-        const tag = document.getElementById('ratio-display-tag');
-        
-        container.className = ""; 
-        container.style.aspectRatio = "";
+    viewUrl = file.getUrl();
+    var fileId = file.getId();
+    var directLink = "https://drive.google.com/uc?export=view&id=" + fileId;
+    imageCell = '=HYPERLINK("' + viewUrl + '", IMAGE("' + directLink + '", 1))'; 
+  }
+  
+  // --- 寫入資料陣列 (與前端對應的順序) ---
+  var rowData = [
+    now, employeeId, machine, formNo, stopTimeFull, startTimeFull, totalTime,
+    imageCell, reason, concernSection, solution, selfActions, viewUrl, fileName
+  ];
 
-        if(ratio !== "FULL") {
-            const ratioClass = `ratio-${ratio.replace("/", "-")}`;
-            container.classList.add(ratioClass);
-            tag.innerText = `Ratio: ${ratio.replace("/", ":")}`;
-        } else {
-             tag.innerText = "Ratio: Full (Original)";
-        }
-        
-        calculateTotalStopTime();
-    }
+  if (action === 'append') {
+    // 1. 新增模式
+    sheet.appendRow(rowData);
+    sheet.setRowHeight(sheet.getLastRow(), 100); 
+    result.result = "success";
+    result.rowIndex = sheet.getLastRow();
     
-    function logout() {
-        if(confirm("Lock and logout?\n(確定要鎖定並登出嗎？)")) {
-            localStorage.removeItem("isLoggedIn"); 
-            document.getElementById('app-screen').style.display = 'none';
-            document.getElementById('login-screen').style.display = 'flex'; 
-            document.getElementById('loginPass').value = ""; 
-            closeSettings();
-        }
-    }
+  } else if (action === 'overwrite' && data.rowIndex && data.rowIndex > 0) {
+    // 2. 覆蓋模式
+    var rowIndex = parseInt(data.rowIndex);
+    var range = sheet.getRange(rowIndex, 1, 1, rowData.length);
+    range.setValues([rowData]);
+    sheet.setRowHeight(rowIndex, 100); 
+    result.result = "success";
+    result.rowIndex = rowIndex;
     
-    function closeSettings() {
-        document.getElementById('settings-modal').style.display = 'none';
+  } else {
+    result.error = "Invalid action or missing rowIndex for overwrite.";
+  }
+  
+  return result;
+}
+
+
+/**
+ * 根據 Repair Form No 查詢單筆資料。
+ */
+function queryData(formNo) {
+  var result = {"result": "error"};
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var dataRange = sheet.getDataRange();
+  var values = dataRange.getValues();
+  
+  // 假設 Repair Form No 在第 4 欄 (Col D, 陣列索引 3)
+  var formNoColumnIndex = 3; 
+
+  // 從第 2 行開始尋找 (跳過標題)
+  for (var i = 1; i < values.length; i++) {
+    var row = values[i];
+    if (row[formNoColumnIndex] && String(row[formNoColumnIndex]).trim().toUpperCase() === String(formNo).trim().toUpperCase()) {
+      
+      // 找到匹配項，返回資料和行號 (Apps Script 行號從 1 開始)
+      result.result = "success";
+      result.rowIndex = i + 1; 
+      
+      // 映射資料到前端所需的 Keys
+      result.data = {
+        // Apps Script Index: 0       1           2         3           4               5                 6           7              8               9                 10           11          12            13
+        // Sheet Column:     A       B           C         D           E               F                 G           H              I               J                 K            L           M             N
+        // Data Field:       Time    EmployeeID  Machine   FormNo      StopTimeFull    StartTimeFull     TotalTime   ImageCell      Reason          ConcernSection    Solution     SelfActions ViewUrl     FileName
+        employeeId:     row[1],
+        machine:        row[2],
+        formNo:         row[3],
+        stopTimeFull:   row[4],
+        startTimeFull:  row[5],
+        totalTime:      row[6],
+        photoUrl:       row[12], // 從 ViewUrl (Col M) 獲取圖片連結
+        reason:         row[8],
+        concernSection: row[9],
+        solution:       row[10],
+        selfActions:    row[11]
+      };
+      
+      return result;
     }
-    function syncLanguage() {
-        const val = document.getElementById('set-lang').value;
-        document.getElementById('voice-lang-select').value = val;
-        localStorage.setItem("cfg_lang", val);
-    }
-    
-    // ================= 機器列表管理 (保持多欄位顯示邏輯) =================
-    function getMachineList() {
-        try {
-            return JSON.parse(localStorage.getItem(MACHINE_LIST_KEY)) || DEFAULT_MACHINE_LIST;
-        } catch (e) {
-            console.error("Failed to parse machine list", e);
-            return DEFAULT_MACHINE_LIST;
-        }
-    }
-    function saveMachineList(list) {
-        const uniqueSortedList = [...new Set(list)].sort((a, b) => a.localeCompare(b));
-        localStorage.setItem(MACHINE_LIST_KEY, JSON.stringify(uniqueSortedList));
-        loadMachineListToUI();
-        return uniqueSortedList;
-    }
-    function loadMachineListToUI() {
-        const select = document.getElementById('input-machine');
-        const list = getMachineList();
-        
-        select.innerHTML = '';
-        
-        const defaultOption = document.createElement('option');
-        defaultOption.value = "";
-        defaultOption.textContent = "--- Select Machine ---";
-        select.appendChild(defaultOption);
-
-        list.forEach(machine => {
-            const option = document.createElement('option');
-            option.value = machine;
-            option.textContent = machine;
-            select.appendChild(option);
-        });
-        
-        if (document.getElementById('settings-modal').style.display === 'flex') {
-            renderMachineListSettings();
-        }
-    }
-    function renderMachineListSettings() {
-        const container = document.getElementById('machine-list-container');
-        const list = getMachineList();
-        container.innerHTML = '';
-
-        list.forEach((machine, index) => {
-            const item = document.createElement('div');
-            item.className = 'machine-list-item';
-            item.innerHTML = `
-                <span style="font-weight: bold;">${machine}</span>
-                <button type="button" class="btn-remove-item" onclick="removeMachine('${machine}')">X</button>
-            `;
-            container.appendChild(item);
-        });
-    }
-    function addMachine() {
-        const input = document.getElementById('new-machine-name');
-        const newMachine = input.value.trim().toUpperCase();
-
-        if (newMachine === "" || newMachine === "--- SELECT MACHINE ---") {
-            alert("請輸入有效的機器名稱。");
-            return;
-        }
-
-        let list = getMachineList();
-        if (list.includes(newMachine)) {
-            alert(`機器 ${newMachine} 已經存在於清單中。`);
-            return;
-        }
-
-        list.push(newMachine);
-        saveMachineList(list);
-        
-        input.value = "";
-    }
-
-    function removeMachine(name) {
-        if (!confirm(`確定要從清單中刪除機器 ${name} 嗎？`)) return;
-
-        let list = getMachineList();
-        const newList = list.filter(m => m !== name);
-        saveMachineList(newList);
-    }
-
-
-    // ================= 時間處理函數 (保持不變) =================
-    const DATETIME_REGEX = /^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})$/;
-
-    function parseCustomDateTime(dtStr) {
-        const match = dtStr.match(DATETIME_REGEX);
-        if (!match) return null;
-
-        const day = parseInt(match[1], 10);
-        const month = parseInt(match[2], 10) - 1; 
-        const year = parseInt(match[3], 10);
-        const hour = parseInt(match[4], 10);
-        const minute = parseInt(match[5], 10);
-
-        const date = new Date(year, month, day, hour, minute);
-
-        if (date.getFullYear() !== year || date.getMonth() !== month || date.getDate() !== day) {
-             return null;
-        }
-
-        return date;
-    }
-    
-    function calculateTotalStopTime() {
-        const stopTimeStr = document.getElementById('input-stop-time-full').value.trim();
-        const startTimeStr = document.getElementById('input-start-time-full').value.trim();
-        const totalTimeInput = document.getElementById('input-total-time');
-        const unitSelect = document.getElementById('total-time-unit');
-        const unit = unitSelect ? unitSelect.value : 'h';
-
-        if (stopTimeStr === "" || startTimeStr === "") {
-             totalTimeInput.value = "";
-             totalTimeInput.style.backgroundColor = '#eee';
-             totalTimeInput.dataset.diffMinutes = 0;
-             return;
-        }
-        
-        const stopDate = parseCustomDateTime(stopTimeStr);
-        const startDate = parseCustomDateTime(startTimeStr);
-
-        if (!stopDate || !startDate) {
-            totalTimeInput.value = "Invalid Time";
-            totalTimeInput.style.backgroundColor = '#fff0f0';
-            totalTimeInput.dataset.diffMinutes = 0;
-            return;
-        }
-
-        if (startDate.getTime() <= stopDate.getTime()) {
-            totalTimeInput.value = "0 min / 0.00 h (時間順序錯誤)";
-            totalTimeInput.style.backgroundColor = '#fff0f0';
-            totalTimeInput.dataset.diffMinutes = 0;
-            return;
-        }
-
-        const diffMs = startDate.getTime() - stopDate.getTime();
-        const diffMinutes = Math.round(diffMs / (1000 * 60)); 
-        totalTimeInput.dataset.diffMinutes = diffMinutes; 
-
-        let totalTimeFormatted;
-        if (unit === 'h') {
-             const diffHours = diffMs / (1000 * 60 * 60);
-             totalTimeFormatted = diffHours.toFixed(2) + " h";
-        } else {
-             totalTimeFormatted = diffMinutes + " min";
-        }
-        
-        totalTimeInput.value = totalTimeFormatted;
-        totalTimeInput.style.backgroundColor = '#e6ffed';
-    }
-
-
-    function getFullDateTimeString(dateObj) {
-        const dateOptions = { day: '2-digit', month: '2-digit', year: 'numeric' };
-        const timeOptions = { hour: '2-digit', minute: '2-digit', hour12: false };
-        
-        const datePart = dateObj.toLocaleDateString('en-US', dateOptions).replace(/\//g, '/');
-        const timePart = dateObj.toLocaleTimeString('en-US', timeOptions).replace(/^(\d):/,'0$1:'); 
-        
-        return `${datePart} ${timePart}`;
-    }
-    
-    function updateSingleTime(targetId) {
-        const targetElement = document.getElementById(targetId);
-        const fullDateTime = getFullDateTimeString(new Date());
-        
-        if (targetElement) {
-            const timeType = targetId.includes('stop') ? "Stop time" : "Start time";
-            if(confirm(`確定將 [${timeType}] 更新為現在時間：${fullDateTime} 嗎？`)) {
-                 targetElement.value = fullDateTime;
-                 calculateTotalStopTime();
-            }
-        }
-    }
-    
-    // ================= 複製格式化訊息 (修正 Concern Section 順序) =================
-    
-    function extractDateAndTime(fullTimeStr) {
-        const match = fullTimeStr.match(DATETIME_REGEX);
-        if (match) {
-             const datePart = `${match[1]}/${match[2]}/${match[3]}`; 
-             const timePart = `${match[4]}:${match[5]}`; 
-             return { date: datePart, time: timePart };
-        }
-        return { date: 'N/A', time: 'N/A' };
-    }
-    
-    function copyFormattedInfo() {
-        const totalTimeInput = document.getElementById('input-total-time');
-        const totalTimeMinutes = totalTimeInput.dataset.diffMinutes || 'N/A';
-        const totalTimeFormat = totalTimeMinutes !== 'N/A' && totalTimeMinutes > 0
-                              ? `${totalTimeMinutes} min`
-                              : totalTimeInput.value.includes('Invalid') || totalTimeInput.value === '' ? 'N/A' : totalTimeInput.value;
-
-        // 1. 蒐集資料
-        const employeeId = document.getElementById('input-employee-id').value || "N/A";
-        const machine = document.getElementById('input-machine').value || "N/A";
-        const stopTimeFull = document.getElementById('input-stop-time-full').value.trim();
-        const startTimeFull = document.getElementById('input-start-time-full').value.trim();
-        const repairFormNo = document.getElementById('input-form-no').value || "N/A";
-        const reason = document.getElementById('input-reason').value || "N/A";
-        const concernSection = document.getElementById('input-concern-section').value || "N/A"; 
-        const solution = document.getElementById('input-solution').value || "N/A";
-        const selfActions = document.getElementById('input-self-actions').value || "N/A"; 
-        
-        // 2. 處理時間
-        const stopInfo = extractDateAndTime(stopTimeFull);
-        const startInfo = extractDateAndTime(startTimeFull);
-        
-        // 3. 構建輸出字串 (Concern Section 放在 Machine 之後)
-        const output = `
-Employee ID :- ${employeeId}
-
-Machine :- ${machine}
-
-Concern Section :- ${concernSection}
-
-Date :- ${stopInfo.date}
-
-Stop time :- ${stopInfo.time}
-
-Start time :- ${startInfo.time}
-
-Total stop time :- ${totalTimeFormat}
-
-Repair Form No:- ${repairFormNo}
-
-Reason :- ${reason}
-
-How to Solve Problem:- ${solution}
-
-Self Actions:- ${selfActions}
-        `.trim();
-
-        // 4. 複製到剪貼簿
-        navigator.clipboard.writeText(output).then(() => {
-            alert("✅ 整合訊息已複製到剪貼簿！");
-        }).catch(err => {
-            console.error('無法複製文字:', err);
-            alert("❌ 無法複製文字，請檢查瀏覽器權限。");
-        });
-    }
-
-    // ================= 上傳與清除邏輯 (修正) =================
-    function clearInputs() {
-        // Employee ID 不清除
-        document.getElementById('input-machine').value = ""; 
-        document.getElementById('input-total-time').value = "";
-        document.getElementById('input-form-no').value = "";
-        document.getElementById('input-reason').value = "";
-        document.getElementById('input-concern-section').value = "";
-        document.getElementById('input-solution').value = "";
-        document.getElementById('input-self-actions').value = "";
-
-        document.getElementById('input-stop-time-full').value = "";
-        document.getElementById('input-start-time-full').value = "";
-        
-        document.getElementById('input-total-time').style.backgroundColor = '#eee';
-        calculateTotalStopTime(); 
-
-        processedImageBase64 = "";
-        document.getElementById('preview-img').style.display = 'none';
-        document.querySelector('.placeholder').style.display = 'block';
-        applySettings();
-    }
-
-    function saveToCloud() {
-        if(isRecording) manualStopVoice();
-
-        // 獲取所有欄位
-        const employeeId = document.getElementById('input-employee-id').value; 
-        const machine = document.getElementById('input-machine').value; 
-        const stopTimeFull = document.getElementById('input-stop-time-full').value; 
-        const startTimeFull = document.getElementById('input-start-time-full').value; 
-        const totalTime = document.getElementById('input-total-time').value; 
-        const formNo = document.getElementById('input-form-no').value;
-        const reason = document.getElementById('input-reason').value;
-        const concernSection = document.getElementById('input-concern-section').value;
-        const solution = document.getElementById('input-solution').value; 
-        const selfActions = document.getElementById('input-self-actions').value;
-        
-        // 檢查
-        if(!processedImageBase64 && !machine && !reason && !solution) {
-            alert("Empty! Please fill in machine info/notes or take a photo."); return;
-        }
-        if (machine.trim() === "") {
-            alert("請選擇 Machine (機台)。");
-            return;
-        }
-        
-        // 儲存員工 ID
-        saveEmployeeID();
-
-        const scriptUrl = `https://script.google.com/macros/s/${FIXED_SCRIPT_ID}/exec`;
-        const btn = document.getElementById('saveBtn');
-        
-        btn.disabled = true;
-        showStatus('loading', 'Uploading...', '資料上傳中...');
-
-        const data = { 
-            image: processedImageBase64, 
-            employeeId: employeeId, 
-            machine: machine,
-            stopTimeFull: stopTimeFull,
-            startTimeFull: startTimeFull,
-            totalTime: totalTime, 
-            formNo: formNo,
-            reason: reason, 
-            concernSection: concernSection,
-            solution: solution, 
-            selfActions: selfActions,
-            folderId: FIXED_FOLDER_ID
-        };
-
-        fetch(scriptUrl, {
-            method: 'POST',
-            body: JSON.stringify(data)
-        })
-        .then(r => r.json())
-        .then(res => {
-            if (res.result === 'success') {
-                showStatus('success', 'Upload Success!', '上傳成功！');
-                clearInputs();
-                setTimeout(() => { closeStatusModal(); }, 2000);
-            } else {
-                showStatus('error', 'Upload Failed', `上傳失敗：${res.error || '未知的錯誤。'}`);
-            }
-        })
-        .catch(e => {
-            console.error(e);
-            showStatus('error', 'Upload Failed', '網路或伺服器錯誤，請檢查。');
-        })
-        .finally(() => {
-            btn.disabled = false;
-        });
-    }
-
-    function viewExcel() {
-        // 使用寫死的 ID 重建網址
-        const url = `https://docs.google.com/spreadsheets/d/${FIXED_SHEET_ID}/edit#gid=0`;
-        window.open(url, '_blank');
-    }
-
-    function viewDriveFolder() {
-        if(FIXED_FOLDER_ID && FIXED_FOLDER_ID.trim() !== "") {
-            // 使用寫死的 ID 重建網址
-            window.open("https://drive.google.com/drive/folders/" + FIXED_FOLDER_ID, '_blank');
-        } else {
-            alert("Folder ID not set.");
-        }
-    }
-
-    function toggleVoice(btn) {
-        if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-            alert("Browser not supported / 瀏覽器不支援語音輸入功能。"); return;
-        }
-        
-        const targetId = btn.getAttribute('data-target');
-        const targetArea = document.getElementById(targetId);
-
-        if (isRecording && activeTextAreaId === targetId) {
-            manualStopVoice(); 
-        } else if (isRecording && activeTextAreaId !== targetId) {
-             if(confirm(`目前正在錄製其他欄位，確定要切換到 [${targetArea.previousElementSibling.innerText.trim()}] 嗎？`)) {
-                manualStopVoice();
-                startVoice(btn, targetArea, targetId);
-             }
-        } else {
-            startVoice(btn, targetArea, targetId);
-        }
-    }
-    
-    function startVoice(btn, targetArea, targetId) {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        recognition = new SpeechRecognition();
-        
-        recognition.lang = document.getElementById('voice-lang-select').value || 'cmn-Hant-TW';
-        recognition.continuous = true; 
-        recognition.interimResults = true; 
-
-        isRecording = true;
-        activeTextAreaId = targetId;
-        
-        document.querySelectorAll('.btn-voice').forEach(b => b.classList.remove('recording'));
-        btn.classList.add('recording');
-        btn.innerText = "🛑 停止錄音";
-        
-        snapshotText = targetArea.value;
-        if(snapshotText.length > 0 && !snapshotText.endsWith(" ")) {
-            snapshotText += " ";
-        }
-
-        recognition.onresult = function(event) {
-            let currentSessionText = ''; 
-            for (let i = event.resultIndex; i < event.results.length; ++i) {
-                currentSessionText += event.results[i][0].transcript;
-            }
-
-            targetArea.value = snapshotText + currentSessionText;
-            targetArea.scrollTop = targetArea.scrollHeight;
-
-            if(punctuationTimer) clearTimeout(punctuationTimer);
-            
-            if(currentSessionText.trim().length > 0) {
-                const timeoutMs = parseFloat(localStorage.getItem("cfg_timeout") || DEFAULT_VOICE_TIMEOUT) * 1000;
-                punctuationTimer = setTimeout(() => {
-                    manualStopVoice(); 
-                }, timeoutMs); 
-            }
-        };
-
-        recognition.onend = function() {
-            if(punctuationTimer) clearTimeout(punctuationTimer);
-            resetVoiceUI();
-        };
-        
-        recognition.onerror = function(event) {
-            console.error("Speech Recognition Error:", event.error);
-            resetVoiceUI();
-            alert(`語音辨識發生錯誤: ${event.error}`);
-        };
-        
-        try {
-            recognition.start();
-        } catch(e) {
-            console.error("Start error", e);
-            resetVoiceUI();
-        }
-    }
-
-    function manualStopVoice() {
-        if(isRecording && recognition) {
-            isRecording = false; 
-            if(punctuationTimer) clearTimeout(punctuationTimer);
-
-            const targetArea = document.getElementById(activeTextAreaId);
-            let currentVal = targetArea.value.trim();
-            if(currentVal.length > 0) {
-                const lastChar = currentVal.slice(-1);
-                const lang = document.getElementById('voice-lang-select').value;
-                const marks = lang.includes('en') ? [",", "."] : ["，", "。", "、", "？", "！"];
-                
-                if(!marks.includes(lastChar)) {
-                    const mark = lang.includes('en') ? ". " : "。";
-                    currentVal += mark;
-                    targetArea.value = currentVal;
-                }
-            }
-
-            recognition.stop();
-            resetVoiceUI();
-        }
-    }
-
-    function resetVoiceUI() {
-        if(punctuationTimer) clearTimeout(punctuationTimer);
-        
-        document.querySelectorAll('.btn-voice').forEach(b => {
-             b.classList.remove('recording');
-             b.innerText = "🎤 語音輸入";
-        });
-        
-        isRecording = false;
-        activeTextAreaId = null;
-    }
-
-    function showStatus(type, title, subtitle) {
-        const modal = document.getElementById('status-modal');
-        const spinner = document.getElementById('status-spinner');
-        const icon = document.getElementById('status-icon');
-        const text = document.getElementById('status-text');
-        const sub = document.getElementById('status-subtext');
-        const closeBtn = document.getElementById('status-close-btn');
-
-        modal.style.display = 'flex';
-        text.innerText = title; sub.innerText = subtitle;
-
-        spinner.style.display = (type === 'loading') ? 'block' : 'none';
-        icon.style.display = (type !== 'loading') ? 'block' : 'none';
-        closeBtn.style.display = (type === 'error') ? 'block' : 'none';
-
-        if(type === 'success') icon.innerText = '✅';
-        else if(type === 'error') icon.innerText = '❌';
-    }
-
-    function closeStatusModal() { document.getElementById('status-modal').style.display = 'none'; }
-    
-    // 以下為圖片處理相關函數 (保持不變)
-    function triggerFile(id) { document.getElementById(id).click(); }
-    
-    function handleFile(input) {
-        if (!input.files || !input.files[0]) return;
-        
-        const file = input.files[0];
-        const reader = new FileReader();
-        
-        reader.onload = function(e) {
-            const img = new Image();
-            img.onload = function() { processImageWithCanvas(img); };
-            img.src = e.target.result;
-        }
-        reader.readAsDataURL(file);
-    }
-    
-    function processImageWithCanvas(img) {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const ratioStr = localStorage.getItem("cfg_ratio") || "4/3";
-        
-        let targetRatio = 4/3;
-        let isFull = ratioStr === "FULL";
-
-        if(ratioStr === "16/9") targetRatio = 16/9;
-        else if(ratioStr === "9/16") targetRatio = 9/16;
-        else if(ratioStr === "1/1") targetRatio = 1;
-
-        let srcW = img.width; let srcH = img.height;
-        let drawW, drawH, startX, startY;
-
-        if (isFull) {
-            drawW = srcW; drawH = srcH; startX = 0; startY = 0;
-        } else {
-            let srcRatio = srcW / srcH;
-            if (srcRatio > targetRatio) {
-                drawH = srcH; drawW = srcH * targetRatio;
-                startX = (srcW - drawW) / 2; startY = 0;
-            } else {
-                drawW = srcW; drawH = srcW / targetRatio;
-                startX = 0; startY = (srcH - drawH) / 2;
-            }
-        }
-
-        const scale = MAX_IMAGE_WIDTH / drawW;
-        canvas.width = MAX_IMAGE_WIDTH; 
-        canvas.height = drawH * scale;
-
-        ctx.drawImage(img, startX, startY, drawW, drawH, 0, 0, canvas.width, canvas.height);
-        processedImageBase64 = canvas.toDataURL('image/jpeg', 0.8);
-        
-        const preview = document.getElementById('preview-img');
-        preview.src = processedImageBase64;
-        preview.style.display = 'block';
-        document.querySelector('.placeholder').style.display = 'none';
-
-        if(isFull) {
-             const container = document.getElementById('preview-container');
-             container.classList.remove("ratio-4-3", "ratio-16-9", "ratio-9-16", "ratio-1-1"); 
-             container.style.aspectRatio = `${canvas.width} / ${canvas.height}`;
-        }
-    }
-</script>
-
-</body>
-</html>
+  }
+  
+  result.data = null; // 找不到資料
+  result.error = "Repair Form No not found.";
+  return result;
+}
