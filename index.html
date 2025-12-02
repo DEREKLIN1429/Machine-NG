@@ -23,7 +23,7 @@
             display: flex; justify-content: center; min-height: 100vh;
         }
 
-        /* --- 模組化樣式 --- */
+        /* --- 模組化樣式 (保持不變) --- */
         #login-screen, #status-modal, #settings-modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.6); z-index: 9999;
@@ -69,6 +69,10 @@
         .btn-cam { background-color: #FF5722; color: white; } 
         .btn-gallery { background-color: #FFC107; color: #333; } 
 
+        /* --- 圖片預覽 (保持修正) --- */
+        #preview-container { max-width: 100%; height: auto; }
+        #preview-img { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; }
+
         /* --- 輸入/表單樣式 (保持不變) --- */
         .input-group { margin-bottom: 8px; display: flex; flex-direction: column; }
         .input-label { font-weight: bold; font-size: 0.9rem; color: #333; margin-bottom: 4px; }
@@ -103,13 +107,6 @@
         .btn-drive { background-color: var(--copy-color); } 
         
         /* --- 設定內排版修正 (保持不變) --- */
-        .settings-content-group {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            margin-top: 10px;
-        }
-        
         #machine-list-container {
             display: grid;
             grid-template-columns: repeat(3, 1fr); 
@@ -164,7 +161,7 @@
     </div>
 
     <div id="app-screen" style="display: none;">
-        <div class="author-header">Author: DERER LIN (v3.2)</div>
+        <div class="author-header">Author: DERER LIN (v3.3)</div>
 
         <div class="header">
             <div class="header-btn" onclick="logout()" title="Lock / Logout (鎖定/登出)">🔒</div>
@@ -273,6 +270,11 @@
              <div class="input-group">
                 <label class="input-label" for="input-self-actions">Self Actions:</label>
                 <textarea id="input-self-actions" placeholder="e.g. check and inform maintenance team"></textarea>
+                <div class="voice-control-group">
+                    <button type="button" class="btn-voice" data-target="input-self-actions" onclick="toggleVoice(this)">
+                        🎤 語音輸入
+                    </button>
+                </div>
             </div>
             
             <select id="voice-lang-select" class="hidden">
@@ -513,7 +515,7 @@
         localStorage.setItem("cfg_lang", val);
     }
     
-    // ... 機器列表管理函數 (保持不變) ...
+    // ... 機器列表管理函數保持不變 ...
     function getMachineList() {
         try {
             return JSON.parse(localStorage.getItem(MACHINE_LIST_KEY)) || DEFAULT_MACHINE_LIST;
@@ -726,7 +728,6 @@
         
         // 2. 處理時間
         const stopInfo = extractDateAndTime(stopTimeFull);
-        const startInfo = extractDateAndTime(startTimeFull);
         
         const startDisplay = startTimeFull === "" ? `N/A (- ${stopTimeFull})` : startTimeFull;
 
@@ -792,13 +793,12 @@ Self Actions:
     function saveToCloud() {
         if(isRecording) manualStopVoice();
 
-        // 獲取所有欄位
         const employeeId = document.getElementById('input-employee-id').value; 
         const machine = document.getElementById('input-machine').value; 
         const stopTimeFull = document.getElementById('input-stop-time-full').value; 
         const startTimeFull = document.getElementById('input-start-time-full').value; 
         const totalTime = document.getElementById('input-total-time').value; 
-        const formNo = document.getElementById('input-form-no').value; // 關鍵欄位
+        const formNo = document.getElementById('input-form-no').value;
         const reason = document.getElementById('input-reason').value;
         const concernSection = document.getElementById('input-concern-section').value;
         const solution = document.getElementById('input-solution').value; 
@@ -828,7 +828,6 @@ Self Actions:
         showStatus('loading', 'Uploading...', '資料上傳中...');
 
         const data = { 
-            // 不再需要 action 或 rowIndex，交給後端判斷
             image: processedImageBase64, 
             employeeId: employeeId, 
             machine: machine,
@@ -849,7 +848,7 @@ Self Actions:
         })
         .then(r => r.json())
         .then(res => {
-            const action = res.action || '新增'; // Apps Script 會回傳動作 (append/overwrite)
+            const action = res.action || '新增'; 
             if (res.result === 'success') {
                 showStatus('success', 'Upload Success!', `資料已成功 ${action}！`);
                 clearInputs();
