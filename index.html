@@ -62,36 +62,19 @@
         .btn-cam { background-color: #ffc107; color: #333; }
         .btn-gallery { background-color: #fd7e14; }
 
-        /* --- 圖片預覽框 (保持不變) --- */
-        #preview-container { 
-            width: 100%; background: #f0fff0; border: 2px solid var(--frame-color);
-            border-radius: 8px; display: flex; align-items: center; justify-content: center; 
-            overflow: hidden; position: relative; box-sizing: border-box;
-            transition: aspect-ratio 0.3s ease; box-shadow: 0 0 10px rgba(0, 230, 0, 0.15);
-            cursor: pointer;
-        }
-        #preview-container::after {
-            content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-            border: 4px solid transparent; background: linear-gradient(to right, var(--frame-color) 4px, transparent 4px) 0 0, linear-gradient(to bottom, var(--frame-color) 4px, transparent 4px) 0 0, linear-gradient(to left, var(--frame-color) 4px, transparent 4px) 100% 0, linear-gradient(to bottom, var(--frame-color) 4px, transparent 4px) 100% 0, linear-gradient(to right, var(--frame-color) 4px, transparent 4px) 0 100%, linear-gradient(to top, var(--frame-color) 4px, transparent 4px) 0 100%, linear-gradient(to left, var(--frame-color) 4px, transparent 4px) 100% 100%, linear-gradient(to top, var(--frame-color) 4px, transparent 4px) 100% 100%;
-            background-repeat: no-repeat; background-size: 20px 20px; pointer-events: none; margin: 5px;
-        }
-        .ratio-tag { position: absolute; top: 10px; left: 10px; background: var(--frame-color); color: #000; font-weight: bold; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; pointer-events: none; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-        .ratio-4-3 { aspect-ratio: 4/3; } .ratio-16-9 { aspect-ratio: 16/9; } .ratio-9-16 { aspect-ratio: 9/16; } .ratio-1-1 { aspect-ratio: 1/1; }
-        #preview-img { width: 100%; height: 100%; object-fit: contain; display: none; z-index: 1; }
-        .placeholder { color: #555; text-align: center; font-size: 0.9em; z-index: 0; font-weight: 500;}
-
         /* --- 輸入/表單樣式 --- */
         .input-group { margin-bottom: 12px; display: flex; flex-direction: column; }
         .input-label { font-weight: bold; font-size: 0.95rem; color: #333; margin-bottom: 4px; }
-        .text-input, textarea { 
+        .text-input, textarea, select.text-input { /* 讓 select 也有樣式 */
             width: 100%; padding: 10px; border: 1px solid var(--input-border); 
             border-radius: 6px; font-size: 15px; box-sizing: border-box;
             font-family: inherit; transition: border-color 0.3s;
         }
         textarea { height: 120px; resize: vertical; } 
         
-        .date-time-group { display: flex; gap: 10px; flex-wrap: wrap; }
-        .time-component { display: flex; flex-direction: column; flex: 1 1 45%; min-width: 100px; }
+        /* 移除 date-time-group 的 flex 屬性，改為 block/上下排列 */
+        .date-time-group { margin-bottom: 12px; } 
+        .time-component { display: flex; flex-direction: column; margin-bottom: 12px; }
         .time-input-row { display: flex; align-items: center; gap: 5px; }
 
         /* --- 語音/更新按鈕樣式 --- */
@@ -114,16 +97,35 @@
             line-height: 1.2;
         }
         .btn-update-time:active { background-color: #e3a900; }
-
-        @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.05); opacity: 0.7; } 100% { transform: scale(1); opacity: 1; } }
         .recording { background-color: var(--danger-color) !important; animation: pulse 1s infinite; }
 
-        /* --- 底部按鈕 --- */
-        .footer-btns { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; padding-bottom: 30px;}
-        .btn-main { width: 100%; padding: 15px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; color: white; }
-        .btn-save { background-color: var(--primary-color); }
-        .btn-view { background-color: #6c757d; }
-        .btn-drive { background-color: var(--drive-color); }
+        /* --- 設定管理清單樣式 (新增) --- */
+        .machine-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            margin-top: 5px;
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        .btn-remove-item {
+            background: var(--danger-color);
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .btn-add-item {
+            background: var(--drive-color);
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 6px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
         .hidden { display: none !important; }
     </style>
 </head>
@@ -149,7 +151,7 @@
     </div>
 
     <div id="app-screen" style="display: none;">
-        <div class="author-header">Author: DERER LIN (v2.3)</div>
+        <div class="author-header">Author: DERER LIN (v2.4)</div>
 
         <div class="header">
             <div class="header-btn" onclick="logout()" title="Lock / Logout (鎖定/登出)">🔒</div>
@@ -181,7 +183,8 @@
             
             <div class="input-group">
                 <label class="input-label" for="input-machine">Machine :</label>
-                <input type="text" id="input-machine" class="text-input" placeholder="e.g. A01">
+                <select id="input-machine" class="text-input">
+                    </select>
             </div>
             
             <div class="input-group">
@@ -194,7 +197,7 @@
                     <label class="input-label" for="input-stop-time-full">Stop time : (DD/MM/YYYY hh:mm)</label>
                     <div class="time-input-row">
                         <input type="text" id="input-stop-time-full" class="text-input" 
-                               placeholder="e.g. 02/12/2025 15:30" oninput="calculateTotalStopTime()">
+                               placeholder="請點右側按鈕或手動輸入" oninput="calculateTotalStopTime()">
                         <button type="button" class="btn-update-time" 
                                 onclick="updateSingleTime('input-stop-time-full')" title="Set Current Time">
                             <span style="font-size: 1.1em;">⏱️</span>
@@ -204,8 +207,8 @@
                 <div class="time-component">
                     <label class="input-label" for="input-start-time-full">Start time : (DD/MM/YYYY hh:mm)</label>
                     <div class="time-input-row">
-                         <input type="text" id="input-start-time-full" class="text-input" 
-                               placeholder="e.g. 02/12/2025 18:00" oninput="calculateTotalStopTime()">
+                        <input type="text" id="input-start-time-full" class="text-input" 
+                               placeholder="請點右側按鈕或手動輸入" oninput="calculateTotalStopTime()">
                         <button type="button" class="btn-update-time" 
                                 onclick="updateSingleTime('input-start-time-full')" title="Set Current Time">
                             <span style="font-size: 1.1em;">⏱️</span>
@@ -262,9 +265,19 @@
                 <button onclick="closeSettings()" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
             </div>
             
-            <div class="modal-group" style="background: #f9f9f9; padding: 10px; border-radius: 8px; border: 1px dashed #ccc;">
+            <div class="modal-group" style="background: #f9f9f9; padding: 10px; border-radius: 8px; border: 1px dashed #ccc; margin-bottom: 15px;">
                 <label style="color:#d63384; font-weight: bold; margin-bottom: 5px; display: block;">🔑 Login Password (修改登入密碼) (Default: 12345)</label>
                 <input type="text" id="set-password" class="login-input" style="margin: 0;" placeholder="Current: 12345">
+            </div>
+
+            <div class="modal-group" style="margin-top: 20px; border: 1px solid #ddd; padding: 10px; border-radius: 8px;">
+                <label style="font-weight: bold; margin-bottom: 10px; display: block; color: var(--drive-color);">3. Machine List Management (機器列表管理)</label>
+                
+                <input type="text" id="new-machine-name" class="login-input" style="margin: 0 0 5px 0;" placeholder="Add new machine name (e.g., CM4)">
+                <button type="button" class="btn-add-item" onclick="addMachine()">+ Add Machine (新增)</button>
+
+                <div id="machine-list-container" style="margin-top: 15px;">
+                    </div>
             </div>
 
             <div class="modal-group" style="margin-top: 15px;">
@@ -301,11 +314,15 @@
     // ================= 參數與初始化 =================
     const DEFAULT_PASS = "12345"; 
     const MAX_IMAGE_WIDTH = 1000;
+    const MACHINE_LIST_KEY = "cfg_machine_list"; // 新增 Key 儲存機器列表
     
+    // 預設機器清單
+    const DEFAULT_MACHINE_LIST = ["BM5", "BM6", "BM7", "BM21", "BM22", "BM23", "CA3", "CA4", "CM1", "CM2", "CM3"];
+
     // 你的固定路徑 (FIXED PATHS)
-    const FIXED_SCRIPT_ID = "AKfycbzfPzPODQjp_phrHPwjsoBYeA8-VgeaoYly6hr3Mx09Wj-o5tWHMPa-nTHfaHyloiH8zg/exec";
-    const FIXED_SHEET_ID = "1sDKZBJfasUbZSGNAfz9GIWfRdrdXxQMrXrxM3x9RlCY/edit?gid=0#gid=0";
-    const FIXED_FOLDER_ID = "1VPfLCMIuJPA66RjN8isrC4xq3luPMJe4";
+    const FIXED_SCRIPT_ID = "AKfycbwseWx2ioJ0K_jEqHvJQVeUGw65PGW8gsxvRiKs63DdXr-mGb-OeM324vwH-DL62ujm/exec";
+    const FIXED_SHEET_ID = "1LvIn4eRb8tzVOQfxiSwZIRnaiPD0zb2jrXsi0hP_2YA/edit?gid=0#gid=0";
+    const FIXED_FOLDER_ID = "13fk6iR1JP7mUrlhoQ4h9TsF_T6VUhe38";
 
     // 狀態變數
     let processedImageBase64 = ""; 
@@ -322,14 +339,23 @@
     });
 
     function initApp() {
+        // 1. 初始化密碼
         if(!localStorage.getItem("app_password")) {
             localStorage.setItem("app_password", DEFAULT_PASS);
         }
+        // 2. 初始化機器列表
+        if(!localStorage.getItem(MACHINE_LIST_KEY)) {
+            localStorage.setItem(MACHINE_LIST_KEY, JSON.stringify(DEFAULT_MACHINE_LIST));
+        }
         
         loadSettingsToUI();
-        setInitialDateTime();
-        calculateTotalStopTime(); // 應用程式啟動時計算一次 (通常為 0.00h)
-
+        loadMachineListToUI(); // 載入機器列表到主畫面
+        // 3. 初始值設定: 確保時間和總時間為空
+        document.getElementById('input-stop-time-full').value = "";
+        document.getElementById('input-start-time-full').value = "";
+        document.getElementById('input-total-time').value = "";
+        document.getElementById('input-total-time').style.backgroundColor = '#eee';
+        
         const isLoggedIn = localStorage.getItem("isLoggedIn");
         if(isLoggedIn === "true") {
             document.getElementById('app-screen').style.display = 'block';
@@ -339,7 +365,111 @@
         }
     }
 
-    // ================= 登入與設定管理 (保持不變) =================
+    // ================= 機器列表管理功能 =================
+    
+    /** 獲取機器列表 (從 localStorage) */
+    function getMachineList() {
+        try {
+            return JSON.parse(localStorage.getItem(MACHINE_LIST_KEY)) || DEFAULT_MACHINE_LIST;
+        } catch (e) {
+            console.error("Failed to parse machine list", e);
+            return DEFAULT_MACHINE_LIST;
+        }
+    }
+
+    /** 儲存機器列表 (到 localStorage) */
+    function saveMachineList(list) {
+        // 排序並去重，確保清單整潔
+        const uniqueSortedList = [...new Set(list)].sort((a, b) => a.localeCompare(b));
+        localStorage.setItem(MACHINE_LIST_KEY, JSON.stringify(uniqueSortedList));
+        return uniqueSortedList;
+    }
+
+    /** 載入機器列表到主畫面的 Select */
+    function loadMachineListToUI() {
+        const select = document.getElementById('input-machine');
+        const list = getMachineList();
+        
+        select.innerHTML = '';
+        
+        // 增加一個預設的選項
+        const defaultOption = document.createElement('option');
+        defaultOption.value = "";
+        defaultOption.textContent = "--- Select Machine ---";
+        select.appendChild(defaultOption);
+
+        list.forEach(machine => {
+            const option = document.createElement('option');
+            option.value = machine;
+            option.textContent = machine;
+            select.appendChild(option);
+        });
+        
+        // 如果設定視窗開啟，同時更新設定清單
+        if (document.getElementById('settings-modal').style.display === 'flex') {
+            renderMachineListSettings();
+        }
+    }
+    
+    /** 渲染設定畫面的機器列表 */
+    function renderMachineListSettings() {
+        const container = document.getElementById('machine-list-container');
+        const list = getMachineList();
+        container.innerHTML = '';
+
+        list.forEach((machine, index) => {
+            const item = document.createElement('div');
+            item.className = 'machine-list-item';
+            item.innerHTML = `
+                <span>${machine}</span>
+                <button type="button" class="btn-remove-item" onclick="removeMachine('${machine}')">刪除</button>
+            `;
+            container.appendChild(item);
+        });
+    }
+
+    /** 新增機器 */
+    function addMachine() {
+        const input = document.getElementById('new-machine-name');
+        const newMachine = input.value.trim().toUpperCase();
+
+        if (newMachine === "" || newMachine === "--- SELECT MACHINE ---") {
+            alert("請輸入有效的機器名稱。");
+            return;
+        }
+
+        let list = getMachineList();
+        if (list.includes(newMachine)) {
+            alert(`機器 ${newMachine} 已經存在於清單中。`);
+            return;
+        }
+
+        list.push(newMachine);
+        saveMachineList(list);
+        
+        input.value = "";
+        loadMachineListToUI(); // 更新主畫面和設定畫面
+    }
+
+    /** 刪除機器 */
+    function removeMachine(name) {
+        if (!confirm(`確定要從清單中刪除機器 ${name} 嗎？`)) return;
+
+        let list = getMachineList();
+        const newList = list.filter(m => m !== name);
+        saveMachineList(newList);
+        loadMachineListToUI(); // 更新主畫面和設定畫面
+    }
+
+    // ================= 登入與設定管理 (調整 openSettings) =================
+    
+    function openSettings() {
+        loadSettingsToUI();
+        renderMachineListSettings(); // 確保打開時渲染機器列表
+        document.getElementById('settings-modal').style.display = 'flex';
+    }
+    
+    // ... (其他登入/登出/設定函數保持不變) ...
     function checkLogin() {
         const input = document.getElementById('loginPass').value;
         const storedPass = localStorage.getItem("app_password"); 
@@ -364,10 +494,6 @@
         }
     }
     
-    function openSettings() {
-        loadSettingsToUI();
-        document.getElementById('settings-modal').style.display = 'flex';
-    }
     function closeSettings() {
         document.getElementById('settings-modal').style.display = 'none';
     }
@@ -416,32 +542,23 @@
         }
     }
 
-    // ================= 時間處理函數 (核心修改) =================
 
-    // 格式: DD/MM/YYYY hh:mm
+    // ================= 時間處理函數 (移除自動帶入) =================
+
     const DATETIME_REGEX = /^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})$/;
 
-    /**
-     * 將 DD/MM/YYYY hh:mm 格式字串轉換為 Date 物件。
-     * @param {string} dtStr - 格式為 DD/MM/YYYY hh:mm 的字串。
-     * @returns {Date|null} 
-     */
     function parseCustomDateTime(dtStr) {
         const match = dtStr.match(DATETIME_REGEX);
         if (!match) return null;
 
-        // 注意: JavaScript 的月份是 0-11
         const day = parseInt(match[1], 10);
         const month = parseInt(match[2], 10) - 1; 
         const year = parseInt(match[3], 10);
         const hour = parseInt(match[4], 10);
         const minute = parseInt(match[5], 10);
 
-        // 使用 UTC 函數避免瀏覽器時區偏差，但由於輸入的時區不明確，這裡使用 Date(year, month, ...)
-        // 為了確保計算準確，我們假設輸入的時間是使用者當地的時間
         const date = new Date(year, month, day, hour, minute);
 
-        // 檢查日期是否有效 (例如 2月30日會被轉成 3月2日)
         if (date.getFullYear() !== year || date.getMonth() !== month || date.getDate() !== day) {
              return null;
         }
@@ -458,6 +575,13 @@
         const stopDate = parseCustomDateTime(stopTimeStr);
         const startDate = parseCustomDateTime(startTimeStr);
 
+        // 修正: 欄位為空時，總時間顯示為 0.00h
+        if (stopTimeStr === "" && startTimeStr === "") {
+             totalTimeInput.value = "0.00 h";
+             totalTimeInput.style.backgroundColor = '#eee';
+             return;
+        }
+        
         // 檢查時間是否有效
         if (!stopDate || !startDate) {
             totalTimeInput.value = "Invalid Time";
@@ -467,7 +591,7 @@
 
         // 開始時間必須晚於停止時間
         if (startDate.getTime() <= stopDate.getTime()) {
-            totalTimeInput.value = "0.00 h";
+            totalTimeInput.value = "0.00 h (時間順序錯誤)";
             totalTimeInput.style.backgroundColor = '#fff0f0';
             return;
         }
@@ -495,19 +619,6 @@
         
         return `${datePart} ${timePart}`;
     }
-
-    /** 應用程式啟動時，設定初始時間 */
-    function setInitialDateTime() {
-        const fullDateTime = getFullDateTimeString(new Date());
-
-        // 僅在欄位為空時設置初始值
-        if (!document.getElementById('input-stop-time-full').value) {
-            document.getElementById('input-stop-time-full').value = fullDateTime;
-        }
-        if (!document.getElementById('input-start-time-full').value) {
-            document.getElementById('input-start-time-full').value = fullDateTime;
-        }
-    }
     
     /** 專門更新單一時間欄位的按鈕函數 */
     function updateSingleTime(targetId) {
@@ -525,7 +636,7 @@
     }
 
 
-    // ================= 圖片/語音/上傳函數 (保持不變) =================
+    // ================= 圖片/語音/上傳函數 (保持穩定) =================
     
     function triggerFile(id) { document.getElementById(id).click(); }
     
@@ -725,20 +836,19 @@
     function closeStatusModal() { document.getElementById('status-modal').style.display = 'none'; }
 
     function clearInputs() {
-        document.getElementById('input-machine').value = "";
+        document.getElementById('input-machine').value = ""; // 清除選單
         document.getElementById('input-total-time').value = "";
         document.getElementById('input-form-no').value = "";
         document.getElementById('input-reason').value = "";
         document.getElementById('input-solution').value = "";
-        
-        // 重設日期時間
+
+        // 清除時間
         document.getElementById('input-stop-time-full').value = "";
         document.getElementById('input-start-time-full').value = "";
-        setInitialDateTime();
         
         // 清除計算狀態
         document.getElementById('input-total-time').style.backgroundColor = '#eee';
-        calculateTotalStopTime(); // 重新計算，結果應為 0.00h 或 Invalid Time
+        calculateTotalStopTime(); 
 
         processedImageBase64 = "";
         document.getElementById('preview-img').style.display = 'none';
@@ -749,16 +859,23 @@
     function saveToCloud() {
         if(isRecording) manualStopVoice();
 
-        const machine = document.getElementById('input-machine').value;
+        // 機台使用選單值
+        const machine = document.getElementById('input-machine').value; 
         const stopTimeFull = document.getElementById('input-stop-time-full').value; 
         const startTimeFull = document.getElementById('input-start-time-full').value; 
-        const totalTime = document.getElementById('input-total-time').value; // 傳送自動計算的值
+        const totalTime = document.getElementById('input-total-time').value; 
         const formNo = document.getElementById('input-form-no').value;
         const reason = document.getElementById('input-reason').value;
         const solution = document.getElementById('input-solution').value; 
 
         if(!processedImageBase64 && !machine && !reason && !solution) {
             alert("Empty! Please fill in machine info/notes or take a photo."); return;
+        }
+        
+        // 增加一個機台未選取的檢查
+        if (machine.trim() === "") {
+            alert("請選擇 Machine (機台)。");
+            return;
         }
 
         const scriptUrl = `https://script.google.com/macros/s/${FIXED_SCRIPT_ID}/exec`;
@@ -772,7 +889,7 @@
             machine: machine,
             stopTimeFull: stopTimeFull,
             startTimeFull: startTimeFull,
-            totalTime: totalTime, // 傳送計算結果
+            totalTime: totalTime, 
             formNo: formNo,
             reason: reason, 
             solution: solution, 
