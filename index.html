@@ -23,7 +23,7 @@
             display: flex; justify-content: center; min-height: 100vh;
         }
 
-        /* --- 模組化樣式 --- */
+        /* --- 模組化樣式 (保持不變) --- */
         #login-screen, #status-modal, #settings-modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.6); z-index: 9999;
@@ -69,11 +69,11 @@
         .btn-cam { background-color: #FF5722; color: white; } 
         .btn-gallery { background-color: #FFC107; color: #333; } 
 
-        /* --- 圖片預覽 (修正) --- */
+        /* --- 圖片預覽 (保持修正) --- */
         #preview-container { max-width: 100%; height: auto; }
         #preview-img { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; }
 
-        /* --- 輸入/表單樣式 --- */
+        /* --- 輸入/表單樣式 (保持不變) --- */
         .input-group { margin-bottom: 8px; display: flex; flex-direction: column; }
         .input-label { font-weight: bold; font-size: 0.9rem; color: #333; margin-bottom: 4px; }
         .text-input, textarea, select.text-input { 
@@ -111,7 +111,7 @@
             cursor: pointer;
         }
 
-        /* --- 底部按鈕美學優化 --- */
+        /* --- 底部按鈕美學優化 (保持不變) --- */
         .footer-btns { display: flex; flex-direction: column; gap: 8px; margin-top: 15px; padding-bottom: 20px;}
         .btn-main { 
             width: 100%; 
@@ -127,46 +127,9 @@
         .btn-main:active { transform: scale(0.99); }
         
         .btn-copy { background-color: var(--copy-color); } 
-        .btn-copy:hover { background-color: #f57c00; }
-
         .btn-save { background-color: var(--primary-color); } 
-        .btn-save:hover { background-color: #43a047; }
-
         .btn-view { background-color: var(--view-color); color: white; } 
-        .btn-view:hover { background-color: #000000; }
-
         .btn-drive { background-color: var(--copy-color); } 
-        .btn-drive:hover { background-color: #f57c00; }
-        
-        /* --- 設定內排版修正 --- */
-        #machine-list-container {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr); 
-            gap: 5px;
-            margin-top: 10px;
-        }
-        .machine-list-item {
-            display: flex;
-            flex-direction: column; 
-            justify-content: space-between;
-            align-items: center;
-            padding: 6px;
-            background: #f1f1f1;
-            border-radius: 4px;
-            text-align: center;
-            font-size: 0.8em;
-            word-break: break-all;
-        }
-        .btn-remove-item {
-            background: var(--danger-color);
-            color: white;
-            border: none;
-            padding: 2px 5px;
-            border-radius: 3px;
-            cursor: pointer;
-            margin-top: 3px;
-            font-weight: bold;
-        }
         
         .hidden { display: none !important; }
     </style>
@@ -193,7 +156,7 @@
     </div>
 
     <div id="app-screen" style="display: none;">
-        <div class="author-header">Author: DERER LIN (v3.0)</div>
+        <div class="author-header">Author: DERER LIN (v3.1)</div>
 
         <div class="header">
             <div class="header-btn" onclick="logout()" title="Lock / Logout (鎖定/登出)">🔒</div>
@@ -203,7 +166,7 @@
             <div class="header-btn" onclick="openSettings()" title="Settings (設定)">⚙️</div>
         </div>
 
-        <div class="input-group card">
+        <div class="input-group">
             <label class="input-label" for="input-employee-id">Employee ID (員工編號):</label>
             <input type="text" id="input-employee-id" class="text-input" placeholder="儲存後不會清除">
         </div>
@@ -665,7 +628,7 @@
         const unitSelect = document.getElementById('total-time-unit');
         const unit = unitSelect ? unitSelect.value : 'h';
 
-        // 修正: 檢查是否任一欄位為空
+        // 修正: 檢查是否任一欄位為空 -> 清空
         if (stopTimeStr === "" || startTimeStr === "") {
              totalTimeInput.value = "";
              totalTimeInput.style.backgroundColor = '#eee';
@@ -698,7 +661,7 @@
         let totalTimeFormatted;
         if (unit === 'h') {
              const diffHours = diffMs / (1000 * 60 * 60);
-             totalTimeFormatted = diffHours.toFixed(2) + " hr"; // 修正單位
+             totalTimeFormatted = diffHours.toFixed(2) + " hr";
         } else {
              totalTimeFormatted = diffMinutes + " min";
         }
@@ -731,7 +694,7 @@
         }
     }
     
-    // ================= 複製格式化訊息 (修正格式與內容) =================
+    // ================= 複製格式化訊息 (最終格式修正) =================
     
     function extractDateAndTime(fullTimeStr) {
         const match = fullTimeStr.match(DATETIME_REGEX);
@@ -746,17 +709,15 @@
     function copyFormattedInfo() {
         const totalTimeInput = document.getElementById('input-total-time');
         const totalTimeMinutes = totalTimeInput.dataset.diffMinutes;
-        const totalTimeDisplay = totalTimeInput.value;
-        const totalTimeHours = totalTimeMinutes && totalTimeMinutes > 0 ? (totalTimeMinutes / 60).toFixed(2) : 'N/A';
         
-        // 格式化 Total Stop Time
         let totalTimeFormat;
         if (totalTimeMinutes === undefined || totalTimeMinutes === '0' || totalTimeMinutes === '') {
             totalTimeFormat = 'N/A';
         } else {
+            const totalTimeHours = (totalTimeMinutes / 60).toFixed(2);
             totalTimeFormat = `${totalTimeMinutes} Min / ${totalTimeHours} hr`;
         }
-
+        
         // 1. 蒐集資料
         const employeeId = document.getElementById('input-employee-id').value || "N/A";
         const machine = document.getElementById('input-machine').value || "N/A";
@@ -772,10 +733,9 @@
         const stopInfo = extractDateAndTime(stopTimeFull);
         const startInfo = extractDateAndTime(startTimeFull);
         
-        // 修正 Start Time 顯示：如果 Start Time 為空，顯示 N/A，並註明 Stop Time
         const startDisplay = startTimeFull === "" ? `N/A (- ${stopTimeFull})` : startTimeFull;
 
-        // 3. 構建輸出字串 (Concern Section 放在 Machine 之後, 多行文字用 - 開頭)
+        // 3. 構建輸出字串 (最終格式)
         const output = `
 Employee ID :
 - ${employeeId}
@@ -811,16 +771,15 @@ Self Actions:
         });
     }
 
-    // ================= 查詢與覆蓋邏輯 (新增) =================
+    // ================= 查詢與覆蓋邏輯 (修正) =================
     
-    // 設置/清除表單的查詢狀態
     function setQueryState(rowIndex, machine, photoUrl) {
         document.getElementById('queried-row-index').value = rowIndex;
         
         const saveBtn = document.getElementById('saveBtn');
         if (rowIndex > 0) {
              saveBtn.innerText = "💾 Save (OVERWRITE Row " + rowIndex + ")";
-             saveBtn.classList.add('btn-copy'); // 覆蓋時使用橘色
+             saveBtn.classList.add('btn-copy'); 
              saveBtn.classList.remove('btn-save');
         } else {
              saveBtn.innerText = "💾 Save to Cloud";
@@ -828,10 +787,7 @@ Self Actions:
              saveBtn.classList.add('btn-save');
         }
         
-        // 如果有照片，設置 photoUrl (假設 Apps Script 返回 photoUrl)
         if (photoUrl) {
-            // 注意: 此處需要額外的邏輯來處理圖片預覽
-            // 由於 Apps Script 查詢無法直接返回 Base64 數據，我們只顯示預覽鏈接
             alert("該筆紀錄帶有圖片，若儲存將覆蓋原圖。");
         }
     }
@@ -846,6 +802,8 @@ Self Actions:
 
         setQueryState(-1);
         showStatus('loading', 'Searching...', '資料查詢中...');
+        
+        // 修正: 呼叫 Apps Script 的 doGet 服務
         const scriptUrl = `https://script.google.com/macros/s/${FIXED_SCRIPT_ID}/exec?action=query&formNo=${encodeURIComponent(formNo)}`;
 
         fetch(scriptUrl)
@@ -854,7 +812,6 @@ Self Actions:
                 if (res.result === 'success' && res.data) {
                     const data = res.data;
                     
-                    // 檢查數據是否齊全 (至少應該有行號)
                     if (data.rowIndex && data.rowIndex > 0) {
                         
                         // 1. 設置查詢狀態
@@ -888,7 +845,6 @@ Self Actions:
                 showStatus('error', 'Network Error', '查詢時發生網路錯誤。');
             })
             .finally(() => {
-                // 自動關閉狀態視窗
                 setTimeout(() => { closeStatusModal(); }, 3000);
             });
     }
@@ -897,7 +853,6 @@ Self Actions:
     function saveToCloud() {
         if(isRecording) manualStopVoice();
 
-        // 獲取所有欄位
         const employeeId = document.getElementById('input-employee-id').value; 
         const machine = document.getElementById('input-machine').value; 
         const stopTimeFull = document.getElementById('input-stop-time-full').value; 
@@ -908,10 +863,10 @@ Self Actions:
         const concernSection = document.getElementById('input-concern-section').value;
         const solution = document.getElementById('input-solution').value; 
         const selfActions = document.getElementById('input-self-actions').value;
-        const rowIndex = document.getElementById('queried-row-index').value; // 獲取行號
+        const rowIndex = document.getElementById('queried-row-index').value;
 
         // 檢查
-        if(!processedImageBase64 && !machine && !reason && !solution) {
+        if(!processedImageBase64 && !machine && !reason && !solution && !concernSection && !selfActions) { // 修正：檢查所有文字欄位
             alert("Empty! Please fill in machine info/notes or take a photo."); return;
         }
         if (machine.trim() === "") {
@@ -928,7 +883,7 @@ Self Actions:
         showStatus('loading', 'Uploading...', '資料上傳中...');
 
         const data = { 
-            action: rowIndex > 0 ? 'overwrite' : 'append', // 關鍵：如果行號 > 0，則執行覆蓋
+            action: rowIndex > 0 ? 'overwrite' : 'append', 
             rowIndex: rowIndex,
             image: processedImageBase64, 
             employeeId: employeeId, 
@@ -953,7 +908,7 @@ Self Actions:
             if (res.result === 'success') {
                 showStatus('success', 'Upload Success!', `資料已成功 ${rowIndex > 0 ? '覆蓋' : '新增'}！`);
                 clearInputs();
-                setQueryState(-1); // 重設查詢狀態
+                setQueryState(-1);
                 setTimeout(() => { closeStatusModal(); }, 2000);
             } else {
                 showStatus('error', 'Upload Failed', `上傳失敗：${res.error || '未知的錯誤。'}`);
@@ -968,9 +923,7 @@ Self Actions:
         });
     }
 
-    // ... (其他圖片/語音/輔助函數省略) ...
     function clearInputs() {
-        // ... (清除邏輯)
         document.getElementById('input-machine').value = ""; 
         document.getElementById('input-total-time').value = "";
         document.getElementById('input-form-no').value = "";
@@ -985,23 +938,24 @@ Self Actions:
         document.getElementById('input-total-time').style.backgroundColor = '#eee';
         calculateTotalStopTime(); 
         
-        document.getElementById('query-form-no').value = ""; // 清除查詢欄位
-        setQueryState(-1); // 清除查詢狀態
+        document.getElementById('query-form-no').value = ""; 
+        setQueryState(-1);
 
         processedImageBase64 = "";
         document.getElementById('preview-img').style.display = 'none';
         document.querySelector('.placeholder').style.display = 'block';
         applySettings();
     }
-    
+
     function viewExcel() {
         const url = `https://docs.google.com/spreadsheets/d/${FIXED_SHEET_ID}/edit#gid=0`;
         window.open(url, '_blank');
     }
 
     function viewDriveFolder() {
+        // 修正: 確保 URL 正確
         if(FIXED_FOLDER_ID && FIXED_FOLDER_ID.trim() !== "") {
-            window.open("https://drive.google.com/drive/folders/" + FIXED_FOLDER_ID, '_blank');
+            window.open(`https://drive.google.com/drive/folders/${FIXED_FOLDER_ID}`, '_blank');
         } else {
             alert("Folder ID not set.");
         }
