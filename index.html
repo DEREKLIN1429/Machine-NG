@@ -222,16 +222,18 @@
         .record-item:hover {
             background-color: #f9f9f9;
         }
-        .record-item .form-no {
+        .record-item .stop-time-display {
             font-weight: bold;
-            color: var(--copy-color);
+            color: var(--copy-color); /* 突出顯示 Stop Time */
             flex-shrink: 0;
             padding-right: 10px;
+            font-size: 0.95em;
         }
         .record-item .details {
             font-size: 0.85rem;
             color: #666;
             text-align: right;
+            line-height: 1.4;
         }
 
 
@@ -783,7 +785,7 @@
     }
 
 
-    // ================= 資料回填與最近紀錄邏輯 (新增功能) =================
+    // ================= 資料回填與最近紀錄邏輯 (修正顯示) =================
 
     /**
      * 載入最近的 NG 紀錄並顯示在底部列表。
@@ -802,16 +804,17 @@
                         item.className = 'record-item';
                         item.setAttribute('onclick', `populateForm('${record.formNo}')`);
                         
-                        // 如果 startTime 為空，顯示 "-"
                         const startTimeDisplay = record.startTime ? record.startTime : '-';
                         const totalTimeDisplay = record.totalTime ? ` (${record.totalTime} min)` : '';
+                        const machineDisplay = record.machine || 'N/A';
+                        const formNoDisplay = record.formNo || 'N/A';
+                        const concernDisplay = record.concernSection || 'N/A';
 
 
                         item.innerHTML = `
-                            <span class="form-no">#${record.formNo}</span>
-                            <div class="details">
-                                <div><span style="color:#333;">${record.machine}</span> - ${record.concernSection}</div>
-                                <div>Stop: ${record.stopTime}${totalTimeDisplay}</div>
+                            <span class="stop-time-display">${record.stopTime}</span> <div class="details">
+                                <div><span style="font-weight: bold; color:#333;">#${formNoDisplay}</span> - ${machineDisplay}</div>
+                                <div>Section: ${concernDisplay} | Start: ${startTimeDisplay}${totalTimeDisplay}</div>
                             </div>
                         `;
                         listContainer.appendChild(item);
