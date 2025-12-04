@@ -137,6 +137,36 @@
         }
         
         .hidden { display: none !important; }
+        
+        /* --- 新增：歷史紀錄列表樣式 --- */
+        .record-item {
+            padding: 10px;
+            margin-bottom: 5px;
+            background-color: #f1f1f1;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            border-left: 5px solid var(--primary-color);
+        }
+        .record-item:hover {
+            background-color: #e3e3e3;
+        }
+        .record-item-main {
+            font-weight: bold;
+            color: #333;
+            display: flex;
+            justify-content: space-between;
+        }
+        .record-item-sub {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 3px;
+        }
+
+        /* 編輯模式時，按鈕顯示紅色邊框 */
+        .edit-mode-active {
+            border: 3px solid var(--danger-color) !important;
+        }
     </style>
 </head>
 <body>
@@ -211,9 +241,9 @@
                 <label class="input-label" for="input-stop-time-full">Stop time : (DD/MM/YYYY hh:mm)</label>
                 <div class="time-input-row">
                     <input type="text" id="input-stop-time-full" class="text-input" 
-                           placeholder="請點右側按鈕或手動輸入" oninput="calculateTotalStopTime()">
+                                placeholder="請點右側按鈕或手動輸入" oninput="calculateTotalStopTime()">
                     <button type="button" class="btn-update-time" 
-                            onclick="updateSingleTime('input-stop-time-full')" title="Set Current Time">
+                                onclick="updateSingleTime('input-stop-time-full')" title="Set Current Time">
                         <span style="font-size: 1.1em;">⏱️</span>
                     </button>
                 </div>
@@ -222,9 +252,9 @@
                 <label class="input-label" for="input-start-time-full">Start time : (DD/MM/YYYY hh:mm)</label>
                 <div class="time-input-row">
                     <input type="text" id="input-start-time-full" class="text-input" 
-                           placeholder="請點右側按鈕或手動輸入" oninput="calculateTotalStopTime()">
+                                placeholder="請點右側按鈕或手動輸入" oninput="calculateTotalStopTime()">
                     <button type="button" class="btn-update-time" 
-                            onclick="updateSingleTime('input-start-time-full')" title="Set Current Time">
+                                onclick="updateSingleTime('input-start-time-full')" title="Set Current Time">
                         <span style="font-size: 1.1em;">⏱️</span>
                     </button>
                 </div>
@@ -268,7 +298,7 @@
                 </div>
             </div>
             
-             <div class="input-group">
+            <div class="input-group">
                 <label class="input-label" for="input-self-actions">Self Actions:</label>
                 <textarea id="input-self-actions" placeholder="e.g. check and inform maintenance team"></textarea>
                 <div class="voice-control-group">
@@ -285,7 +315,16 @@
                 <option value="hi-IN">Hindi (印地語)</option>
             </select>
         </div>
-        
+
+        <div class="card" id="history-card" style="margin-top: 20px;">
+            <span class="section-title" style="display: flex; justify-content: space-between; align-items: center;">
+                3. Latest Repair Records (最新紀錄)
+                <span id="load-records-btn" onclick="loadLatestRecords(true)" class="header-btn" title="Refresh">🔄</span>
+            </span>
+            <div id="latest-records-container" style="max-height: 300px; overflow-y: auto; padding: 5px 0;">
+                <p style="text-align: center; color: #888; font-size: 0.9em;">點擊 🔄 載入資料...</p>
+            </div>
+        </div>
         <div class="footer-btns">
             <button class="btn-main btn-copy" onclick="copyFormattedInfo()">📋 Copy Info</button>
             <button class="btn-main btn-save" id="saveBtn" onclick="saveToCloud()">💾 Save to Cloud</button>
@@ -344,7 +383,7 @@
                         </div>
                 </div>
                 
-                 <div class="modal-group" style="border: 1px solid #ddd; padding: 10px; border-radius: 8px;">
+                <div class="modal-group" style="border: 1px solid #ddd; padding: 10px; border-radius: 8px;">
                     <label style="font-weight: bold; margin-bottom: 10px; display: block; color: var(--copy-color);">5. Machine List Management<br>(機器列表管理)</label>
                     
                     <input type="text" id="new-machine-name" class="login-input" style="margin: 0 0 5px 0;" placeholder="Add new machine name (e.g., CM4)">
@@ -372,7 +411,6 @@
     const CONCERN_LIST_KEY = "cfg_concern_list"; 
     const EMPLOYEE_ID_KEY = "cfg_employee_id"; 
     const DEFAULT_MACHINE_LIST = ["BM5", "BM6", "BM7", "BM21", "BM22", "BM23", "CA3", "CA4", "CM1", "CM2", "CM3"];
-    // 修正 Concern List 初始值
     const DEFAULT_CONCERN_LIST = ["Mixing", "Extrusion", "Cutting", "Calendering"]; 
     const DEFAULT_VOICE_TIMEOUT = 1.5;
 
@@ -386,8 +424,9 @@
     let recognition = null;
     let isRecording = false; 
     let activeTextAreaId = null; 
-    let snapshotText = "";       
+    let snapshotText = "";        
     let punctuationTimer = null; 
+    let currentEditFormNo = null; // 新增：用於追蹤當前正在編輯的 Form No
 
     document.addEventListener('DOMContentLoaded', () => {
         if (typeof initApp === 'function') {
@@ -424,6 +463,7 @@
         if(isLoggedIn === "true") {
             document.getElementById('app-screen').style.display = 'block';
             applySettings();
+            loadLatestRecords(false); // 啟動時靜默載入資料
         } else {
             document.getElementById('login-screen').style.display = 'flex';
         }
@@ -545,6 +585,7 @@
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('app-screen').style.display = 'block';
             applySettings();
+            loadLatestRecords(false); // 登入成功後載入資料
         } else {
             alert("Wrong Password! (密碼錯誤)");
         }
@@ -594,7 +635,7 @@
             container.classList.add(ratioClass);
             tag.innerText = `Ratio: ${ratio.replace("/", ":")}`;
         } else {
-             tag.innerText = "Ratio: Full (Original)";
+            tag.innerText = "Ratio: Full (Original)";
         }
         
         calculateTotalStopTime();
@@ -717,7 +758,7 @@
         const date = new Date(year, month, day, hour, minute);
 
         if (date.getFullYear() !== year || date.getMonth() !== month || date.getDate() !== day) {
-             return null;
+              return null;
         }
 
         return date;
@@ -731,10 +772,10 @@
         const unit = unitSelect ? unitSelect.value : 'h';
 
         if (stopTimeStr === "" || startTimeStr === "") {
-             totalTimeInput.value = "";
-             totalTimeInput.style.backgroundColor = '#eee';
-             totalTimeInput.dataset.diffMinutes = ''; 
-             return;
+              totalTimeInput.value = "";
+              totalTimeInput.style.backgroundColor = '#eee';
+              totalTimeInput.dataset.diffMinutes = ''; 
+              return;
         }
         
         const stopDate = parseCustomDateTime(stopTimeStr);
@@ -761,10 +802,10 @@
         
         let totalTimeFormatted;
         if (unit === 'h') {
-             const diffHours = diffMs / (1000 * 60 * 60);
-             totalTimeFormatted = diffHours.toFixed(2) + " hr";
+              const diffHours = diffMs / (1000 * 60 * 60);
+              totalTimeFormatted = diffHours.toFixed(2) + " hr";
         } else {
-             totalTimeFormatted = diffMinutes + " min";
+              totalTimeFormatted = diffMinutes + " min";
         }
         
         totalTimeInput.value = totalTimeFormatted;
@@ -787,8 +828,8 @@
         const fullDateTime = getFullDateTimeString(new Date());
         
         if (targetElement) {
-             targetElement.value = fullDateTime;
-             calculateTotalStopTime();
+              targetElement.value = fullDateTime;
+              calculateTotalStopTime();
         }
     }
     
@@ -797,9 +838,9 @@
     function extractDateAndTime(fullTimeStr) {
         const match = fullTimeStr.match(DATETIME_REGEX);
         if (match) {
-             const datePart = `${match[1]}/${match[2]}/${match[3]}`; 
-             const timePart = `${match[4]}:${match[5]}`; 
-             return { date: datePart, time: timePart };
+              const datePart = `${match[1]}/${match[2]}/${match[3]}`; 
+              const timePart = `${match[4]}:${match[5]}`; 
+              return { date: datePart, time: timePart };
         }
         return { date: '', time: '' }; 
     }
@@ -881,6 +922,14 @@ ${selfActions.replace(/\n/g, '\n')}
         document.getElementById('input-stop-time-full').value = "";
         document.getElementById('input-start-time-full').value = "";
         
+        // 新增：清除編輯模式相關狀態
+        currentEditFormNo = null;
+        const formNoInput = document.getElementById('input-form-no');
+        formNoInput.readOnly = false;
+        formNoInput.value = "";
+        formNoInput.style.backgroundColor = '#ffffff';
+        document.querySelectorAll('.record-item').forEach(item => item.classList.remove('edit-mode-active'));
+        
         document.getElementById('input-total-time').style.backgroundColor = '#eee';
         calculateTotalStopTime(); 
 
@@ -950,6 +999,7 @@ ${selfActions.replace(/\n/g, '\n')}
             if (res.result === 'success') {
                 showStatus('success', 'Upload Success!', `資料已成功 ${action}！`);
                 clearInputs();
+                loadLatestRecords(false); // 儲存成功後重新載入列表
                 setTimeout(() => { closeStatusModal(); }, 2000);
             } else {
                 showStatus('error', 'Upload Failed', `上傳失敗：${res.error || '未知的錯誤。'}`);
@@ -1041,9 +1091,9 @@ ${selfActions.replace(/\n/g, '\n')}
         document.querySelector('.placeholder').style.display = 'none';
 
         if(isFull) {
-             const container = document.getElementById('preview-container');
-             container.classList.remove("ratio-4-3", "ratio-16-9", "ratio-9-16", "ratio-1-1"); 
-             container.style.aspectRatio = `${canvas.width} / ${canvas.height}`;
+              const container = document.getElementById('preview-container');
+              container.classList.remove("ratio-4-3", "ratio-16-9", "ratio-9-16", "ratio-1-1"); 
+              container.style.aspectRatio = `${canvas.width} / ${canvas.height}`;
         }
     }
 
@@ -1059,10 +1109,10 @@ ${selfActions.replace(/\n/g, '\n')}
         if (isRecording && activeTextAreaId === targetId) {
             manualStopVoice(); 
         } else if (isRecording && activeTextAreaId !== targetId) {
-             if(confirm(`目前正在錄製其他欄位，確定要切換到 [${targetArea.previousElementSibling.innerText.trim()}] 嗎？`)) {
+              if(confirm(`目前正在錄製其他欄位，確定要切換到 [${targetArea.previousElementSibling.innerText.trim()}] 嗎？`)) {
                 manualStopVoice();
                 startVoice(btn, targetArea, targetId);
-             }
+              }
         } else {
             startVoice(btn, targetArea, targetId);
         }
@@ -1155,8 +1205,8 @@ ${selfActions.replace(/\n/g, '\n')}
         if(punctuationTimer) clearTimeout(punctuationTimer);
         
         document.querySelectorAll('.btn-voice').forEach(b => {
-             b.classList.remove('recording');
-             b.innerText = "🎤 語音輸入";
+              b.classList.remove('recording');
+              b.innerText = "🎤 語音輸入";
         });
         
         isRecording = false;
@@ -1183,19 +1233,141 @@ ${selfActions.replace(/\n/g, '\n')}
     }
 
     function closeStatusModal() { document.getElementById('status-modal').style.display = 'none'; }
+    
+    
+    // ================= 新增：歷史紀錄載入與編輯功能 =================
+    
+    function loadLatestRecords(showAlert) {
+        const container = document.getElementById('latest-records-container');
+        // GAS 的 URL 必須使用 GET 請求的格式
+        const scriptUrl = `https://script.google.com/macros/s/${FIXED_SCRIPT_ID}/exec`;
 
-    function viewExcel() {
-        const url = `https://docs.google.com/spreadsheets/d/${FIXED_SHEET_ID}/edit#gid=0`;
-        window.open(url, '_blank');
+        container.innerHTML = '<p style="text-align: center; color: #888; font-size: 0.9em;">載入中...</p>';
+
+        fetch(scriptUrl + "?action=loadRecords") // 使用 action 參數觸發 GAS 的 doGet 邏輯
+            .then(r => r.json())
+            .then(res => {
+                if (res.result === 'success') {
+                    renderRecords(res.data);
+                    if (showAlert) alert(`✅ 成功載入 ${res.data.length} 筆最新資料。`);
+                } else {
+                    container.innerHTML = `<p style="text-align: center; color: ${var(--danger-color)}; font-size: 0.9em;">載入失敗: ${res.error || '請檢查 GAS Log'}</p>`;
+                    if (showAlert) alert(`❌ 資料載入失敗: ${res.error}`);
+                }
+            })
+            .catch(e => {
+                console.error("Fetch records error:", e);
+                container.innerHTML = `<p style="text-align: center; color: ${var(--danger-color)}; font-size: 0.9em;">網路錯誤，無法連線。</p>`;
+                if (showAlert) alert("❌ 網路連線錯誤，無法載入資料。");
+            });
     }
 
-    function viewDriveFolder() {
-        if(FIXED_FOLDER_ID && FIXED_FOLDER_ID.trim() !== "") {
-            window.open(`https://drive.google.com/drive/folders/${FIXED_FOLDER_ID}`, '_blank');
-        } else {
-            alert("Folder ID not set.");
+    function renderRecords(records) {
+        const container = document.getElementById('latest-records-container');
+        container.innerHTML = '';
+
+        if (records.length === 0) {
+            container.innerHTML = '<p style="text-align: center; color: #888; font-size: 0.9em;">尚無紀錄。</p>';
+            return;
+        }
+
+        records.forEach(record => {
+            const item = document.createElement('div');
+            item.className = 'record-item';
+            item.setAttribute('data-form-no', record.formNo);
+            item.onclick = () => loadRecordToEdit(record.formNo);
+            
+            // 確保總時間顯示正確，Total Time 是分鐘數 (由 GAS 返回)
+            let totalTimeDisplay = "N/A";
+            if (record.totalTime !== "") {
+                const totalMinutes = parseInt(record.totalTime, 10);
+                if (!isNaN(totalMinutes) && totalMinutes > 0) {
+                    const totalHours = (totalMinutes / 60).toFixed(2);
+                    totalTimeDisplay = `${totalMinutes} min / ${totalHours} hr`;
+                } else {
+                     totalTimeDisplay = "0 min / 0.00 hr";
+                }
+            }
+
+
+            item.innerHTML = `
+                <div class="record-item-main">
+                    <span>機台: ${record.machine || 'N/A'}</span>
+                    <span>單號: ${record.formNo || 'N/A'}</span>
+                </div>
+                <div class="record-item-sub">
+                    部門: ${record.concern || 'N/A'} | 總時長: ${totalTimeDisplay}
+                </div>
+                <div class="record-item-sub">
+                    停機: ${record.stopTime || 'N/A'}
+                </div>
+            `;
+            container.appendChild(item);
+        });
+        
+        // 載入完成後，如果正在編輯，高亮顯示該項目
+        if (currentEditFormNo) {
+            const activeItem = document.querySelector(`.record-item[data-form-no="${currentEditFormNo}"]`);
+            if (activeItem) {
+                activeItem.classList.add('edit-mode-active');
+            }
         }
     }
+
+    function loadRecordToEdit(formNo) {
+        // 1. 清除現有編輯狀態/高亮
+        clearInputs();
+        
+        // 2. 獲取資料並填充表單 (使用新的 action=getRow 邏輯)
+        const scriptUrl = `https://script.google.com/macros/s/${FIXED_SCRIPT_ID}/exec`;
+        showStatus('loading', 'Loading Record...', `正在載入單號 ${formNo} 的舊資料...`);
+
+        // 使用不同的 action 參數來觸發 GAS 中的 doGetRow 邏輯
+        fetch(scriptUrl + "?action=getRow&formNo=" + encodeURIComponent(formNo))
+            .then(r => r.json())
+            .then(res => {
+                closeStatusModal(); 
+                if (res.result === 'success') {
+                    const data = res.data;
+                    
+                    // 填充欄位
+                    document.getElementById('input-employee-id').value = data.employeeId;
+                    document.getElementById('input-machine').value = data.machine;
+                    document.getElementById('input-stop-time-full').value = data.stopTimeFull;
+                    document.getElementById('input-start-time-full').value = data.startTimeFull;
+                    document.getElementById('input-form-no').value = data.formNo; // 鎖定單號
+                    document.getElementById('input-reason').value = data.reason;
+                    document.getElementById('input-concern-section').value = data.concernSection;
+                    document.getElementById('input-solution').value = data.solution;
+                    document.getElementById('input-self-actions').value = data.selfActions;
+                    
+                    // 設定編輯狀態
+                    currentEditFormNo = formNo;
+                    document.getElementById('input-form-no').readOnly = true;
+                    document.getElementById('input-form-no').style.backgroundColor = '#fff0f0';
+                    
+                    // 高亮當前編輯項目
+                    const activeItem = document.querySelector(`.record-item[data-form-no="${formNo}"]`);
+                    if (activeItem) {
+                        activeItem.classList.add('edit-mode-active');
+                    }
+                    
+                    // 重新計算 Total Time
+                    calculateTotalStopTime();
+                    
+                    alert(`✅ 成功載入單號 ${formNo}。目前為編輯模式，請更新或補充資料。`);
+
+                } else {
+                    alert(`❌ 載入失敗: ${res.error}`);
+                }
+            })
+            .catch(e => {
+                closeStatusModal(); 
+                console.error("Load record error:", e);
+                alert("❌ 網路連線錯誤或 Apps Script 錯誤。");
+            });
+    }
+
 </script>
 
 </body>
