@@ -69,7 +69,6 @@
         .time-input-row { display: flex; align-items: center; gap: 5px; }
         .btn-update-time { padding: 10px 12px; border: none; background-color: #00bcd4; color: white; border-radius: 6px; cursor: pointer; font-weight: bold; line-height: 1; }
         
-        /* 修正 Total Time 樣式，容納重新計算按鈕 */
         .total-time-input-group { display: flex; gap: 5px; align-items: center; }
         .total-time-input-group #input-total-time { flex-grow: 1; }
         .total-time-input-group .btn-calc { padding: 10px; background: #607D8B; color: white; border: none; border-radius: 6px; cursor: pointer; }
@@ -101,7 +100,9 @@
         .record-item .stop-time-display { font-weight: bold; color: #333; font-size: 0.9em; }
         .record-item .details { font-size: 0.85rem; color: #777; text-align: right; line-height: 1.4; width: 55%; }
         .hidden { display: none !important; }
-        .btn-voice.recording { background-color: var(--danger-color); color: white; }
+        
+        .btn-voice.recording { background-color: var(--danger-color); color: white; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.8; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
@@ -167,7 +168,7 @@
     </div>
 
     <div id="app-screen" style="display: none;">
-        <div class="author-header">Author: DERER LIN (v3.9)</div>
+        <div class="author-header">Author: DERER LIN (v4.1 - IST)</div>
         <div class="header">
             <div class="header-btn" onclick="logout()" title="Logout">🔒</div>
             <div class="header-title"><h2>Machine-NG<br>重點事項紀錄</h2></div>
@@ -193,17 +194,28 @@
         </div>
         <div class="card" id="info-card">
             <span class="section-title">2. Machine NG Information</span>
+            
+            <div class="input-group">
+                <label class="input-label" style="color: #FF5722;">🗣️ Voice Language (語音語言):</label>
+                <select id="voice-lang-select" class="text-input" onchange="syncLanguageToSettings(this)">
+                    <option value="cmn-Hant-TW">Chinese (TW) - 繁體中文</option>
+                    <option value="en-US">English - 英文</option>
+                    <option value="ja-JP">Japanese - 日文</option>
+                    <option value="hi-IN">Hindi - 印地語</option>
+                </select>
+            </div>
+
             <div class="input-group"><label class="input-label">Machine :</label><select id="input-machine" class="text-input"></select></div>
             <div class="input-group"><label class="input-label">Repair Form No:</label><input type="text" id="input-form-no" class="text-input" placeholder="e.g. A69304"></div>
             <div class="time-component">
-                <label class="input-label">Stop time : (DD/MM/YYYY hh:mm)</label>
+                <label class="input-label">Stop time : (DD/MM/YYYY hh:mm) (IST)</label>
                 <div class="time-input-row">
                     <input type="text" id="input-stop-time-full" class="text-input" placeholder="請點右側按鈕或手動輸入" oninput="calculateTotalStopTime()">
                     <button type="button" class="btn-update-time" onclick="updateSingleTime('input-stop-time-full')"><span style="font-size: 1.1em;">⏱️</span></button>
                 </div>
             </div>
             <div class="time-component">
-                <label class="input-label">Start time : (DD/MM/YYYY hh:mm)</label>
+                <label class="input-label">Start time : (DD/MM/YYYY hh:mm) (IST)</label>
                 <div class="time-input-row">
                     <input type="text" id="input-start-time-full" class="text-input" placeholder="請點右側按鈕或手動輸入" oninput="calculateTotalStopTime()">
                     <button type="button" class="btn-update-time" onclick="updateSingleTime('input-start-time-full')"><span style="font-size: 1.1em;">⏱️</span></button>
@@ -230,7 +242,6 @@
                 <label class="input-label">Self Actions:</label><textarea id="input-self-actions"></textarea>
                 <div class="voice-control-group"><button type="button" class="btn-voice" data-target="input-self-actions" onclick="toggleVoice(this)">🎤 語音輸入</button></div>
             </div>
-            <select id="voice-lang-select" class="hidden"><option value="cmn-Hant-TW">中文</option><option value="en-US">English</option></select>
         </div>
 
         <div id="recent-records-container" class="card">
@@ -274,10 +285,9 @@
         
         loadSettingsToUI(); loadMachineListToUI(); loadConcernSectionToUI(); loadEmployeeID(); 
         
-        // 修正：初始化時設定預設值
         document.getElementById('input-stop-time-full').value = ""; document.getElementById('input-start-time-full').value = "";
         document.getElementById('input-total-time').value = ""; document.getElementById('input-total-time').style.backgroundColor = '#eee';
-        document.getElementById('total-time-unit').value = "min"; // 強制設為 min
+        document.getElementById('total-time-unit').value = "min"; 
         
         const isLoggedIn = localStorage.getItem("isLoggedIn");
         if(isLoggedIn === "true") {
@@ -288,22 +298,22 @@
         }
     }
 
-    // ... (登入、設定、列表管理等輔助函數) ...
-    // 請保留原有的: checkLogin, logout, openSettings, closeSettings, saveSettings, loadSettingsToUI, applySettings, syncLanguage
-    // getMachineList, saveMachineList, loadMachineListToUI, renderMachineListSettings, addMachine, removeMachine
-    // getConcernList, saveConcernList, loadConcernSectionToUI, renderConcernListSettings, addConcernSection, removeConcernSection
-    // loadEmployeeID, saveEmployeeID, calculateTotalStopTime, getFullDateTimeString, updateSingleTime, parseCustomDateTime
-    // triggerFile, handleFile, processImageWithCanvas, toggleVoice, startVoice, manualStopVoice, resetVoiceUI
-    // showStatus, closeStatusModal, copyFormattedInfo, viewExcel, viewDriveFolder, clearInputs
-
     function checkLogin(){const i=document.getElementById('loginPass').value;if(i===localStorage.getItem("app_password")){localStorage.setItem("isLoggedIn","true");document.getElementById('login-screen').style.display='none';document.getElementById('app-screen').style.display='block';applySettings();loadRecentRecords()}else{alert("Password incorrect.")}}
     function logout(){if(confirm("Logout?")){localStorage.removeItem("isLoggedIn");document.getElementById('app-screen').style.display='none';document.getElementById('login-screen').style.display='flex';document.getElementById('loginPass').value=''}}
     function openSettings(){document.getElementById('settings-modal').style.display='flex';renderConcernListSettings();renderMachineListSettings();document.getElementById('set-password').value=''}
     function closeSettings(){document.getElementById('settings-modal').style.display='none'}
     function saveSettings(){const p=document.getElementById('set-password').value.trim();if(p)localStorage.setItem("app_password",p);const t=parseFloat(document.getElementById('set-timeout').value);if(!isNaN(t))localStorage.setItem("cfg_timeout",t);localStorage.setItem("cfg_ratio",document.getElementById('set-ratio').value);localStorage.setItem("cfg_lang",document.getElementById('set-lang').value);alert("Saved!");closeSettings();applySettings()}
     function loadSettingsToUI(){document.getElementById('set-timeout').value=localStorage.getItem("cfg_timeout")||DEFAULT_VOICE_TIMEOUT;document.getElementById('set-ratio').value=localStorage.getItem("cfg_ratio")||'4/3';document.getElementById('set-lang').value=localStorage.getItem("cfg_lang")||'cmn-Hant-TW'}
-    function applySettings(){const r=localStorage.getItem("cfg_ratio")||'4/3';const c=document.getElementById('preview-container');c.className='';c.classList.add(r==='4/3'?'ratio-4-3':r==='16/9'?'ratio-16-9':r==='9/16'?'ratio-9-16':'ratio-1-1');document.getElementById('ratio-display-tag').innerText=`Ratio: ${r.replace('/',':')}`;document.getElementById('voice-lang-select').value=localStorage.getItem("cfg_lang")||'cmn-Hant-TW'}
+    
+    function applySettings(){
+        const r=localStorage.getItem("cfg_ratio")||'4/3';const c=document.getElementById('preview-container');c.className='';c.classList.add(r==='4/3'?'ratio-4-3':r==='16/9'?'ratio-16-9':r==='9/16'?'ratio-9-16':'ratio-1-1');document.getElementById('ratio-display-tag').innerText=`Ratio: ${r.replace('/',':')}`;
+        const l = localStorage.getItem("cfg_lang")||'cmn-Hant-TW';
+        document.getElementById('voice-lang-select').value = l;
+        document.getElementById('set-lang').value = l;
+    }
     function syncLanguage(){localStorage.setItem("cfg_lang",document.getElementById('set-lang').value);document.getElementById('voice-lang-select').value=document.getElementById('set-lang').value}
+    function syncLanguageToSettings(el){localStorage.setItem("cfg_lang",el.value);document.getElementById('set-lang').value=el.value}
+
     function getMachineList(){try{return JSON.parse(localStorage.getItem(MACHINE_LIST_KEY))||DEFAULT_MACHINE_LIST}catch(e){return DEFAULT_MACHINE_LIST}}
     function saveMachineList(l){localStorage.setItem(MACHINE_LIST_KEY,JSON.stringify(l));loadMachineListToUI();renderMachineListSettings()}
     function loadMachineListToUI(){const s=document.getElementById('input-machine');s.innerHTML='<option value="">-- Select --</option>';getMachineList().forEach(i=>{const o=document.createElement('option');o.value=i;o.innerText=i;s.appendChild(o)})}
@@ -319,11 +329,10 @@
     function loadEmployeeID(){const v=localStorage.getItem(EMPLOYEE_ID_KEY);if(v)document.getElementById('input-employee-id').value=v}
     function saveEmployeeID(){const v=document.getElementById('input-employee-id').value.trim();if(v)localStorage.setItem(EMPLOYEE_ID_KEY,v)}
     
-    // 修正：加強格式處理 trim()
     const DATETIME_REGEX = /^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})$/;
     function parseCustomDateTime(dtStr) {
         if(!dtStr) return null;
-        const s = dtStr.trim(); // 去除前後空白
+        const s = dtStr.trim(); 
         const match = s.match(DATETIME_REGEX);
         if (!match) return null;
         const day = parseInt(match[1], 10);
@@ -351,156 +360,119 @@
         t.style.background='#e6ffed';
     }
     
+    // 修正：產生印度時間 (IST) 
     function getFullDateTimeString(dateObj) {
-        const day = String(dateObj.getDate()).padStart(2, '0');
-        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-        const year = dateObj.getFullYear();
-        const hour = String(dateObj.getHours()).padStart(2, '0');
-        const minute = String(dateObj.getMinutes()).padStart(2, '0');
+        // 取得 UTC 時間 (毫秒)
+        const utc = dateObj.getTime() + (dateObj.getTimezoneOffset() * 60000);
+        // 加上印度偏移量 (UTC+5.5 小時 = 330 分鐘)
+        const istDate = new Date(utc + (3600000 * 5.5));
+        
+        const day = String(istDate.getDate()).padStart(2, '0');
+        const month = String(istDate.getMonth() + 1).padStart(2, '0');
+        const year = istDate.getFullYear();
+        const hour = String(istDate.getHours()).padStart(2, '0');
+        const minute = String(istDate.getMinutes()).padStart(2, '0');
         return `${day}/${month}/${year} ${hour}:${minute}`;
     }
+    function updateSingleTime(id){const n=new Date();document.getElementById(id).value=getFullDateTimeString(n);calculateTotalStopTime()}
+    function clearRecentRecords(){if(confirm("清除列表？")){document.getElementById('recent-records-list').innerHTML='<p style="text-align: center; color: #999;">(已清除)</p>'}}
+    function loadRecentRecords(){
+        const listContainer=document.getElementById('recent-records-list');listContainer.innerHTML='<p style="text-align: center; color: #999;">Loading...</p>';
+        fetch(`${GAS_URL}?action=loadRecords`).then(r=>r.json()).then(res=>{
+            listContainer.innerHTML='';if(res.result==='success'&&res.data.length>0){res.data.forEach(r=>{
+                const i=document.createElement('div');i.className='record-item';i.setAttribute('onclick',`populateForm('${r.formNo}')`);
+                i.innerHTML=`<div class="main-info-group"><span class="form-no-display">#${r.formNo||'N/A'}</span><span class="stop-time-display">🛑 ${r.stopTime||"No Stop Time"}</span></div><div class="details"><div>${r.machine||'N/A'} (${r.concernSection||'N/A'})</div><div>${r.startTime?'Start: '+r.startTime:''}</div></div>`;
+                listContainer.appendChild(i)
+            })}else{listContainer.innerHTML='<p style="text-align: center; color: #999;">無最近紀錄。</p>'}
+        }).catch(e=>{listContainer.innerHTML='<p style="text-align: center; color: red;">❌ 載入失敗。</p>'})
+    }
+    function populateForm(f){
+        if(!confirm(`回填單號 [${f}]?`))return;showStatus('loading','Loading...',f);
+        fetch(`${GAS_URL}?action=getRow&formNo=${encodeURIComponent(f)}`).then(r=>r.json()).then(res=>{
+            if(res.result==='success'){
+                const d=res.data;processedImageBase64="";document.getElementById('preview-img').style.display='none';document.querySelector('.placeholder').style.display='block';
+                document.getElementById('input-employee-id').value=d.employeeId;document.getElementById('input-machine').value=d.machine;
+                document.getElementById('input-form-no').value=d.formNo;document.getElementById('input-stop-time-full').value=d.stopTimeFull?d.stopTimeFull.trim():"";
+                document.getElementById('input-start-time-full').value=d.startTimeFull?d.startTimeFull.trim():"";document.getElementById('input-concern-section').value=d.concernSection;
+                document.getElementById('input-reason').value=d.reason;document.getElementById('input-solution').value=d.solution;document.getElementById('input-self-actions').value=d.selfActions;
+                calculateTotalStopTime();showStatus('success','Loaded','');setTimeout(closeStatusModal,1000)
+            }else{showStatus('error','Failed',res.error)}
+        }).catch(e=>showStatus('error','Error','Network'))
+    }
+    function triggerFile(id){document.getElementById(id).click()}
+    function handleFile(i){if(i.files[0]){showStatus('loading','Processing...','');const r=new FileReader();r.onload=e=>{const img=new Image();img.onload=()=>processImageWithCanvas(img);img.src=e.target.result};r.readAsDataURL(i.files[0])}}
+    function processImageWithCanvas(img){const c=document.createElement('canvas');let w=img.width;let h=img.height;if(w>MAX_IMAGE_WIDTH){h=Math.round(h*(MAX_IMAGE_WIDTH/w));w=MAX_IMAGE_WIDTH}c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);processedImageBase64=c.toDataURL('image/jpeg',0.8);document.getElementById('preview-img').src=processedImageBase64;document.getElementById('preview-img').style.display='block';document.querySelector('.placeholder').style.display='none';closeStatusModal()}
     
-    // 修正：更新時間後，強制重新計算
-    function updateSingleTime(id) {
-        const targetElement = document.getElementById(id);
-        const fullDateTime = getFullDateTimeString(new Date());
-        if (targetElement) {
-            targetElement.value = fullDateTime;
-            calculateTotalStopTime();
-        }
-    }
-
-    function clearRecentRecords() {
-        if(confirm("確定要清除畫面上的紀錄列表嗎？")) {
-            const list = document.getElementById('recent-records-list');
-            list.innerHTML = '<p style="text-align: center; color: #999;">(紀錄已清除)</p>';
-        }
-    }
-
-    function loadRecentRecords() {
-        const listContainer = document.getElementById('recent-records-list');
-        listContainer.innerHTML = '<p style="text-align: center; color: #999;"><div class="spinner" style="width: 20px; height: 20px;"></div> Loading...</p>';
-        fetch(`${GAS_URL}?action=loadRecords`).then(r => r.json()).then(res => {
-            listContainer.innerHTML = '';
-            if (res.result === 'success' && res.data.length > 0) {
-                res.data.forEach(record => {
-                    const item = document.createElement('div'); item.className = 'record-item'; item.setAttribute('onclick', `populateForm('${record.formNo}')`);
-                    const stopTimeDisplayRaw = record.stopTime || "No Stop Time";
-                    const machineDisplay = record.machine || 'N/A';
-                    const formNoDisplay = record.formNo || 'N/A';
-                    const concernDisplay = record.concernSection || 'N/A';
-                    const startTimeDisplay = record.startTime ? `Start: ${record.startTime}` : '';
-                    item.innerHTML = `<div class="main-info-group"><span class="form-no-display">#${formNoDisplay}</span><span class="stop-time-display">🛑 ${stopTimeDisplayRaw}</span></div><div class="details"><div>${machineDisplay} (${concernDisplay})</div><div>${startTimeDisplay}</div></div>`;
-                    listContainer.appendChild(item);
-                });
-            } else { listContainer.innerHTML = '<p style="text-align: center; color: #999;">無最近紀錄。</p>'; }
-        }).catch(e => { console.error(e); listContainer.innerHTML = '<p style="text-align: center; color: var(--danger-color);">❌ 載入紀錄失敗。</p>'; });
-    }
-
-    // 修正：回填資料時，去除空白並強制計算
-    function populateForm(formNo) {
-        if (!confirm(`確定要回填單號 [${formNo}] 的資料嗎？\n(將覆蓋當前輸入)`)) return;
-        showStatus('loading', 'Loading Record...', `載入單號 ${formNo}...`);
-        fetch(`${GAS_URL}?action=getRow&formNo=${encodeURIComponent(formNo)}`).then(r => r.json()).then(res => {
-            if (res.result === 'success') {
-                const data = res.data;
-                processedImageBase64 = ""; document.getElementById('preview-img').src = ""; document.getElementById('preview-img').style.display = 'none'; document.querySelector('.placeholder').style.display = 'block'; applySettings();
-                document.getElementById('input-employee-id').value = data.employeeId;
-                document.getElementById('input-machine').value = data.machine;
-                document.getElementById('input-form-no').value = data.formNo;
-                
-                // 去除可能存在的空白
-                document.getElementById('input-stop-time-full').value = data.stopTimeFull ? data.stopTimeFull.trim() : "";
-                document.getElementById('input-start-time-full').value = data.startTimeFull ? data.startTimeFull.trim() : "";
-                
-                document.getElementById('input-concern-section').value = data.concernSection;
-                document.getElementById('input-reason').value = data.reason;
-                document.getElementById('input-solution').value = data.solution;
-                document.getElementById('input-self-actions').value = data.selfActions;
-                
-                calculateTotalStopTime(); // 強制觸發計算
-                
-                showStatus('success', 'Load Complete', `單號 ${formNo} 回填完成。`);
-                setTimeout(() => { closeStatusModal(); }, 1000);
-            } else { showStatus('error', 'Load Failed', `失敗：${res.error}`); }
-        }).catch(e => { console.error(e); showStatus('error', 'Load Failed', '網路錯誤。'); });
-    }
-
-    function triggerFile(id) { document.getElementById(id).click(); }
-    function handleFile(input) {
-        const file = input.files[0];
-        if (!file) return;
-        showStatus('loading', 'Processing Photo...', '圖片處理中...');
-        const reader = new FileReader();
-        reader.onload = function(e) { const img = new Image(); img.onload = function() { processImageWithCanvas(img); }; img.src = e.target.result; };
-        reader.readAsDataURL(file);
-    }
-    function processImageWithCanvas(img) {
-        const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
-        const previewImg = document.getElementById('preview-img');
-        const placeholder = document.querySelector('.placeholder');
-        let width = img.width; let height = img.height;
-        if (width > MAX_IMAGE_WIDTH) { height = Math.round(height * (MAX_IMAGE_WIDTH / width)); width = MAX_IMAGE_WIDTH; }
-        canvas.width = width; canvas.height = height;
-        ctx.drawImage(img, 0, 0, width, height);
-        processedImageBase64 = canvas.toDataURL('image/jpeg', 0.8);
-        previewImg.src = processedImageBase64; previewImg.style.display = 'block'; placeholder.style.display = 'none';
-        showStatus('success', 'Photo Ready', '圖片已壓縮並準備上傳。'); setTimeout(() => { closeStatusModal(); }, 1000);
-    }
+    // ================= 語音輸入邏輯 =================
     function toggleVoice(button) {
-        if (!('webkitSpeechRecognition' in window)) { alert("抱歉，你的瀏覽器不支援語音輸入功能（請使用 Chrome 瀏覽器）。"); return; }
+        if (!('webkitSpeechRecognition' in window)) { alert("請使用 Chrome 瀏覽器"); return; }
         if (isRecording) { manualStopVoice(); } else { activeTextAreaId = button.dataset.target; startVoice(button); }
     }
+
     function startVoice(button) {
         isRecording = true; button.classList.add('recording'); button.innerHTML = '🔴 錄音中...';
         recognition = new webkitSpeechRecognition(); recognition.continuous = true; recognition.interimResults = true;
         recognition.lang = document.getElementById('voice-lang-select').value; 
-        const targetElement = document.getElementById(activeTextAreaId); snapshotText = targetElement.value; 
+        
+        const targetElement = document.getElementById(activeTextAreaId);
+        snapshotText = targetElement.value; 
+
         recognition.onstart = function() { clearTimeout(punctuationTimer); };
+
         recognition.onresult = function(event) {
             clearTimeout(punctuationTimer);
             let interimTranscript = ''; let finalTranscript = '';
             for (let i = event.resultIndex; i < event.results.length; ++i) {
-                if (event.results[i].isFinal) { finalTranscript += event.results[i][0].transcript; } else { interimTranscript += event.results[i][0].transcript; }
+                if (event.results[i].isFinal) { finalTranscript += event.results[i][0].transcript; } 
+                else { interimTranscript += event.results[i][0].transcript; }
             }
             targetElement.value = snapshotText + finalTranscript + interimTranscript;
+            
             const timeout = parseFloat(localStorage.getItem("cfg_timeout") || DEFAULT_VOICE_TIMEOUT) * 1000;
             punctuationTimer = setTimeout(manualStopVoice, timeout);
         };
-        recognition.onerror = function(event) { console.error('Recognition error: ' + event.error); resetVoiceUI(); if (event.error !== 'no-speech') alert('語音辨識發生錯誤: ' + event.error); };
-        recognition.onend = function() { if (isRecording) { resetVoiceUI(); } };
-        try { recognition.start(); } catch(e) { console.warn("Recognition start failed."); }
+
+        recognition.onerror = function(event) {
+            console.error('Error:', event.error);
+            if(event.error === 'no-speech') { } // 靜默不報錯
+            else { resetVoiceUI(); alert('語音錯誤: ' + event.error); }
+        };
+
+        recognition.onend = function() {
+            if (isRecording) { try { recognition.start(); } catch(e) { } } else { resetVoiceUI(); }
+        };
+
+        try { recognition.start(); } catch(e) { console.warn("Start failed"); }
     }
-    function manualStopVoice() { if (recognition) { clearTimeout(punctuationTimer); recognition.stop(); const targetElement = document.getElementById(activeTextAreaId); snapshotText = targetElement.value; resetVoiceUI(); } }
-    function resetVoiceUI() { isRecording = false; document.querySelectorAll('.btn-voice').forEach(button => { button.classList.remove('recording'); button.innerHTML = '🎤 語音輸入'; }); activeTextAreaId = null; }
-    function showStatus(type, title, subtext) {
-        const modal = document.getElementById('status-modal'); const spinner = document.getElementById('status-spinner'); const icon = document.getElementById('status-icon'); const closeBtn = document.getElementById('status-close-btn');
-        document.getElementById('status-text').innerText = title; document.getElementById('status-subtext').innerText = subtext;
-        spinner.style.display = (type === 'loading' ? 'block' : 'none'); icon.style.display = (type !== 'loading' ? 'block' : 'none'); closeBtn.style.display = (type !== 'loading' ? 'block' : 'none');
-        icon.innerText = type === 'success' ? '✅' : '❌';
-        modal.style.display = 'flex';
+
+    function manualStopVoice() {
+        isRecording = false; 
+        if (recognition) { clearTimeout(punctuationTimer); recognition.stop(); const targetElement = document.getElementById(activeTextAreaId); if(targetElement) snapshotText = targetElement.value; }
+        resetVoiceUI();
     }
-    function closeStatusModal() { document.getElementById('status-modal').style.display = 'none'; }
-    function copyFormattedInfo() {
-        const machine = document.getElementById('input-machine').value; const formNo = document.getElementById('input-form-no').value; const stopTime = document.getElementById('input-stop-time-full').value; const startTime = document.getElementById('input-start-time-full').value; const totalTime = document.getElementById('input-total-time').value; const reason = document.getElementById('input-reason').value; const concernSection = document.getElementById('input-concern-section').value; const solution = document.getElementById('input-solution').value; const selfActions = document.getElementById('input-self-actions').value;
-        if (!machine && !formNo && !reason) { alert("請先填寫資料！"); return; }
-        let info = `【Machine NG 紀錄】\n機台: ${machine || '-'}\n維修單號: ${formNo || '-'}\n停機時間: ${stopTime || '-'}\n開機時間: ${startTime || '-'}\n總耗時: ${totalTime || 'N/A'}\n相關部門: ${concernSection || '-'}\n原因: ${reason || '-'}\n解決方法: ${solution || '-'}\n自我行動: ${selfActions || '-'}\n\n--- (資料已上傳雲端) ---`;
-        navigator.clipboard.writeText(info).then(() => { showStatus('success', 'Copied!', '資訊已複製到剪貼簿。'); setTimeout(() => { closeStatusModal(); }, 1500); }).catch(err => { alert('無法複製到剪貼簿，請手動複製。'); });
+
+    function resetVoiceUI() {
+        isRecording = false; document.querySelectorAll('.btn-voice').forEach(b=>{b.classList.remove('recording');b.innerText='🎤 語音輸入'}); activeTextAreaId = null;
     }
-    function viewExcel() { if (!FIXED_SHEET_ID) { alert("請在程式碼中設定 FIXED_SHEET_ID。"); return; } window.open(`https://docs.google.com/spreadsheets/d/${FIXED_SHEET_ID}/edit`, '_blank'); }
-    function viewDriveFolder() { if (!FIXED_FOLDER_ID) { alert("請在程式碼中設定 FIXED_FOLDER_ID。"); return; } window.open(`https://drive.google.com/drive/folders/${FIXED_FOLDER_ID}`, '_blank'); }
-    function clearInputs() {
-        document.getElementById('input-machine').value = ""; document.getElementById('input-total-time').value = ""; document.getElementById('input-form-no').value = ""; document.getElementById('input-reason').value = ""; document.getElementById('input-concern-section').value = ""; document.getElementById('input-solution').value = ""; document.getElementById('input-self-actions').value = "";
-        document.getElementById('input-stop-time-full').value = ""; document.getElementById('input-start-time-full').value = "";
-        document.getElementById('input-total-time').style.backgroundColor = '#eee'; calculateTotalStopTime(); 
-        processedImageBase64 = ""; document.getElementById('preview-img').src = ""; document.getElementById('preview-img').style.display = 'none'; document.querySelector('.placeholder').style.display = 'block'; applySettings();
+
+    function showStatus(t,h,s){const m=document.getElementById('status-modal');document.getElementById('status-text').innerText=h;document.getElementById('status-subtext').innerText=s;document.getElementById('status-spinner').style.display=t==='loading'?'block':'none';document.getElementById('status-icon').style.display=t!=='loading'?'block':'none';document.getElementById('status-close-btn').style.display=t!=='loading'?'block':'none';document.getElementById('status-icon').innerText=t==='success'?'✅':'❌';m.style.display='flex'}
+    function closeStatusModal(){document.getElementById('status-modal').style.display='none'}
+    function copyFormattedInfo(){
+        const m=document.getElementById('input-machine').value;const f=document.getElementById('input-form-no').value;const r=document.getElementById('input-reason').value;
+        if(!m||!f||!r){alert("Data incomplete");return}
+        navigator.clipboard.writeText(`Machine: ${m}\nForm: ${f}\nReason: ${r}`).then(()=>alert("Copied!"));
     }
-    function saveToCloud() {
-        if(isRecording) manualStopVoice();
+    function viewExcel(){window.open(`https://docs.google.com/spreadsheets/d/${FIXED_SHEET_ID}/edit`,'_blank')}
+    function viewDriveFolder(){window.open(`https://drive.google.com/drive/folders/${FIXED_FOLDER_ID}`,'_blank')}
+    function clearInputs(){
+        document.getElementById('input-machine').value="";document.getElementById('input-form-no').value="";document.getElementById('input-stop-time-full').value="";document.getElementById('input-start-time-full').value="";document.getElementById('input-total-time').value="";document.getElementById('input-reason').value="";document.getElementById('input-solution').value="";document.getElementById('input-self-actions').value="";processedImageBase64="";document.getElementById('preview-img').style.display='none';document.querySelector('.placeholder').style.display='block';calculateTotalStopTime();
+    }
+    function saveToCloud(){
+        if(isRecording)manualStopVoice();
         const d={image:processedImageBase64,employeeId:document.getElementById('input-employee-id').value,machine:document.getElementById('input-machine').value,stopTimeFull:document.getElementById('input-stop-time-full').value,startTimeFull:document.getElementById('input-start-time-full').value,formNo:document.getElementById('input-form-no').value,reason:document.getElementById('input-reason').value,concernSection:document.getElementById('input-concern-section').value,solution:document.getElementById('input-solution').value,selfActions:document.getElementById('input-self-actions').value,folderId:FIXED_FOLDER_ID};
         if(!d.formNo){alert("Form No required");return}
         saveEmployeeID();showStatus('loading','Uploading...','');
-        fetch(GAS_URL,{method:'POST',body:JSON.stringify(d)}).then(r=>r.json()).then(res=>{if(res.result==='success'){showStatus('success','Saved!',`Action: ${res.action}`);clearInputs();loadRecentRecords();setTimeout(closeStatusModal,2000)}else{showStatus('error','Failed',res.error)}}).catch(e=>{showStatus('error','Error',e.message)});
+        fetch(GAS_URL,{method:'POST',body:JSON.stringify(d)}).then(r=>r.json()).then(res=>{if(res.result==='success'){showStatus('success','Saved!',res.action);clearInputs();loadRecentRecords();setTimeout(closeStatusModal,2000)}else{showStatus('error','Failed',res.error)}}).catch(e=>showStatus('error','Error',e.message)).finally(()=>document.getElementById('saveBtn').disabled=false);
     }
 </script>
 </body>
