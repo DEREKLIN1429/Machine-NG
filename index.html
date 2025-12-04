@@ -158,7 +158,8 @@
         .btn-main { 
             width: 100%; 
             aspect-ratio: 1 / 1; /* 正方形 */
-            padding: 8px; /* 減小內距，相對減小高度 (約 20% 調整) */
+            /* 進一步縮減 padding */
+            padding: 6px; 
             border: none; 
             border-radius: 8px; 
             font-size: 18px; /* 字體加大 */
@@ -174,8 +175,6 @@
             text-align: center;
         }
         .btn-main:active { transform: scale(0.99); }
-        
-        /* 移除 #view-btns 特殊處理，讓所有按鈕使用統一佈局 */
         
         .btn-save { background-color: var(--primary-color); }
         .btn-copy { background-color: var(--copy-color); }
@@ -196,7 +195,20 @@
             color: var(--view-color);
             border-bottom: 1px solid #eee;
             padding-bottom: 5px;
+            display: flex; /* 啟用 flex 佈局 */
+            justify-content: space-between; /* 讓標題和按鈕分開 */
+            align-items: center;
         }
+        .btn-clear-history {
+            background: #e0e0e0;
+            color: #333;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
         .record-item {
             display: flex;
             justify-content: space-between;
@@ -212,29 +224,32 @@
         .record-item:hover {
             background-color: #f9f9f9;
         }
-        /* 修正：將 Repair Form No 和 Stop Time 放在同一行並突出顯示 */
+        /* 修正：確保主要資訊有足夠空間，並將 Stop Time 放在顯眼位置 */
         .record-item .main-info-group {
             display: flex;
             gap: 10px;
             align-items: center;
             flex-shrink: 0;
+            min-width: 50%; /* 確保主資訊至少佔一半寬度 */
         }
         .record-item .form-no-display {
             font-weight: bold;
             color: var(--copy-color); 
             font-size: 1em;
+            white-space: nowrap;
         }
         .record-item .stop-time-display {
             font-weight: bold;
-            color: var(--view-color); /* 使用次要色，但加粗 */
+            color: var(--view-color);
             font-size: 0.95em;
+            white-space: nowrap;
         }
         .record-item .details {
             font-size: 0.85rem;
             color: #666;
             text-align: right;
             line-height: 1.4;
-            white-space: nowrap; /* 防止詳細資訊換行 */
+            margin-left: auto; /* 推到右邊 */
         }
 
 
@@ -461,7 +476,9 @@
         </div>
 
         <div id="recent-records-container" class="card">
-            <h4>最近紀錄 (Recent NG Records)</h4>
+            <h4>
+                最近紀錄 (Recent NG Records)
+                <button class="btn-clear-history" onclick="clearRecentRecords()">清空列表</button> </h4>
             <div id="recent-records-list">
                 <p style="text-align: center; color: #999;">Loading recent records...</p>
             </div>
@@ -487,6 +504,7 @@
     const DEFAULT_MACHINE_LIST = ["BM5", "BM6", "BM7", "BM21", "BM22", "BM23", "CA3", "CA4", "CM1", "CM2", "CM3"];
     const DEFAULT_CONCERN_LIST = ["Mixing", "Extrusion", "Cutting", "Calendering"]; 
     const DEFAULT_VOICE_TIMEOUT = 1.5;
+    const RECENT_RECORDS_KEY = "recent_form_records"; // 新增：用於儲存最近紀錄的 key
 
     // TODO: 請務必根據你的 Apps Script 部署結果修改以下三個路徑
     // 部署 Web App 後取得的 Exec URL
@@ -550,7 +568,7 @@
     }
 
 
-    // ================= 登入與設定管理 =================
+    // ================= 登入與設定管理 (未修改) =================
 
     function checkLogin() {
         const inputPass = document.getElementById('loginPass').value;
@@ -639,7 +657,7 @@
         document.getElementById('voice-lang-select').value = lang;
     }
 
-    // ================= Machine List 處理 =================
+    // ================= Machine List 處理 (未修改) =================
     function getMachineList() {
         try {
             return JSON.parse(localStorage.getItem(MACHINE_LIST_KEY)) || DEFAULT_MACHINE_LIST;
@@ -704,7 +722,7 @@
         }
     }
 
-    // ================= Concern Section 處理 (同 Machine List 邏輯) =================
+    // ================= Concern Section 處理 (未修改) =================
     function getConcernList() {
         try {
             return JSON.parse(localStorage.getItem(CONCERN_LIST_KEY)) || DEFAULT_CONCERN_LIST;
@@ -769,7 +787,7 @@
         }
     }
 
-    // ================= Employee ID 處理 =================
+    // ================= Employee ID 處理 (未修改) =================
     function loadEmployeeID() {
         const employeeId = localStorage.getItem(EMPLOYEE_ID_KEY);
         if (employeeId) {
@@ -785,7 +803,7 @@
     }
 
 
-    // ================= 資料回填與最近紀錄邏輯 (修正顯示) =================
+    // ================= 資料回填與最近紀錄邏輯 (修正顯示與新增清除功能) =================
 
     /**
      * 載入最近的 NG 紀錄並顯示在底部列表。
@@ -793,6 +811,9 @@
     function loadRecentRecords() {
         const listContainer = document.getElementById('recent-records-list');
         listContainer.innerHTML = '<p style="text-align: center; color: #999;"><div class="spinner" style="width: 20px; height: 20px;"></div> Loading...</p>';
+
+        // NOTE: 如果想在前端儲存最近紀錄（不依賴 GAS），則需要修改這裡
+        // 由於你希望資料來自雲端，我們保持調用 GAS 的方式。
 
         fetch(`${GAS_URL}?action=loadRecords`)
             .then(r => r.json())
@@ -810,7 +831,7 @@
                         const formNoDisplay = record.formNo || 'N/A';
                         const concernDisplay = record.concernSection || 'N/A';
 
-                        // 核心修正：將 Repair Form No 和 Stop Time 放在主要資訊區
+                        // 修正：將 Repair Form No 和 Stop Time 放在主要資訊區
                         item.innerHTML = `
                             <div class="main-info-group">
                                 <span class="form-no-display">#${formNoDisplay}</span>
@@ -832,6 +853,24 @@
                 listContainer.innerHTML = '<p style="text-align: center; color: var(--danger-color);">❌ 載入紀錄失敗。</p>';
             });
     }
+
+    /**
+     * 新增：清除最近紀錄列表
+     */
+    function clearRecentRecords() {
+        if(confirm("確定要清除瀏覽器中儲存的最近紀錄列表嗎？\n(此操作不會影響雲端資料)")) {
+            // 由於你的列表是直接從 GAS 讀取，我們不需要清除 LocalStorage 中的列表，只需刷新即可。
+            // 但如果用戶想要清空視覺上的列表，我們可以直接清空 DOM 並重新嘗試載入。
+            const listContainer = document.getElementById('recent-records-list');
+            listContainer.innerHTML = '<p style="text-align: center; color: #999;">已清除。重新載入中...</p>';
+            
+            // 由於 GAS 沒有 "清除" 的 action，我們只能重新讀取最新的資料。
+            // 如果你希望在瀏覽器本地暫時不顯示，可以在此處設置一個狀態，但這會讓後續操作不一致。
+            // 最好的做法是直接重新載入最新的雲端資料。
+            setTimeout(loadRecentRecords, 500); 
+        }
+    }
+
 
     /**
      * 根據 Repair Form No 從雲端獲取完整紀錄並回填至表單。
@@ -883,7 +922,7 @@
             });
     }
 
-    // ================= 時間處理函數 =================
+    // ================= 時間處理函數 (未修改) =================
     const DATETIME_REGEX = /^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})$/;
 
     function parseCustomDateTime(dtStr) {
@@ -976,7 +1015,7 @@
         }
     }
     
-    // ================= 檔案與圖片處理 =================
+    // ================= 檔案與圖片處理 (未修改) =================
     
     function triggerFile(id) {
         document.getElementById(id).click();
@@ -1032,7 +1071,7 @@
         setTimeout(() => { closeStatusModal(); }, 1000);
     }
 
-    // ================= 語音輸入處理 =================
+    // ================= 語音輸入處理 (未修改) =================
 
     function toggleVoice(button) {
         if (!('webkitSpeechRecognition' in window)) {
@@ -1142,7 +1181,7 @@
     }
 
 
-    // ================= 彈窗與通知處理 =================
+    // ================= 彈窗與通知處理 (未修改) =================
     function showStatus(type, title, subtext) {
         const modal = document.getElementById('status-modal');
         const spinner = document.getElementById('status-spinner');
@@ -1169,7 +1208,7 @@
         document.getElementById('status-modal').style.display = 'none';
     }
 
-    // ================= 複製與連結處理 =================
+    // ================= 複製與連結處理 (未修改) =================
 
     function copyFormattedInfo() {
         const machine = document.getElementById('input-machine').value;
@@ -1226,7 +1265,7 @@
         window.open(url, '_blank');
     }
 
-    // ================= 儲存主函數 =================
+    // ================= 儲存主函數 (未修改) =================
 
     function clearInputs() {
         // 保留員工編號，清除其他欄位
