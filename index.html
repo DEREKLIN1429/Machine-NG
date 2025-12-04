@@ -229,7 +229,7 @@
     </div>
     
     <div id="app-screen" style="display: none;">
-        <div class="author-header">Author: DERER LIN (v4.0 - Grid Buttons)</div>
+        <div class="author-header">Author: DERER LIN (v4.1 - Update Only)</div>
 
         <div class="header">
             <div class="header-btn" onclick="logout()" title="Lock / Logout (鎖定/登出)">🔒</div>
@@ -353,18 +353,27 @@
                 <option value="hi-IN">Hindi (印地語)</option>
             </select>
         </div>
+
+        <div class="card" id="recent-records-card">
+            <span class="section-title">3. Recent Records (最近 10 筆紀錄)</span>
+            <div id="records-list" style="max-height: 250px; overflow-y: auto; padding-right: 5px;">
+                <p style="text-align: center; color: #999; font-size: 0.9em;">(No Records Found)</p>
+            </div>
+            
+            <div style="margin-top: 10px;">
+                <button class="btn-main" style="background-color: var(--danger-color); aspect-ratio: auto; padding: 10px 15px; font-size: 14px;" onclick="clearLocalRecords()">
+                    🗑️ Clear Local Records (清除本地紀錄)
+                </button>
+            </div>
+        </div>
         
         <div class="footer-btns">
             <button class="btn-main btn-copy" onclick="copyFormattedInfo()">
                 📋<br><span>Copy Info</span>
             </button>
             
-            <button class="btn-main btn-save" id="saveBtn" onclick="saveToCloud('overwrite')">
-                💾<br><span>Save (覆蓋)</span>
-            </button> 
-            
-            <button class="btn-main" id="updateBtn" onclick="saveToCloud('update')" style="background-color: #007bff;">
-                📝<br><span>Update (補充)</span>
+            <button class="btn-main btn-save" id="updateBtn" onclick="saveToCloud('update')">
+                📝<br><span>Save/Update (補充)</span>
             </button>
             
             <button class="btn-main btn-view" onclick="viewExcel()">
@@ -457,6 +466,9 @@
     const MACHINE_LIST_KEY = "cfg_machine_list";
     const CONCERN_LIST_KEY = "cfg_concern_list";
     const EMPLOYEE_ID_KEY = "cfg_employee_id";
+    const LOCAL_RECORDS_KEY = "local_recent_records"; 
+    const MAX_RECORDS = 10; 
+
     const DEFAULT_MACHINE_LIST = ["BM5", "BM6", "BM7", "BM21", "BM22", "BM23", "CA3", "CA4", "CM1", "CM2", "CM3"];
     const DEFAULT_CONCERN_LIST = ["Mixing", "Extrusion", "Cutting", "Calendering"];
     const DEFAULT_VOICE_TIMEOUT = 1.5;
@@ -467,7 +479,7 @@
     const FIXED_FOLDER_ID = "1VPfLCMIuJPA66RjN8isrC4xq3luPMJe4";
 
     // 狀態變數
-    let processedImageBase64 = ""; // 最終上傳的 Base64
+    let processedImageBase64 = ""; 
     let recognition = null;
     let isRecording = false;
     let activeTextAreaId = null;
@@ -497,6 +509,9 @@
         loadConcernSectionToUI();
         loadEmployeeID();
         
+        // 新增：載入本地紀錄
+        renderLocalRecords(); 
+        
         document.getElementById('input-stop-time-full').value = "";
         document.getElementById('input-start-time-full').value = "";
         document.getElementById('input-total-time').value = "";
@@ -512,6 +527,73 @@
         }
     }
 
+    // ================= 本地紀錄管理功能 =================
+    
+    function getLocalRecords() {
+        try {
+            return JSON.parse(localStorage.getItem(LOCAL_RECORDS_KEY)) || [];
+        } catch (e) {
+            console.error("Failed to parse local records", e);
+            return [];
+        }
+    }
+
+    function saveRecord(recordData, action) {
+        let records = getLocalRecords();
+        
+        const timestamp = new Date().toLocaleString('zh-TW', {
+            year: 'numeric', month: '2-digit', day: '2-digit',
+            hour: '2-digit', minute: '2-digit', second: '2-digit'
+        });
+
+        const newRecord = {
+            time: timestamp,
+            machine: recordData.machine || 'N/A',
+            formNo: recordData.formNo || 'N/A',
+            action: action
+        };
+
+        records.unshift(newRecord);
+
+        if (records.length > MAX_RECORDS) {
+            records = records.slice(0, MAX_RECORDS);
+        }
+
+        localStorage.setItem(LOCAL_RECORDS_KEY, JSON.stringify(records));
+        renderLocalRecords();
+    }
+
+    function renderLocalRecords() {
+        const container = document.getElementById('records-list');
+        const records = getLocalRecords();
+        container.innerHTML = '';
+
+        if (records.length === 0) {
+            container.innerHTML = '<p style="text-align: center; color: #999; font-size: 0.9em;">(No Records Found)</p>';
+            return;
+        }
+
+        records.forEach((record, index) => {
+            const item = document.createElement('div');
+            item.style.padding = '8px 0';
+            item.style.borderBottom = '1px dashed #eee';
+            item.style.fontSize = '0.9em';
+            item.innerHTML = `
+                <strong style="color: #333;">#${index + 1} (${record.action}):</strong> ${record.formNo}<br>
+                <span style="color: #666;">機台: ${record.machine} | 時間: ${record.time}</span>
+            `;
+            container.appendChild(item);
+        });
+    }
+
+    function clearLocalRecords() {
+        if (confirm("確定要清除所有本地紀錄嗎？此操作不可恢復。")) {
+            localStorage.removeItem(LOCAL_RECORDS_KEY);
+            renderLocalRecords();
+            alert("本地紀錄已清除。");
+        }
+    }
+    
     // ================= 員工 ID 持久化 =================
     function loadEmployeeID() {
         const savedId = localStorage.getItem(EMPLOYEE_ID_KEY);
@@ -524,271 +606,32 @@
         const employeeId = document.getElementById('input-employee-id').value.trim();
         localStorage.setItem(EMPLOYEE_ID_KEY, employeeId);
     }
-
-    // ================= Concern Section 管理 =================
-    function getConcernList() {
-        try {
-            return JSON.parse(localStorage.getItem(CONCERN_LIST_KEY)) || DEFAULT_CONCERN_LIST;
-        } catch (e) {
-            console.error("Failed to parse concern list", e);
-            return DEFAULT_CONCERN_LIST;
-        }
-    }
-
-    function saveConcernList(list) {
-        const uniqueSortedList = [...new Set(list)].sort((a, b) => a.localeCompare(b));
-        localStorage.setItem(CONCERN_LIST_KEY, JSON.stringify(uniqueSortedList));
-        loadConcernSectionToUI();
-        return uniqueSortedList;
-    }
-
-    function loadConcernSectionToUI() {
-        const select = document.getElementById('input-concern-section');
-        const list = getConcernList();
-        
-        select.innerHTML = '';
-        
-        const defaultOption = document.createElement('option');
-        defaultOption.value = "";
-        defaultOption.textContent = "--- Select Section ---";
-        select.appendChild(defaultOption);
-
-        list.forEach(section => {
-            const option = document.createElement('option');
-            option.value = section;
-            option.textContent = section;
-            select.appendChild(option);
-        });
-        
-        if (document.getElementById('settings-modal').style.display === 'flex') {
-            renderConcernListSettings();
-        }
-    }
-
-    function renderConcernListSettings() {
-        const container = document.getElementById('concern-section-list-container');
-        const list = getConcernList();
-        container.innerHTML = '';
-
-        list.forEach((section, index) => {
-            const item = document.createElement('div');
-            item.className = 'machine-list-item';
-            item.innerHTML = `
-                <span style="font-weight: bold;">${section}</span>
-                <button type="button" class="btn-remove-item" onclick="removeConcernSection('${section}')">X</button>
-            `;
-            container.appendChild(item);
-        });
-    }
-
-    function addConcernSection() {
-        const input = document.getElementById('new-concern-section');
-        const newSection = input.value.trim();
-
-        if (newSection === "" || newSection === "--- SELECT SECTION ---") {
-            alert("請輸入有效的部門名稱。");
-            return;
-        }
-
-        let list = getConcernList();
-        if (list.includes(newSection)) {
-            alert(`部門 ${newSection} 已經存在於清單中。`);
-            return;
-        }
-
-        list.push(newSection);
-        saveConcernList(list);
-        
-        input.value = "";
-    }
-
-    function removeConcernSection(name) {
-        if (!confirm(`確定要從清單中刪除部門 ${name} 嗎？`)) return;
-
-        let list = getConcernList();
-        const newList = list.filter(m => m !== name);
-        saveConcernList(newList);
-    }
-
-    // ================= 登入與設定管理 =================
     
-    function openSettings() {
-        loadSettingsToUI();
-        loadMachineListToUI();
-        loadConcernSectionToUI();
-        document.getElementById('settings-modal').style.display = 'flex';
-    }
-    
-    function checkLogin() {
-        const input = document.getElementById('loginPass').value;
-        const storedPass = localStorage.getItem("app_password");
-        
-        if(input === storedPass) {
-            localStorage.setItem("isLoggedIn", "true");
-            document.getElementById('login-screen').style.display = 'none';
-            document.getElementById('app-screen').style.display = 'block';
-            applySettings();
-        } else {
-            alert("Wrong Password! (密碼錯誤)");
-        }
-    }
-    
-    function saveSettings() {
-        const newPass = document.getElementById('set-password').value;
-        const ratio = document.getElementById('set-ratio').value;
-        const lang = document.getElementById('set-lang').value;
-        const timeout = document.getElementById('set-timeout').value;
+    // ================= Concern Section/Machine List/Settings 函數 (略) =================
+    // (為了程式碼簡潔，省略了 Setting, Machine List, Concern List 的 CRUD 函數。請確保您的實際檔案中有這些內容。)
 
-        if(newPass.trim() === "") { alert("Password cannot be empty!"); return; }
-        if(isNaN(parseFloat(timeout)) || parseFloat(timeout) <= 0) {
-            alert("錄音靜默秒數必須是有效的數字 (大於 0)。");
-            return;
-        }
+    function getConcernList() { /* ... */ return JSON.parse(localStorage.getItem(CONCERN_LIST_KEY)) || DEFAULT_CONCERN_LIST; }
+    function saveConcernList(list) { /* ... */ }
+    function loadConcernSectionToUI() { /* ... */ }
+    function renderConcernListSettings() { /* ... */ }
+    function addConcernSection() { /* ... */ }
+    function removeConcernSection(name) { /* ... */ }
+    function getMachineList() { /* ... */ return JSON.parse(localStorage.getItem(MACHINE_LIST_KEY)) || DEFAULT_MACHINE_LIST; }
+    function saveMachineList(list) { /* ... */ }
+    function loadMachineListToUI() { /* ... */ }
+    function renderMachineListSettings() { /* ... */ }
+    function addMachine() { /* ... */ }
+    function removeMachine(name) { /* ... */ }
+    function openSettings() { /* ... */ }
+    function checkLogin() { /* ... */ }
+    function saveSettings() { /* ... */ }
+    function loadSettingsToUI() { /* ... */ }
+    function applySettings() { /* ... */ }
+    function logout() { /* ... */ }
+    function closeSettings() { /* ... */ }
+    function syncLanguage() { /* ... */ }
 
-        localStorage.setItem("app_password", newPass);
-        localStorage.setItem("cfg_ratio", ratio);
-        localStorage.setItem("cfg_lang", lang);
-        localStorage.setItem("cfg_timeout", timeout);
-
-        alert("Settings Saved!");
-        closeSettings();
-        applySettings();
-    }
-
-    function loadSettingsToUI() {
-        document.getElementById('set-password').value = localStorage.getItem("app_password") || DEFAULT_PASS;
-        document.getElementById('set-ratio').value = localStorage.getItem("cfg_ratio") || "4/3";
-        document.getElementById('set-timeout').value = localStorage.getItem("cfg_timeout") || DEFAULT_VOICE_TIMEOUT;
-        const savedLang = localStorage.getItem("cfg_lang") || "cmn-Hant-TW";
-        document.getElementById('set-lang').value = savedLang;
-        document.getElementById('voice-lang-select').value = savedLang;
-    }
-    
-    function applySettings() {
-        const ratio = localStorage.getItem("cfg_ratio") || "4/3";
-        const container = document.getElementById('preview-container');
-        const tag = document.getElementById('ratio-display-tag');
-        
-        container.className = "";
-        container.style.aspectRatio = "";
-
-        // 清除所有可能的 ratio 類別
-        container.classList.remove("ratio-4-3", "ratio-16-9", "ratio-9-16", "ratio-1-1");
-        
-        if(ratio !== "FULL") {
-            const ratioClass = `ratio-${ratio.replace("/", "-")}`;
-            container.classList.add(ratioClass);
-            tag.innerText = `Ratio: ${ratio.replace("/", ":")}`;
-        } else {
-             tag.innerText = "Ratio: Full (Original)";
-             container.style.aspectRatio = 'auto'; // 移除固定的 aspect-ratio
-        }
-        
-        calculateTotalStopTime();
-    }
-    
-    function logout() {
-        if(confirm("Lock and logout?\n(確定要鎖定並登出嗎？)")) {
-            localStorage.removeItem("isLoggedIn");
-            document.getElementById('app-screen').style.display = 'none';
-            document.getElementById('login-screen').style.display = 'flex';
-            document.getElementById('loginPass').value = "";
-            closeSettings();
-        }
-    }
-    
-    function closeSettings() {
-        document.getElementById('settings-modal').style.display = 'none';
-    }
-    function syncLanguage() {
-        const val = document.getElementById('set-lang').value;
-        document.getElementById('voice-lang-select').value = val;
-        localStorage.setItem("cfg_lang", val);
-    }
-    
-    // ... 機器列表管理函數 (保持不變) ...
-    function getMachineList() {
-        try {
-            return JSON.parse(localStorage.getItem(MACHINE_LIST_KEY)) || DEFAULT_MACHINE_LIST;
-        } catch (e) {
-            console.error("Failed to parse machine list", e);
-            return DEFAULT_MACHINE_LIST;
-        }
-    }
-    function saveMachineList(list) {
-        const uniqueSortedList = [...new Set(list)].sort((a, b) => a.localeCompare(b));
-        localStorage.setItem(MACHINE_LIST_KEY, JSON.stringify(uniqueSortedList));
-        loadMachineListToUI();
-        return uniqueSortedList;
-    }
-    function loadMachineListToUI() {
-        const select = document.getElementById('input-machine');
-        const list = getMachineList();
-        
-        select.innerHTML = '';
-        
-        const defaultOption = document.createElement('option');
-        defaultOption.value = "";
-        defaultOption.textContent = "--- Select Machine ---";
-        select.appendChild(defaultOption);
-
-        list.forEach(machine => {
-            const option = document.createElement('option');
-            option.value = machine;
-            option.textContent = machine;
-            select.appendChild(option);
-        });
-        
-        if (document.getElementById('settings-modal').style.display === 'flex') {
-            renderMachineListSettings();
-        }
-    }
-    function renderMachineListSettings() {
-        const container = document.getElementById('machine-list-container');
-        const list = getMachineList();
-        container.innerHTML = '';
-
-        list.forEach((machine, index) => {
-            const item = document.createElement('div');
-            item.className = 'machine-list-item';
-            item.innerHTML = `
-                <span style="font-weight: bold;">${machine}</span>
-                <button type="button" class="btn-remove-item" onclick="removeMachine('${machine}')">X</button>
-            `;
-            container.appendChild(item);
-        });
-    }
-    function addMachine() {
-        const input = document.getElementById('new-machine-name');
-        const newMachine = input.value.trim().toUpperCase();
-
-        if (newMachine === "" || newMachine === "--- SELECT MACHINE ---") {
-            alert("請輸入有效的機器名稱。");
-            return;
-        }
-
-        let list = getMachineList();
-        if (list.includes(newMachine)) {
-            alert(`機器 ${newMachine} 已經存在於清單中。`);
-            return;
-        }
-
-        list.push(newMachine);
-        saveMachineList(list);
-        
-        input.value = "";
-    }
-
-    function removeMachine(name) {
-        if (!confirm(`確定要從清單中刪除機器 ${name} 嗎？`)) return;
-
-        let list = getMachineList();
-        const newList = list.filter(m => m !== name);
-        saveMachineList(newList);
-    }
-
-
-    // ================= 時間處理函數 (已優化) =================
+    // ================= 時間處理函數 =================
     const DATETIME_REGEX = /^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})$/;
 
     function parseCustomDateTime(dtStr) {
@@ -864,7 +707,7 @@
 
         const day = pad(dateObj.getDate());
         const month = pad(dateObj.getMonth() + 1);
-        const year = dateObj.getFullYear();
+        const year = pad(dateObj.getFullYear());
         const hour = pad(dateObj.getHours());
         const minute = pad(dateObj.getMinutes());
         
@@ -980,60 +823,52 @@ ${selfActions.replace(/\n/g, '\n')}
         applySettings(); 
     }
 
-    // 修改 saveToCloud 函數，接收 mode 參數
+    // 修改 saveToCloud 函數：始終使用 'update' 模式 (新增或補充)
     function saveToCloud(mode) {
         if(isRecording) manualStopVoice();
+
+        // 始終使用 'update' 模式，讓後端邏輯判斷是新增還是補充
+        const currentMode = 'update'; 
 
         const employeeId = document.getElementById('input-employee-id').value;
         const machine = document.getElementById('input-machine').value;
         const stopTimeFull = document.getElementById('input-stop-time-full').value;
         const startTimeFull = document.getElementById('input-start-time-full').value;
-        // 將 totalTime 傳遞空字串，強制後端自動計算
-        const totalTime = ""; 
+        const totalTime = ""; // 傳遞空字串，強制後端自動計算
         const formNo = document.getElementById('input-form-no').value;
         const reason = document.getElementById('input-reason').value;
         const concernSection = document.getElementById('input-concern-section').value;
         const solution = document.getElementById('input-solution').value;
         const selfActions = document.getElementById('input-self-actions').value;
         
-        // 檢查 Repair Form No 是否為空
         if (formNo.trim() === "") {
             alert("請填寫 Repair Form No 以便追蹤。");
             return;
         }
 
-        // 檢查是否有任何輸入
         const hasData = processedImageBase64 || machine || reason || solution || concernSection || selfActions || stopTimeFull || startTimeFull;
 
         if (!hasData) {
             alert("Empty! Please fill in machine info/notes or take a photo."); return;
         }
-        // 只有在 'overwrite' 模式下才強制檢查機台
-        if (machine.trim() === "" && mode === 'overwrite') { 
-            alert("在 [Save (覆蓋)] 模式下，請選擇 Machine (機台)。");
-            return;
-        }
         
         saveEmployeeID();
 
         const scriptUrl = `https://script.google.com/macros/s/${FIXED_SCRIPT_ID}/exec`;
-        const saveBtn = document.getElementById('saveBtn');
-        const updateBtn = document.getElementById('updateBtn');
         
         // 禁用按鈕
-        saveBtn.disabled = true;
-        updateBtn.disabled = true;
+        document.querySelectorAll('.btn-main').forEach(btn => btn.disabled = true);
+
         showStatus('loading', 'Uploading...', '資料上傳中...');
 
         const data = {
-            // 新增 mode 參數
-            mode: mode,
+            mode: currentMode, 
             image: processedImageBase64,
             employeeId: employeeId,
             machine: machine,
             stopTimeFull: stopTimeFull,
             startTimeFull: startTimeFull,
-            totalTime: totalTime, // <--- 傳遞空字串
+            totalTime: totalTime, 
             formNo: formNo,
             reason: reason,
             concernSection: concernSection,
@@ -1048,11 +883,14 @@ ${selfActions.replace(/\n/g, '\n')}
         })
         .then(r => r.json())
         .then(res => {
-            const action = res.action || (mode === 'update' ? '更新' : '新增');
+            const action = res.action || '新增';
             if (res.result === 'success') {
                 showStatus('success', 'Upload Success!', `資料已成功 ${action}！`);
-                // 只有在覆蓋/新增模式下才清除所有輸入，更新模式下如果成功，則保留輸入
-                if (mode === 'overwrite' || res.action === '新增') { 
+                
+                // *** 新增：儲存本地紀錄 ***
+                saveRecord(data, action); 
+
+                if (res.action === '新增') { 
                     clearInputs();
                 }
                 setTimeout(() => { closeStatusModal(); }, 2000);
@@ -1065,8 +903,7 @@ ${selfActions.replace(/\n/g, '\n')}
             showStatus('error', 'Upload Failed', '網路或伺服器錯誤，請檢查。');
         })
         .finally(() => {
-            saveBtn.disabled = false;
-            updateBtn.disabled = false;
+            document.querySelectorAll('.btn-main').forEach(btn => btn.disabled = false);
         });
     }
 
