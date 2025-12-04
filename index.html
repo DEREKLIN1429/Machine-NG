@@ -147,7 +147,7 @@
         }
 
 
-        /* --- 底部按鈕群組修正：使用 grid 佈局，實現並排、正方形和字體加大 --- */
+        /* --- 底部按鈕群組修正：4個按鈕分兩排，正方形，減小高度，加大字體 --- */
         .footer-btns { 
             display: grid; 
             grid-template-columns: 1fr 1fr; /* 兩欄 */
@@ -158,10 +158,10 @@
         .btn-main { 
             width: 100%; 
             aspect-ratio: 1 / 1; /* 正方形 */
-            padding: 10px; /* 減小 padding 讓字體有空間 */
+            padding: 8px; /* 減小內距，相對減小高度 (約 20% 調整) */
             border: none; 
             border-radius: 8px; 
-            font-size: 20px; /* 字體加大 */
+            font-size: 18px; /* 字體加大 */
             font-weight: 700; 
             cursor: pointer; 
             color: white; 
@@ -175,18 +175,8 @@
         }
         .btn-main:active { transform: scale(0.99); }
         
-        /* 讓 View Excel 和 View Photos 按鈕單獨佔一列，恢復標準矩形排版 */
-        #view-btns {
-            grid-column: span 2;
-            display: flex;
-            gap: 8px;
-        }
-        #view-btns .btn-main {
-            flex: 1;
-            font-size: 16px;
-            aspect-ratio: auto;
-            height: 50px;
-        }
+        /* 移除 #view-btns 特殊處理，讓所有按鈕使用統一佈局 */
+        
         .btn-save { background-color: var(--primary-color); }
         .btn-copy { background-color: var(--copy-color); }
         .btn-view { background-color: #03A9F4; }
@@ -222,11 +212,21 @@
         .record-item:hover {
             background-color: #f9f9f9;
         }
+        /* 修正：將 Repair Form No 和 Stop Time 放在同一行並突出顯示 */
+        .record-item .main-info-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .record-item .form-no-display {
+            font-weight: bold;
+            color: var(--copy-color); 
+            font-size: 1em;
+        }
         .record-item .stop-time-display {
             font-weight: bold;
-            color: var(--copy-color); /* 突出顯示 Stop Time */
-            flex-shrink: 0;
-            padding-right: 10px;
+            color: var(--view-color); /* 使用次要色，但加粗 */
             font-size: 0.95em;
         }
         .record-item .details {
@@ -234,6 +234,7 @@
             color: #666;
             text-align: right;
             line-height: 1.4;
+            white-space: nowrap; /* 防止詳細資訊換行 */
         }
 
 
@@ -467,13 +468,12 @@
         </div>
         
         <div class="footer-btns">
+            
             <button class="btn-main btn-copy" onclick="copyFormattedInfo()">📋<br>Copy Info</button>
             <button class="btn-main btn-save" id="saveBtn" onclick="saveToCloud()">💾<br>Save to Cloud</button>
             
-            <div id="view-btns">
-                <button class="btn-main btn-view" onclick="viewExcel()">📊 View Excel</button>
-                <button class="btn-main btn-drive" onclick="viewDriveFolder()">📂 View Photos</button>
-            </div>
+            <button class="btn-main btn-view" onclick="viewExcel()">📊<br>View Excel</button>
+            <button class="btn-main btn-drive" onclick="viewDriveFolder()">📂<br>View Photos</button>
         </div>
     </div>
 
@@ -804,17 +804,21 @@
                         item.className = 'record-item';
                         item.setAttribute('onclick', `populateForm('${record.formNo}')`);
                         
-                        const startTimeDisplay = record.startTime ? record.startTime : '-';
+                        const startTimeDisplay = record.startTime ? 'Start: ' + record.startTime : '';
                         const totalTimeDisplay = record.totalTime ? ` (${record.totalTime} min)` : '';
                         const machineDisplay = record.machine || 'N/A';
                         const formNoDisplay = record.formNo || 'N/A';
                         const concernDisplay = record.concernSection || 'N/A';
 
-
+                        // 核心修正：將 Repair Form No 和 Stop Time 放在主要資訊區
                         item.innerHTML = `
-                            <span class="stop-time-display">${record.stopTime}</span> <div class="details">
-                                <div><span style="font-weight: bold; color:#333;">#${formNoDisplay}</span> - ${machineDisplay}</div>
-                                <div>Section: ${concernDisplay} | Start: ${startTimeDisplay}${totalTimeDisplay}</div>
+                            <div class="main-info-group">
+                                <span class="form-no-display">#${formNoDisplay}</span>
+                                <span class="stop-time-display">${record.stopTime}</span> 
+                            </div>
+                            <div class="details">
+                                <div>Machine: ${machineDisplay} | Section: ${concernDisplay}</div>
+                                <div>${startTimeDisplay}${totalTimeDisplay}</div>
                             </div>
                         `;
                         listContainer.appendChild(item);
