@@ -90,9 +90,6 @@
             margin: 0 0 10px 0; color: var(--view-color); border-bottom: 1px solid #eee; padding-bottom: 8px;
             display: flex; justify-content: space-between; align-items: center;
         }
-        .btn-clear-history {
-            background: #f0f0f0; color: #555; border: 1px solid #ccc; padding: 5px 10px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; font-weight: bold;
-        }
         .record-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 5px; cursor: pointer; border-bottom: 1px dashed #f0f0f0; transition: background-color 0.2s; }
         .record-item:last-child { border-bottom: none; } .record-item:hover { background-color: #f9f9f9; }
         .record-item .main-info-group { display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; width: 45%; }
@@ -144,20 +141,26 @@
                         <option value="4/3">4:3</option><option value="16/9">16:9</option><option value="9/16">9:16</option><option value="1/1">1:1</option>
                     </select>
                 </div>
+                
                 <div class="modal-group">
-                    <label style="font-weight: bold; margin-bottom: 5px; display: block;">3. Voice Language</label>
+                    <label style="font-weight: bold; margin-bottom: 5px; display: block;">3. Recent Records Limit (顯示筆數)</label>
+                    <input type="number" id="set-recent-limit" class="login-input" style="margin: 0;" placeholder="Default: 5" min="1" max="30">
+                </div>
+
+                <div class="modal-group">
+                    <label style="font-weight: bold; margin-bottom: 5px; display: block;">4. Voice Language</label>
                     <select id="set-lang" class="login-input" style="margin: 0;" onchange="syncLanguage()">
                         <option value="cmn-Hant-TW">Chinese (TW)</option><option value="en-US">English</option><option value="ja-JP">Japanese</option><option value="hi-IN">Hindi</option>
                     </select>
                 </div>
                 <div class="modal-group" style="border: 1px solid #ddd; padding: 10px; border-radius: 8px;">
-                    <label style="font-weight: bold; margin-bottom: 10px; display: block;">4. Concern Section List</label>
+                    <label style="font-weight: bold; margin-bottom: 10px; display: block;">5. Concern Section List</label>
                     <input type="text" id="new-concern-section" class="login-input" style="margin: 0 0 5px 0;" placeholder="Add section">
                     <button type="button" class="btn-add-item" onclick="addConcernSection()">+ Add</button>
                     <div id="concern-section-list-container"></div>
                 </div>
                 <div class="modal-group" style="border: 1px solid #ddd; padding: 10px; border-radius: 8px;">
-                    <label style="font-weight: bold; margin-bottom: 10px; display: block;">5. Machine List</label>
+                    <label style="font-weight: bold; margin-bottom: 10px; display: block;">6. Machine List</label>
                     <input type="text" id="new-machine-name" class="login-input" style="margin: 0 0 5px 0;" placeholder="Add machine">
                     <button type="button" class="btn-add-item" onclick="addMachine()">+ Add</button>
                     <div id="machine-list-container"></div>
@@ -168,7 +171,7 @@
     </div>
 
     <div id="app-screen" style="display: none;">
-        <div class="author-header">Author: DERER LIN (v4.1 - IST)</div>
+        <div class="author-header">Author: DERER LIN (v4.3 - Recent Limit)</div>
         <div class="header">
             <div class="header-btn" onclick="logout()" title="Logout">🔒</div>
             <div class="header-title"><h2>Machine-NG<br>重點事項紀錄</h2></div>
@@ -245,11 +248,7 @@
         </div>
 
         <div id="recent-records-container" class="card">
-            <h4>
-                最近紀錄 (Recent Records)
-                <button class="btn-clear-history" onclick="clearRecentRecords()">🗑️ 清除列表</button>
-            </h4>
-            <div id="recent-records-list"><p style="text-align: center; color: #999;">Loading recent records...</p></div>
+            <h4>最近紀錄 (Recent Records)</h4> <div id="recent-records-list"><p style="text-align: center; color: #999;">Loading recent records...</p></div>
         </div>
         
         <div class="footer-btns">
@@ -266,6 +265,7 @@
     const DEFAULT_MACHINE_LIST = ["BM5", "BM6", "BM7", "BM21", "BM22", "BM23", "CA3", "CA4", "CM1", "CM2", "CM3"];
     const DEFAULT_CONCERN_LIST = ["Mixing", "Extrusion", "Cutting", "Calendering"];
     const DEFAULT_VOICE_TIMEOUT = 1.5;
+    const DEFAULT_RECENT_LIMIT = 5; // 新增：預設筆數
 
     // TODO: 請務必修改以下三個路徑
     const FIXED_SCRIPT_ID = "AKfycbzfPzPODQjp_phrHPwjsoBYeA8-VgeaoYly6hr3Mx09Wj-o5tWHMPa-nTHfaHyloiH8zg/exec"; 
@@ -282,6 +282,8 @@
         if(!localStorage.getItem(MACHINE_LIST_KEY)) localStorage.setItem(MACHINE_LIST_KEY, JSON.stringify(DEFAULT_MACHINE_LIST));
         if(!localStorage.getItem(CONCERN_LIST_KEY)) localStorage.setItem(CONCERN_LIST_KEY, JSON.stringify(DEFAULT_CONCERN_LIST));
         if(!localStorage.getItem("cfg_timeout")) localStorage.setItem("cfg_timeout", DEFAULT_VOICE_TIMEOUT);
+        // 初始化紀錄筆數
+        if(!localStorage.getItem("cfg_recent_limit")) localStorage.setItem("cfg_recent_limit", DEFAULT_RECENT_LIMIT);
         
         loadSettingsToUI(); loadMachineListToUI(); loadConcernSectionToUI(); loadEmployeeID(); 
         
@@ -302,8 +304,25 @@
     function logout(){if(confirm("Logout?")){localStorage.removeItem("isLoggedIn");document.getElementById('app-screen').style.display='none';document.getElementById('login-screen').style.display='flex';document.getElementById('loginPass').value=''}}
     function openSettings(){document.getElementById('settings-modal').style.display='flex';renderConcernListSettings();renderMachineListSettings();document.getElementById('set-password').value=''}
     function closeSettings(){document.getElementById('settings-modal').style.display='none'}
-    function saveSettings(){const p=document.getElementById('set-password').value.trim();if(p)localStorage.setItem("app_password",p);const t=parseFloat(document.getElementById('set-timeout').value);if(!isNaN(t))localStorage.setItem("cfg_timeout",t);localStorage.setItem("cfg_ratio",document.getElementById('set-ratio').value);localStorage.setItem("cfg_lang",document.getElementById('set-lang').value);alert("Saved!");closeSettings();applySettings()}
-    function loadSettingsToUI(){document.getElementById('set-timeout').value=localStorage.getItem("cfg_timeout")||DEFAULT_VOICE_TIMEOUT;document.getElementById('set-ratio').value=localStorage.getItem("cfg_ratio")||'4/3';document.getElementById('set-lang').value=localStorage.getItem("cfg_lang")||'cmn-Hant-TW'}
+    function saveSettings(){
+        const p=document.getElementById('set-password').value.trim();if(p)localStorage.setItem("app_password",p);
+        const t=parseFloat(document.getElementById('set-timeout').value);if(!isNaN(t))localStorage.setItem("cfg_timeout",t);
+        
+        // 儲存筆數設定
+        const limit = parseInt(document.getElementById('set-recent-limit').value);
+        if(!isNaN(limit) && limit > 0) localStorage.setItem("cfg_recent_limit", limit);
+
+        localStorage.setItem("cfg_ratio",document.getElementById('set-ratio').value);
+        localStorage.setItem("cfg_lang",document.getElementById('set-lang').value);
+        alert("Saved!");closeSettings();applySettings();
+        loadRecentRecords(); // 重新載入以應用新筆數
+    }
+    function loadSettingsToUI(){
+        document.getElementById('set-timeout').value=localStorage.getItem("cfg_timeout")||DEFAULT_VOICE_TIMEOUT;
+        document.getElementById('set-ratio').value=localStorage.getItem("cfg_ratio")||'4/3';
+        document.getElementById('set-lang').value=localStorage.getItem("cfg_lang")||'cmn-Hant-TW';
+        document.getElementById('set-recent-limit').value = localStorage.getItem("cfg_recent_limit") || DEFAULT_RECENT_LIMIT;
+    }
     
     function applySettings(){
         const r=localStorage.getItem("cfg_ratio")||'4/3';const c=document.getElementById('preview-container');c.className='';c.classList.add(r==='4/3'?'ratio-4-3':r==='16/9'?'ratio-16-9':r==='9/16'?'ratio-9-16':'ratio-1-1');document.getElementById('ratio-display-tag').innerText=`Ratio: ${r.replace('/',':')}`;
@@ -360,13 +379,9 @@
         t.style.background='#e6ffed';
     }
     
-    // 修正：產生印度時間 (IST) 
     function getFullDateTimeString(dateObj) {
-        // 取得 UTC 時間 (毫秒)
         const utc = dateObj.getTime() + (dateObj.getTimezoneOffset() * 60000);
-        // 加上印度偏移量 (UTC+5.5 小時 = 330 分鐘)
         const istDate = new Date(utc + (3600000 * 5.5));
-        
         const day = String(istDate.getDate()).padStart(2, '0');
         const month = String(istDate.getMonth() + 1).padStart(2, '0');
         const year = istDate.getFullYear();
@@ -375,17 +390,26 @@
         return `${day}/${month}/${year} ${hour}:${minute}`;
     }
     function updateSingleTime(id){const n=new Date();document.getElementById(id).value=getFullDateTimeString(n);calculateTotalStopTime()}
-    function clearRecentRecords(){if(confirm("清除列表？")){document.getElementById('recent-records-list').innerHTML='<p style="text-align: center; color: #999;">(已清除)</p>'}}
+    
+    // 修正：截取指定數量的紀錄
     function loadRecentRecords(){
         const listContainer=document.getElementById('recent-records-list');listContainer.innerHTML='<p style="text-align: center; color: #999;">Loading...</p>';
+        const limit = parseInt(localStorage.getItem("cfg_recent_limit")) || DEFAULT_RECENT_LIMIT;
+
         fetch(`${GAS_URL}?action=loadRecords`).then(r=>r.json()).then(res=>{
-            listContainer.innerHTML='';if(res.result==='success'&&res.data.length>0){res.data.forEach(r=>{
-                const i=document.createElement('div');i.className='record-item';i.setAttribute('onclick',`populateForm('${r.formNo}')`);
-                i.innerHTML=`<div class="main-info-group"><span class="form-no-display">#${r.formNo||'N/A'}</span><span class="stop-time-display">🛑 ${r.stopTime||"No Stop Time"}</span></div><div class="details"><div>${r.machine||'N/A'} (${r.concernSection||'N/A'})</div><div>${r.startTime?'Start: '+r.startTime:''}</div></div>`;
-                listContainer.appendChild(i)
-            })}else{listContainer.innerHTML='<p style="text-align: center; color: #999;">無最近紀錄。</p>'}
+            listContainer.innerHTML='';
+            if(res.result==='success'&&res.data.length>0){
+                // 根據設定筆數進行截斷
+                const recordsToShow = res.data.slice(0, limit);
+                recordsToShow.forEach(r=>{
+                    const i=document.createElement('div');i.className='record-item';i.setAttribute('onclick',`populateForm('${r.formNo}')`);
+                    i.innerHTML=`<div class="main-info-group"><span class="form-no-display">#${r.formNo||'N/A'}</span><span class="stop-time-display">🛑 ${r.stopTime||"No Stop Time"}</span></div><div class="details"><div>${r.machine||'N/A'} (${r.concernSection||'N/A'})</div><div>${r.startTime?'Start: '+r.startTime:''}</div></div>`;
+                    listContainer.appendChild(i)
+                })
+            }else{listContainer.innerHTML='<p style="text-align: center; color: #999;">無最近紀錄。</p>'}
         }).catch(e=>{listContainer.innerHTML='<p style="text-align: center; color: red;">❌ 載入失敗。</p>'})
     }
+
     function populateForm(f){
         if(!confirm(`回填單號 [${f}]?`))return;showStatus('loading','Loading...',f);
         fetch(`${GAS_URL}?action=getRow&formNo=${encodeURIComponent(f)}`).then(r=>r.json()).then(res=>{
@@ -403,7 +427,6 @@
     function handleFile(i){if(i.files[0]){showStatus('loading','Processing...','');const r=new FileReader();r.onload=e=>{const img=new Image();img.onload=()=>processImageWithCanvas(img);img.src=e.target.result};r.readAsDataURL(i.files[0])}}
     function processImageWithCanvas(img){const c=document.createElement('canvas');let w=img.width;let h=img.height;if(w>MAX_IMAGE_WIDTH){h=Math.round(h*(MAX_IMAGE_WIDTH/w));w=MAX_IMAGE_WIDTH}c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);processedImageBase64=c.toDataURL('image/jpeg',0.8);document.getElementById('preview-img').src=processedImageBase64;document.getElementById('preview-img').style.display='block';document.querySelector('.placeholder').style.display='none';closeStatusModal()}
     
-    // ================= 語音輸入邏輯 =================
     function toggleVoice(button) {
         if (!('webkitSpeechRecognition' in window)) { alert("請使用 Chrome 瀏覽器"); return; }
         if (isRecording) { manualStopVoice(); } else { activeTextAreaId = button.dataset.target; startVoice(button); }
@@ -416,17 +439,22 @@
         
         const targetElement = document.getElementById(activeTextAreaId);
         snapshotText = targetElement.value; 
+        if (snapshotText.length > 0 && !snapshotText.endsWith(' ') && !snapshotText.endsWith('\n')) {
+            snapshotText += ' ';
+        }
 
         recognition.onstart = function() { clearTimeout(punctuationTimer); };
 
         recognition.onresult = function(event) {
-            clearTimeout(punctuationTimer);
-            let interimTranscript = ''; let finalTranscript = '';
+            clearTimeout(punctuationTimer); 
+            let sessionFinal = '';
+            let sessionInterim = '';
             for (let i = event.resultIndex; i < event.results.length; ++i) {
-                if (event.results[i].isFinal) { finalTranscript += event.results[i][0].transcript; } 
-                else { interimTranscript += event.results[i][0].transcript; }
+                if (event.results[i].isFinal) { sessionFinal += event.results[i][0].transcript; } 
+                else { sessionInterim += event.results[i][0].transcript; }
             }
-            targetElement.value = snapshotText + finalTranscript + interimTranscript;
+            if (sessionFinal) { snapshotText += sessionFinal; }
+            targetElement.value = snapshotText + sessionInterim;
             
             const timeout = parseFloat(localStorage.getItem("cfg_timeout") || DEFAULT_VOICE_TIMEOUT) * 1000;
             punctuationTimer = setTimeout(manualStopVoice, timeout);
@@ -434,12 +462,21 @@
 
         recognition.onerror = function(event) {
             console.error('Error:', event.error);
-            if(event.error === 'no-speech') { } // 靜默不報錯
+            if(event.error === 'no-speech') { }
             else { resetVoiceUI(); alert('語音錯誤: ' + event.error); }
         };
 
         recognition.onend = function() {
-            if (isRecording) { try { recognition.start(); } catch(e) { } } else { resetVoiceUI(); }
+            if (isRecording) {
+                try { 
+                    const el = document.getElementById(activeTextAreaId);
+                    if(el) snapshotText = el.value; 
+                    if (snapshotText.length > 0 && !snapshotText.endsWith(' ') && !snapshotText.endsWith('\n')) { snapshotText += ' '; }
+                    recognition.start(); 
+                } catch(e) { console.warn("Restart failed"); }
+            } else {
+                resetVoiceUI();
+            }
         };
 
         try { recognition.start(); } catch(e) { console.warn("Start failed"); }
