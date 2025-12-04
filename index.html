@@ -3,9 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Machine-NG (機械故障訊息)</title>
-    
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
+    <title>Machine-NG (機械故障資訊)</title>
     
     <style>
         :root {
@@ -27,13 +25,12 @@
         }
 
         /* --- 模組化樣式 --- */
-        #login-screen, #status-modal, #settings-modal, #cropper-modal {
+        #login-screen, #status-modal, #settings-modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.6); z-index: 9999;
             display: none; align-items: center; justify-content: center;
         }
         #login-screen { background: var(--bg-color); }
-        #cropper-modal { background: rgba(0,0,0,0.8); } /* 裁剪介面使用更暗的背景 */
 
         .modal-box {
             background: white; padding: 25px; border-radius: 12px;
@@ -41,8 +38,6 @@
             max-height: 90vh;
             overflow-y: auto;
         }
-        /* 裁剪模態框調整，使其可以更寬 */
-        #cropper-modal .modal-box { max-width: 95%; max-height: 95vh; padding: 15px; }
 
         .login-input {
             width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc;
@@ -76,7 +71,7 @@
         .btn-cam { background-color: #FF5722; color: white; }
         .btn-gallery { background-color: #FFC107; color: #333; }
 
-        /* --- 圖片預覽 (保持修正) --- */
+        /* --- 圖片預覽 (自動裁剪/截圖範圍) --- */
         #preview-container { max-width: 100%; height: auto; border: 2px dashed #ccc; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative;}
         /* 新增 Aspect Ratio 類別 */
         .ratio-4-3 { aspect-ratio: 4/3; }
@@ -102,13 +97,13 @@
         .time-component { display: flex; flex-direction: column; margin-bottom: 8px; }
         .time-input-row { display: flex; align-items: center; gap: 5px; }
 
-        /* 新增：總時間輸入組件排版 */
+        /* 總時間輸入組件排版 */
         .total-time-input-group {
-            display: flex; /* 使用 Flexbox */
-            gap: 8px; /* 間隔 */
+            display: flex;
+            gap: 8px;
         }
         .total-time-input-group > .text-input:first-child {
-            flex-grow: 1; /* 讓總時間輸入框佔據更多空間 */
+            flex-grow: 1;
         }
 
         /* --- 底部按鈕美學優化 (保持不變) --- */
@@ -182,9 +177,7 @@
         .hidden { display: none !important; }
     </style>
     
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
-
-</head>
+    </head>
 <body>
 
     <div id="login-screen" style="display: none;">
@@ -206,31 +199,13 @@
         </div>
     </div>
     
-    <div id="cropper-modal" style="display: none;">
-        <div class="modal-box" style="max-width: 95%;">
-            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 5px;">
-                <h3 style="margin: 0;">✂️ Crop Image (裁剪圖片)</h3>
-                <button onclick="closeCropperModal()" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color: #333;">&times;</button>
-            </div>
-            
-            <div style="max-height: 70vh; overflow: hidden; margin-bottom: 15px;">
-                <img id="cropper-image" style="max-width: 100%;">
-            </div>
-            
-            <div style="display: flex; gap: 10px;">
-                <button class="btn-half btn-save" onclick="cropAndSave()">✅ Save Crop (儲存裁剪)</button>
-                <button class="btn-half" style="background-color: var(--danger-color);" onclick="closeCropperModal()">❌ Cancel (取消)</button>
-            </div>
-        </div>
-    </div>
-
     <div id="app-screen" style="display: none;">
-        <div class="author-header">Author: DERER LIN (v3.8)</div>
+        <div class="author-header">Author: DERER LIN (v3.9 - Canvas Auto Crop)</div>
 
         <div class="header">
             <div class="header-btn" onclick="logout()" title="Lock / Logout (鎖定/登出)">🔒</div>
             <div class="header-title">
-                <h2>Machine-NG<br>機械故障訊息</h2>
+                <h2>Machine-NG<br>機械故障記錄</h2>
             </div>
             <div class="header-btn" onclick="openSettings()" title="Settings (設定)">⚙️</div>
         </div>
@@ -241,16 +216,12 @@
         </div>
 
         <div class="card">
-            <span class="section-title">1. Photo (圖片紀錄)</span>
+            <span class="section-title">1. Photo (圖片紀錄) - 範圍截圖 (自動裁剪)</span>
             <div class="photo-controls">
                 <button class="btn-half btn-cam" onclick="triggerFile('input-cam')">📷 Camera</button>
                 <button class="btn-half btn-gallery" onclick="triggerFile('input-gallery')">🖼️ Gallery</button>
             </div>
 
-            <button id="crop-button" class="btn-main hidden" style="margin-bottom: 10px; background-color: #007bff;" onclick="openCropperModal()">
-                ✂️ Crop/Adjust Image (裁剪/調整)
-            </button>
-            
             <div id="preview-container" class="ratio-4-3" onclick="triggerFile('input-cam')" title="Click to take photo">
                 <div class="ratio-tag" id="ratio-display-tag">Ratio: 4:3</div>
                 <span class="placeholder">Tap here to Take Photo</span>
@@ -449,10 +420,8 @@
     const FIXED_SHEET_ID = "1sDKZBJfasUbZSGNAfz9GIWfRdrdXxQMrXrxM3x9RlCY";
     const FIXED_FOLDER_ID = "1VPfLCMIuJPA66RjN8isrC4xq3luPMJe4";
 
-    // 狀態變數
+    // 狀態變數 (移除 cropper 和 rawImageBase64)
     let processedImageBase64 = ""; // 最終上傳的 Base64
-    let rawImageBase64 = ""; // 原始圖片 Base64，用於裁剪
-    let cropper = null; // Cropper 實例
     let recognition = null;
     let isRecording = false;
     let activeTextAreaId = null;
@@ -666,7 +635,7 @@
             tag.innerText = `Ratio: ${ratio.replace("/", ":")}`;
         } else {
              tag.innerText = "Ratio: Full (Original)";
-             container.style.aspectRatio = 'auto';
+             container.style.aspectRatio = 'auto'; // 移除固定的 aspect-ratio
         }
         
         calculateTotalStopTime();
@@ -780,7 +749,6 @@
         const match = dtStr.match(DATETIME_REGEX);
         if (!match) return null;
 
-        // 格式：DD/MM/YYYY hh:mm -> 轉換為 Date(YYYY, MM-1, DD, hh, mm)
         const day = parseInt(match[1], 10);
         const month = parseInt(match[2], 10) - 1;
         const year = parseInt(match[3], 10);
@@ -789,7 +757,6 @@
 
         const date = new Date(year, month, day, hour, minute);
 
-        // 簡單驗證日期是否溢出
         if (date.getFullYear() !== year || date.getMonth() !== month || date.getDate() !== day) {
              return null;
         }
@@ -850,12 +817,11 @@
         const pad = (num) => num.toString().padStart(2, '0');
 
         const day = pad(dateObj.getDate());
-        const month = pad(dateObj.getMonth() + 1); // 月份是從 0 開始
+        const month = pad(dateObj.getMonth() + 1);
         const year = dateObj.getFullYear();
         const hour = pad(dateObj.getHours());
         const minute = pad(dateObj.getMinutes());
         
-        // 確保格式為 DD/MM/YYYY hh:mm
         return `${day}/${month}/${year} ${hour}:${minute}`;
     }
     
@@ -941,77 +907,6 @@ ${selfActions.replace(/\n/g, '\n')}
             alert("❌ 無法複製文字，請檢查瀏覽器權限。");
         });
     }
-
-    // ================= 圖片裁剪處理 (Cropper.js) =================
-
-    function openCropperModal() {
-        if (!rawImageBase64) {
-            alert("請先選擇一張圖片！");
-            return;
-        }
-        
-        document.getElementById('cropper-modal').style.display = 'flex';
-        const image = document.getElementById('cropper-image');
-        image.src = rawImageBase64;
-
-        // 取得設定的比例
-        const ratioStr = localStorage.getItem("cfg_ratio") || "4/3";
-        let aspectRatio = ratioStr === "FULL" ? NaN : eval(ratioStr); // 將 "4/3" 轉換為數字 4/3
-
-        // 銷毀舊的實例以防止重複初始化
-        if (cropper) {
-            cropper.destroy();
-        }
-
-        // 初始化 Cropper
-        cropper = new Cropper(image, {
-            aspectRatio: aspectRatio,
-            viewMode: 1, // 限制裁剪框在圖片內
-            autoCropArea: 0.9, // 預設裁剪區域佔 90%
-            zoomable: true,
-            movable: true,
-        });
-    }
-
-    function closeCropperModal() {
-        document.getElementById('cropper-modal').style.display = 'none';
-        if (cropper) {
-            cropper.destroy();
-            cropper = null;
-        }
-    }
-
-    function cropAndSave() {
-        if (!cropper) return;
-
-        // 取得裁剪後的 Base64 數據，並進行最終縮放
-        const croppedDataUrl = cropper.getCroppedCanvas({
-            maxWidth: MAX_IMAGE_WIDTH, // 使用您定義的最大寬度進行縮放
-            fillColor: '#fff',
-            imageSmoothingEnabled: true, // 啟用平滑處理
-            imageSmoothingQuality: 'high',
-        }).toDataURL('image/jpeg', 0.8);
-        
-        processedImageBase64 = croppedDataUrl;
-
-        // 更新主畫面預覽圖
-        document.getElementById('preview-img').src = processedImageBase64;
-        
-        // 如果是 FULL ratio，更新預覽容器的 aspect ratio
-        const ratioStr = localStorage.getItem("cfg_ratio") || "4/3";
-        if (ratioStr === "FULL") {
-             const tempImg = new Image();
-             tempImg.onload = function() {
-                 const container = document.getElementById('preview-container');
-                 container.style.aspectRatio = `${tempImg.width} / ${tempImg.height}`;
-             };
-             tempImg.src = processedImageBase64;
-        }
-
-
-        alert("✅ 圖片裁剪完成並已儲存！");
-        closeCropperModal();
-    }
     
     // ================= 上傳與清除邏輯 =================
     function clearInputs() {
@@ -1029,10 +924,8 @@ ${selfActions.replace(/\n/g, '\n')}
         document.getElementById('input-total-time').style.backgroundColor = '#eee';
         calculateTotalStopTime();
         
-        // 新增：清除裁剪相關狀態並隱藏按鈕
+        // 清除圖片相關狀態
         processedImageBase64 = "";
-        rawImageBase64 = "";
-        document.getElementById('crop-button').classList.add('hidden');
         
         document.getElementById('preview-img').style.display = 'none';
         document.querySelector('.placeholder').style.display = 'block';
@@ -1115,7 +1008,7 @@ ${selfActions.replace(/\n/g, '\n')}
         });
     }
 
-    // ================= 圖片與語音函數 =================
+    // ================= 圖片/語音函數 (恢復 Canvas 處理邏輯) =================
     
     function triggerFile(id) {
         if (window.location.protocol === 'http:' && !window.location.hostname.includes('localhost')) {
@@ -1125,7 +1018,7 @@ ${selfActions.replace(/\n/g, '\n')}
         document.getElementById(id).click();
     }
     
-    // 修改 handleFile：只讀取原始 Base64
+    // 修改 handleFile：讀取後直接交給 processImageWithCanvas 處理
     function handleFile(input) {
         if (!input.files || !input.files[0]) return;
         
@@ -1133,27 +1026,70 @@ ${selfActions.replace(/\n/g, '\n')}
         const reader = new FileReader();
         
         reader.onload = function(e) {
-            // 儲存原始 Base64 數據
-            rawImageBase64 = e.target.result;
-            
-            // 顯示在主預覽區
-            const preview = document.getElementById('preview-img');
-            preview.src = rawImageBase64;
-            preview.style.display = 'block';
-            document.querySelector('.placeholder').style.display = 'none';
-            document.getElementById('crop-button').classList.remove('hidden'); // 顯示裁剪按鈕
-            
-            // 初始狀態：預覽圖即為上傳圖 (未裁剪/縮放)，直到裁剪後才更新 processedImageBase64
-            processedImageBase64 = rawImageBase64; 
-            
-            // 由於 Cropper 會處理 FULL 比例，這裡只處理顯示
-            applySettings(); 
+            const img = new Image();
+            img.onload = function() { processImageWithCanvas(img); }; // 載入圖片後進行處理
+            img.src = e.target.result;
         }
         reader.readAsDataURL(file);
     }
     
-    // 舊的 processImageWithCanvas 函數已移除，功能由 Cropper.js 處理
-    
+    // 恢復 processImageWithCanvas 函數：根據設定的比例進行縮放和裁剪
+    function processImageWithCanvas(img) {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const ratioStr = localStorage.getItem("cfg_ratio") || "4/3";
+        
+        let targetRatio = 4/3;
+        let isFull = ratioStr === "FULL";
+
+        if(ratioStr === "16/9") targetRatio = 16/9;
+        else if(ratioStr === "9/16") targetRatio = 9/16;
+        else if(ratioStr === "1/1") targetRatio = 1;
+
+        let srcW = img.width; let srcH = img.height;
+        let drawW, drawH, startX, startY;
+
+        if (isFull) {
+            drawW = srcW; drawH = srcH; startX = 0; startY = 0;
+        } else {
+            let srcRatio = srcW / srcH;
+            
+            // 判斷是否需要裁剪
+            if (srcRatio > targetRatio) { // 原始圖片太寬，裁左右
+                drawH = srcH; drawW = srcH * targetRatio;
+                startX = (srcW - drawW) / 2; startY = 0;
+            } else { // 原始圖片太高，裁上下
+                drawW = srcW; drawH = srcW / targetRatio;
+                startX = 0; startY = (srcH - drawH) / 2;
+            }
+        }
+
+        // 縮放到最大寬度
+        const scale = MAX_IMAGE_WIDTH / drawW;
+        canvas.width = MAX_IMAGE_WIDTH;
+        canvas.height = drawH * scale;
+
+        // 繪製和裁剪
+        ctx.drawImage(img, startX, startY, drawW, drawH, 0, 0, canvas.width, canvas.height);
+        processedImageBase64 = canvas.toDataURL('image/jpeg', 0.8);
+        
+        const preview = document.getElementById('preview-img');
+        preview.src = processedImageBase64;
+        preview.style.display = 'block';
+        document.querySelector('.placeholder').style.display = 'none';
+
+        if(isFull) {
+             const container = document.getElementById('preview-container');
+             container.classList.remove("ratio-4-3", "ratio-16-9", "ratio-9-16", "ratio-1-1");
+             // FULL 模式下，讓預覽容器自動適應圖片的實際尺寸
+             container.style.aspectRatio = `${canvas.width} / ${canvas.height}`; 
+        } else {
+             // 確保非 FULL 模式下應用 CSS 比例
+             applySettings();
+        }
+    }
+
+
     function toggleVoice(btn) {
         if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
             alert("❌ 語音輸入被阻擋！瀏覽器不支援，或請確保 App 透過 HTTPS 網址開啟。");
@@ -1237,7 +1173,7 @@ ${selfActions.replace(/\n/g, '\n')}
 
     function manualStopVoice() {
         if(isRecording && recognition) {
-            isRecording = false; // 設置狀態
+            isRecording = false;
             if(punctuationTimer) clearTimeout(punctuationTimer);
 
             // 新增標點符號邏輯
