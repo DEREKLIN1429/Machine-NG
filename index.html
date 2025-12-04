@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Machine-NG (機械故障資訊)</title>
+    <title>Machine-NG (重點事項紀錄)</title>
     
     <style>
         :root {
@@ -106,7 +106,7 @@
             flex-grow: 1;
         }
 
-        /* --- 底部按鈕美學優化 (保持不變) --- */
+        /* --- 底部按鈕美學優化 (包含新增的 Update/補充按鈕) --- */
         .footer-btns { display: flex; flex-direction: column; gap: 8px; margin-top: 15px; padding-bottom: 20px;}
         .btn-main {
             width: 100%;
@@ -122,7 +122,7 @@
         .btn-main:active { transform: scale(0.99); }
         
         .btn-copy { background-color: var(--copy-color); }
-        .btn-save { background-color: var(--primary-color); }
+        .btn-save { background-color: var(--primary-color); } /* Save (覆蓋) */
         .btn-view { background-color: var(--view-color); color: white; }
         .btn-drive { background-color: var(--copy-color); }
         
@@ -177,7 +177,7 @@
         .hidden { display: none !important; }
     </style>
     
-    </head>
+</head>
 <body>
 
     <div id="login-screen" style="display: none;">
@@ -200,12 +200,12 @@
     </div>
     
     <div id="app-screen" style="display: none;">
-        <div class="author-header">Author: DERER LIN (v3.9 - Canvas Auto Crop)</div>
+        <div class="author-header">Author: DERER LIN (v4.0 - Save/Update Modes)</div>
 
         <div class="header">
             <div class="header-btn" onclick="logout()" title="Lock / Logout (鎖定/登出)">🔒</div>
             <div class="header-title">
-                <h2>Machine-NG<br>機械故障記錄</h2>
+                <h2>Machine-NG<br>重點事項紀錄</h2>
             </div>
             <div class="header-btn" onclick="openSettings()" title="Settings (設定)">⚙️</div>
         </div>
@@ -221,7 +221,7 @@
                 <button class="btn-half btn-cam" onclick="triggerFile('input-cam')">📷 Camera</button>
                 <button class="btn-half btn-gallery" onclick="triggerFile('input-gallery')">🖼️ Gallery</button>
             </div>
-
+            
             <div id="preview-container" class="ratio-4-3" onclick="triggerFile('input-cam')" title="Click to take photo">
                 <div class="ratio-tag" id="ratio-display-tag">Ratio: 4:3</div>
                 <span class="placeholder">Tap here to Take Photo</span>
@@ -327,7 +327,11 @@
         
         <div class="footer-btns">
             <button class="btn-main btn-copy" onclick="copyFormattedInfo()">📋 Copy Info</button>
-            <button class="btn-main btn-save" id="saveBtn" onclick="saveToCloud()">💾 Save to Cloud</button>
+            
+            <button class="btn-main btn-save" id="saveBtn" onclick="saveToCloud('overwrite')">💾 Save (覆蓋)</button> 
+            
+            <button class="btn-main" id="updateBtn" onclick="saveToCloud('update')" style="background-color: #007bff;">📝 Update (補充)</button>
+            
             <button class="btn-main btn-view" onclick="viewExcel()">📊 View Excel</button>
             <button class="btn-main btn-drive" onclick="viewDriveFolder()">📂 View Photos</button>
         </div>
@@ -420,7 +424,7 @@
     const FIXED_SHEET_ID = "1sDKZBJfasUbZSGNAfz9GIWfRdrdXxQMrXrxM3x9RlCY";
     const FIXED_FOLDER_ID = "1VPfLCMIuJPA66RjN8isrC4xq3luPMJe4";
 
-    // 狀態變數 (移除 cropper 和 rawImageBase64)
+    // 狀態變數
     let processedImageBase64 = ""; // 最終上傳的 Base64
     let recognition = null;
     let isRecording = false;
@@ -908,7 +912,7 @@ ${selfActions.replace(/\n/g, '\n')}
         });
     }
     
-    // ================= 上傳與清除邏輯 =================
+    // ================= 上傳與清除邏輯 (已修改) =================
     function clearInputs() {
         document.getElementById('input-machine').value = "";
         document.getElementById('input-total-time').value = "";
@@ -934,7 +938,8 @@ ${selfActions.replace(/\n/g, '\n')}
         applySettings(); 
     }
 
-    function saveToCloud() {
+    // 修改 saveToCloud 函數，接收 mode 參數
+    function saveToCloud(mode) {
         if(isRecording) manualStopVoice();
 
         const employeeId = document.getElementById('input-employee-id').value;
@@ -948,28 +953,38 @@ ${selfActions.replace(/\n/g, '\n')}
         const solution = document.getElementById('input-solution').value;
         const selfActions = document.getElementById('input-self-actions').value;
         
+        // 檢查 Repair Form No 是否為空
         if (formNo.trim() === "") {
             alert("請填寫 Repair Form No 以便追蹤。");
             return;
         }
 
-        if(!processedImageBase64 && !machine && !reason && !solution && !concernSection && !selfActions) {
+        // 檢查是否有任何輸入
+        const hasData = processedImageBase64 || machine || reason || solution || concernSection || selfActions || stopTimeFull || startTimeFull;
+
+        if (!hasData) {
             alert("Empty! Please fill in machine info/notes or take a photo."); return;
         }
-        if (machine.trim() === "") {
-            alert("請選擇 Machine (機台)。");
+        // 只有在 'overwrite' 模式下才強制檢查機台
+        if (machine.trim() === "" && mode === 'overwrite') { 
+            alert("在 [Save (覆蓋)] 模式下，請選擇 Machine (機台)。");
             return;
         }
         
         saveEmployeeID();
 
         const scriptUrl = `https://script.google.com/macros/s/${FIXED_SCRIPT_ID}/exec`;
-        const btn = document.getElementById('saveBtn');
+        const saveBtn = document.getElementById('saveBtn');
+        const updateBtn = document.getElementById('updateBtn');
         
-        btn.disabled = true;
+        // 禁用按鈕
+        saveBtn.disabled = true;
+        updateBtn.disabled = true;
         showStatus('loading', 'Uploading...', '資料上傳中...');
 
         const data = {
+            // 新增 mode 參數
+            mode: mode,
             image: processedImageBase64,
             employeeId: employeeId,
             machine: machine,
@@ -990,10 +1005,13 @@ ${selfActions.replace(/\n/g, '\n')}
         })
         .then(r => r.json())
         .then(res => {
-            const action = res.action || '新增';
+            const action = res.action || (mode === 'update' ? '更新' : '新增');
             if (res.result === 'success') {
                 showStatus('success', 'Upload Success!', `資料已成功 ${action}！`);
-                clearInputs();
+                // 只有在覆蓋/新增模式下才清除所有輸入，更新模式下如果成功，則保留輸入
+                if (mode === 'overwrite' || res.action === '新增') { 
+                    clearInputs();
+                }
                 setTimeout(() => { closeStatusModal(); }, 2000);
             } else {
                 showStatus('error', 'Upload Failed', `上傳失敗：${res.error || '未知的錯誤。'}`);
@@ -1004,7 +1022,8 @@ ${selfActions.replace(/\n/g, '\n')}
             showStatus('error', 'Upload Failed', '網路或伺服器錯誤，請檢查。');
         })
         .finally(() => {
-            btn.disabled = false;
+            saveBtn.disabled = false;
+            updateBtn.disabled = false;
         });
     }
 
@@ -1054,11 +1073,11 @@ ${selfActions.replace(/\n/g, '\n')}
         } else {
             let srcRatio = srcW / srcH;
             
-            // 判斷是否需要裁剪
-            if (srcRatio > targetRatio) { // 原始圖片太寬，裁左右
+            // 判斷是否需要裁剪 (以填充容器為準則)
+            if (srcRatio > targetRatio) { // 原始圖片太寬，裁左右 (保留中間)
                 drawH = srcH; drawW = srcH * targetRatio;
                 startX = (srcW - drawW) / 2; startY = 0;
-            } else { // 原始圖片太高，裁上下
+            } else { // 原始圖片太高，裁上下 (保留中間)
                 drawW = srcW; drawH = srcW / targetRatio;
                 startX = 0; startY = (srcH - drawH) / 2;
             }
