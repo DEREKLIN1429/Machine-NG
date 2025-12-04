@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <base target="_top">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Machine-NG (重點事項紀錄)</title>
@@ -414,10 +415,10 @@
     const DEFAULT_CONCERN_LIST = ["Mixing", "Extrusion", "Cutting", "Calendering"]; 
     const DEFAULT_VOICE_TIMEOUT = 1.5;
 
-    // 你的固定路徑 (FIXED PATHS) - 已寫死
-    const FIXED_SCRIPT_ID = "AKfycbzfPzPODQjp_phrHPwjsoBYeA8-VgeaoYly6hr3Mx09Wj-o5tWHMPa-nTHfaHyloiH8zg/exec";
-    const FIXED_SHEET_ID = "1sDKZBJfasUbZSGNAfz9GIWfRdrdXxQMrXrxM3x9RlCY"; 
-    const FIXED_FOLDER_ID = "1VPfLCMIuJPA66RjN8isrC4xq3luPMJe4";
+    // 你的固定路徑 (FIXED PATHS) - 這裡使用 Apps Script 的 google.script.run 來發送請求
+    const FIXED_SCRIPT_ID = "AKfycbzfPzPODQjp_phrHPwjsoBYeA8-VgeaoYly6hr3Mx09Wj-o5tWHMPa-nTHfaHyloiH8zg/exec"; // 請確認此 ID 正確
+    const FIXED_SHEET_ID = "1sDKZBJfasUbZSGNAfz9GIWfRdrdXxQMrXrxM3x9RlCY"; // 請確認此 ID 正確
+    const FIXED_FOLDER_ID = "1VPfLCMIuJPA66RjN8isrC4xq3luPMJe4"; // 請確認此 ID 正確
 
     // 狀態變數
     let processedImageBase64 = ""; 
@@ -426,13 +427,36 @@
     let activeTextAreaId = null; 
     let snapshotText = "";        
     let punctuationTimer = null; 
-    let currentEditFormNo = null; // 新增：用於追蹤當前正在編輯的 Form No
+    let currentEditFormNo = null; 
 
     document.addEventListener('DOMContentLoaded', () => {
         if (typeof initApp === 'function') {
             initApp();
         }
     });
+    
+    // Apps Script 專用的 fetch 輔助函數
+    function fetchScript(action, params = {}, method = 'GET', body = null) {
+        let url = `${location.protocol}//script.google.com/macros/s/${FIXED_SCRIPT_ID}/exec?action=${action}`;
+
+        // 僅 GET 請求才將參數加到 URL
+        if (method === 'GET' && Object.keys(params).length > 0) {
+            url += '&' + new URLSearchParams(params).toString();
+        }
+
+        const options = {
+            method: method,
+            headers: {'Content-Type': 'application/json'},
+        };
+        
+        if (method === 'POST' && body) {
+            options.body = JSON.stringify(body);
+        }
+
+        // 使用 fetch 處理 GET/POST 請求
+        return fetch(url, options);
+    }
+
 
     function initApp() {
         if(!localStorage.getItem("app_password")) {
@@ -441,7 +465,7 @@
         if(!localStorage.getItem(MACHINE_LIST_KEY)) {
             localStorage.setItem(MACHINE_LIST_KEY, JSON.stringify(DEFAULT_MACHINE_LIST));
         }
-        if(!localStorage.getItem(CONCERN_LIST_KEY)) { // 初始化 Concern List
+        if(!localStorage.getItem(CONCERN_LIST_KEY)) {
             localStorage.setItem(CONCERN_LIST_KEY, JSON.stringify(DEFAULT_CONCERN_LIST));
         }
         if(!localStorage.getItem("cfg_timeout")) {
@@ -457,13 +481,13 @@
         document.getElementById('input-start-time-full').value = "";
         document.getElementById('input-total-time').value = "";
         document.getElementById('input-total-time').style.backgroundColor = '#eee';
-        document.getElementById('total-time-unit').value = 'min'; // 預設 Total Time 單位為分鐘
+        document.getElementById('total-time-unit').value = 'min'; 
         
         const isLoggedIn = localStorage.getItem("isLoggedIn");
         if(isLoggedIn === "true") {
             document.getElementById('app-screen').style.display = 'block';
             applySettings();
-            loadLatestRecords(false); // 啟動時靜默載入資料
+            loadLatestRecords(false); 
         } else {
             document.getElementById('login-screen').style.display = 'flex';
         }
@@ -585,7 +609,7 @@
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('app-screen').style.display = 'block';
             applySettings();
-            loadLatestRecords(false); // 登入成功後載入資料
+            loadLatestRecords(false); 
         } else {
             alert("Wrong Password! (密碼錯誤)");
         }
@@ -615,7 +639,7 @@
 
     function loadSettingsToUI() {
         document.getElementById('set-password').value = localStorage.getItem("app_password") || DEFAULT_PASS;
-        document.getElementById('set-ratio').value = localStorage.getItem("cfg_ratio") || "4/3";
+        document.getElementById('set-ratio').value = localStorage.getItem("cfg-ratio") || "4/3";
         document.getElementById('set-timeout').value = localStorage.getItem("cfg_timeout") || DEFAULT_VOICE_TIMEOUT; 
         const savedLang = localStorage.getItem("cfg_lang") || "cmn-Hant-TW";
         document.getElementById('set-lang').value = savedLang;
@@ -849,7 +873,6 @@
         const totalTimeInput = document.getElementById('input-total-time');
         const totalTimeMinutes = totalTimeInput.dataset.diffMinutes;
         
-        // 修正 Total Time 格式: 只有在有有效分鐘數時才顯示格式
         let totalTimeFormat;
         if (totalTimeMinutes && totalTimeMinutes > 0) {
             const totalTimeHours = (totalTimeMinutes / 60).toFixed(2);
@@ -858,7 +881,6 @@
             totalTimeFormat = ''; 
         }
         
-        // 1. 蒐集資料
         const employeeId = document.getElementById('input-employee-id').value || "N/A";
         const machine = document.getElementById('input-machine').value || "N/A";
         const stopTimeFull = document.getElementById('input-stop-time-full').value.trim();
@@ -869,12 +891,8 @@
         const solution = document.getElementById('input-solution').value || "N/A";
         const selfActions = document.getElementById('input-self-actions').value || "N/A"; 
         
-        // 2. 處理時間
-        
-        // 修正 Start Time 顯示：如果 Start Time 為空，顯示空字串
         const startDisplay = startTimeFull === "" ? '' : startTimeFull;
 
-        // 3. 構建輸出字串 (最終格式: 去除所有 "-" 符號)
         const output = `
 ID : ${employeeId}
 
@@ -900,7 +918,6 @@ Self Actions:
 ${selfActions.replace(/\n/g, '\n')}
         `.trim();
 
-        // 4. 複製到剪貼簿
         navigator.clipboard.writeText(output).then(() => {
             alert("✅ 整合訊息已複製到剪貼簿！");
         }).catch(err => {
@@ -913,7 +930,7 @@ ${selfActions.replace(/\n/g, '\n')}
     function clearInputs() {
         document.getElementById('input-machine').value = ""; 
         document.getElementById('input-total-time').value = "";
-        document.getElementById('input-form-no').value = "";
+        // document.getElementById('input-form-no').value = ""; // Form No 應被 reset
         document.getElementById('input-reason').value = "";
         document.getElementById('input-concern-section').value = "";
         document.getElementById('input-solution').value = "";
@@ -922,7 +939,7 @@ ${selfActions.replace(/\n/g, '\n')}
         document.getElementById('input-stop-time-full').value = "";
         document.getElementById('input-start-time-full').value = "";
         
-        // 新增：清除編輯模式相關狀態
+        // 清除編輯模式相關狀態
         currentEditFormNo = null;
         const formNoInput = document.getElementById('input-form-no');
         formNoInput.readOnly = false;
@@ -968,9 +985,7 @@ ${selfActions.replace(/\n/g, '\n')}
         
         saveEmployeeID();
 
-        const scriptUrl = `https://script.google.com/macros/s/${FIXED_SCRIPT_ID}/exec`;
         const btn = document.getElementById('saveBtn');
-        
         btn.disabled = true;
         showStatus('loading', 'Uploading...', '資料上傳中...');
 
@@ -989,17 +1004,15 @@ ${selfActions.replace(/\n/g, '\n')}
             folderId: FIXED_FOLDER_ID
         };
 
-        fetch(scriptUrl, {
-            method: 'POST',
-            body: JSON.stringify(data)
-        })
+        // 使用 fetchScript 呼叫 doPost 邏輯 (action 留空讓 GAS 判斷是 POST)
+        fetchScript("", {}, 'POST', data)
         .then(r => r.json())
         .then(res => {
             const action = res.action || '新增'; 
             if (res.result === 'success') {
                 showStatus('success', 'Upload Success!', `資料已成功 ${action}！`);
                 clearInputs();
-                loadLatestRecords(false); // 儲存成功後重新載入列表
+                loadLatestRecords(false); 
                 setTimeout(() => { closeStatusModal(); }, 2000);
             } else {
                 showStatus('error', 'Upload Failed', `上傳失敗：${res.error || '未知的錯誤。'}`);
@@ -1027,7 +1040,7 @@ ${selfActions.replace(/\n/g, '\n')}
         }
     }
     
-    // ... 圖片/語音函數保持不變 ...
+    // ... 圖片/語音函數 ...
     function triggerFile(id) { 
         if (window.location.protocol === 'http:' && !window.location.hostname.includes('localhost')) {
             alert("❌ 相機功能需要 HTTPS 協定。請使用 Apps Script 網址開啟。");
@@ -1239,12 +1252,9 @@ ${selfActions.replace(/\n/g, '\n')}
     
     function loadLatestRecords(showAlert) {
         const container = document.getElementById('latest-records-container');
-        // GAS 的 URL 必須使用 GET 請求的格式
-        const scriptUrl = `https://script.google.com/macros/s/${FIXED_SCRIPT_ID}/exec`;
-
         container.innerHTML = '<p style="text-align: center; color: #888; font-size: 0.9em;">載入中...</p>';
 
-        fetch(scriptUrl + "?action=loadRecords") // 使用 action 參數觸發 GAS 的 doGet 邏輯
+        fetchScript("loadRecords")
             .then(r => r.json())
             .then(res => {
                 if (res.result === 'success') {
@@ -1277,7 +1287,6 @@ ${selfActions.replace(/\n/g, '\n')}
             item.setAttribute('data-form-no', record.formNo);
             item.onclick = () => loadRecordToEdit(record.formNo);
             
-            // 確保總時間顯示正確，Total Time 是分鐘數 (由 GAS 返回)
             let totalTimeDisplay = "N/A";
             if (record.totalTime !== "") {
                 const totalMinutes = parseInt(record.totalTime, 10);
@@ -1305,7 +1314,6 @@ ${selfActions.replace(/\n/g, '\n')}
             container.appendChild(item);
         });
         
-        // 載入完成後，如果正在編輯，高亮顯示該項目
         if (currentEditFormNo) {
             const activeItem = document.querySelector(`.record-item[data-form-no="${currentEditFormNo}"]`);
             if (activeItem) {
@@ -1315,44 +1323,36 @@ ${selfActions.replace(/\n/g, '\n')}
     }
 
     function loadRecordToEdit(formNo) {
-        // 1. 清除現有編輯狀態/高亮
         clearInputs();
         
-        // 2. 獲取資料並填充表單 (使用新的 action=getRow 邏輯)
-        const scriptUrl = `https://script.google.com/macros/s/${FIXED_SCRIPT_ID}/exec`;
         showStatus('loading', 'Loading Record...', `正在載入單號 ${formNo} 的舊資料...`);
 
-        // 使用不同的 action 參數來觸發 GAS 中的 doGetRow 邏輯
-        fetch(scriptUrl + "?action=getRow&formNo=" + encodeURIComponent(formNo))
+        fetchScript("getRow", { formNo: formNo })
             .then(r => r.json())
             .then(res => {
                 closeStatusModal(); 
                 if (res.result === 'success') {
                     const data = res.data;
                     
-                    // 填充欄位
                     document.getElementById('input-employee-id').value = data.employeeId;
                     document.getElementById('input-machine').value = data.machine;
                     document.getElementById('input-stop-time-full').value = data.stopTimeFull;
                     document.getElementById('input-start-time-full').value = data.startTimeFull;
-                    document.getElementById('input-form-no').value = data.formNo; // 鎖定單號
+                    document.getElementById('input-form-no').value = data.formNo; 
                     document.getElementById('input-reason').value = data.reason;
                     document.getElementById('input-concern-section').value = data.concernSection;
                     document.getElementById('input-solution').value = data.solution;
                     document.getElementById('input-self-actions').value = data.selfActions;
                     
-                    // 設定編輯狀態
                     currentEditFormNo = formNo;
                     document.getElementById('input-form-no').readOnly = true;
                     document.getElementById('input-form-no').style.backgroundColor = '#fff0f0';
                     
-                    // 高亮當前編輯項目
                     const activeItem = document.querySelector(`.record-item[data-form-no="${formNo}"]`);
                     if (activeItem) {
                         activeItem.classList.add('edit-mode-active');
                     }
                     
-                    // 重新計算 Total Time
                     calculateTotalStopTime();
                     
                     alert(`✅ 成功載入單號 ${formNo}。目前為編輯模式，請更新或補充資料。`);
