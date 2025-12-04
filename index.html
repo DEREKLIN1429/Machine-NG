@@ -106,23 +106,52 @@
             flex-grow: 1;
         }
 
-        /* --- 底部按鈕美學優化 (包含新增的 Update/補充按鈕) --- */
-        .footer-btns { display: flex; flex-direction: column; gap: 8px; margin-top: 15px; padding-bottom: 20px;}
+        /* --- 底部按鈕優化 (正方形，兩列網格) --- */
+        .footer-btns {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 10px;
+            margin-top: 15px; 
+            padding-bottom: 20px;
+            align-items: stretch;
+        }
         .btn-main {
             width: 100%;
-            padding: 14px 15px;
+            aspect-ratio: 1 / 1; /* 正方形 */
+            
+            padding: 10px; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            
             border: none;
             border-radius: 8px;
-            font-size: 16px;
+            font-size: 14px; 
             font-weight: 600;
             cursor: pointer;
             color: white;
             transition: background 0.2s, transform 0.1s;
+            line-height: 1.2;
         }
-        .btn-main:active { transform: scale(0.99); }
+        .btn-main:active { transform: scale(0.98); }
         
+        /* 單獨處理 View Photos 按鈕的容器和長方形樣式 */
+        #view-photos-container {
+            grid-column: 1 / -1; /* 跨越所有列 */
+            display: flex;
+            justify-content: center;
+        }
+        #view-photos-container .btn-main {
+            max-width: 50%; 
+            aspect-ratio: 4 / 1; /* 長方形 */
+            font-size: 16px;
+        }
+        /* 確保按鈕內容換行 */
+        .btn-main span { text-align: center; }
+
         .btn-copy { background-color: var(--copy-color); }
-        .btn-save { background-color: var(--primary-color); } /* Save (覆蓋) */
+        .btn-save { background-color: var(--primary-color); } 
         .btn-view { background-color: var(--view-color); color: white; }
         .btn-drive { background-color: var(--copy-color); }
         
@@ -200,7 +229,7 @@
     </div>
     
     <div id="app-screen" style="display: none;">
-        <div class="author-header">Author: DERER LIN (v4.0 - Save/Update Modes)</div>
+        <div class="author-header">Author: DERER LIN (v4.0 - Grid Buttons)</div>
 
         <div class="header">
             <div class="header-btn" onclick="logout()" title="Lock / Logout (鎖定/登出)">🔒</div>
@@ -326,14 +355,27 @@
         </div>
         
         <div class="footer-btns">
-            <button class="btn-main btn-copy" onclick="copyFormattedInfo()">📋 Copy Info</button>
+            <button class="btn-main btn-copy" onclick="copyFormattedInfo()">
+                📋<br><span>Copy Info</span>
+            </button>
             
-            <button class="btn-main btn-save" id="saveBtn" onclick="saveToCloud('overwrite')">💾 Save (覆蓋)</button> 
+            <button class="btn-main btn-save" id="saveBtn" onclick="saveToCloud('overwrite')">
+                💾<br><span>Save (覆蓋)</span>
+            </button> 
             
-            <button class="btn-main" id="updateBtn" onclick="saveToCloud('update')" style="background-color: #007bff;">📝 Update (補充)</button>
+            <button class="btn-main" id="updateBtn" onclick="saveToCloud('update')" style="background-color: #007bff;">
+                📝<br><span>Update (補充)</span>
+            </button>
             
-            <button class="btn-main btn-view" onclick="viewExcel()">📊 View Excel</button>
-            <button class="btn-main btn-drive" onclick="viewDriveFolder()">📂 View Photos</button>
+            <button class="btn-main btn-view" onclick="viewExcel()">
+                📊<br><span>View Excel</span>
+            </button>
+            
+            <div id="view-photos-container">
+                 <button class="btn-main btn-drive" onclick="viewDriveFolder()">
+                     📂 View Photos
+                 </button>
+            </div>
         </div>
     </div>
 
@@ -912,7 +954,7 @@ ${selfActions.replace(/\n/g, '\n')}
         });
     }
     
-    // ================= 上傳與清除邏輯 (已修改) =================
+    // ================= 上傳與清除邏輯 =================
     function clearInputs() {
         document.getElementById('input-machine').value = "";
         document.getElementById('input-total-time').value = "";
@@ -1027,7 +1069,7 @@ ${selfActions.replace(/\n/g, '\n')}
         });
     }
 
-    // ================= 圖片/語音函數 (恢復 Canvas 處理邏輯) =================
+    // ================= 圖片/語音函數 (Canvas 處理邏輯) =================
     
     function triggerFile(id) {
         if (window.location.protocol === 'http:' && !window.location.hostname.includes('localhost')) {
