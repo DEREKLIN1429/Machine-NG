@@ -3,43 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Machine-NG (重點事項紀錄)</title>
+    <title>Machine-NG (機械故障訊息)</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
+    
     <style>
         :root {
             /* 主體配色：黑、橘、綠 */
             --primary-color: #4CAF50; /* 綠色 - 主要/成功/儲存 */
-            --bg-color: #f7f9fc; 
+            --bg-color: #f7f9fc;
             --card-bg: #ffffff;
-            --danger-color: #e53935; 
+            --danger-color: #e53935;
             --copy-color: #FF9800; /* 橘色 - Copy/Drive */
             --view-color: #212121; /* 黑色 - View/次要 */
-            --frame-color: #4CAF50; 
+            --frame-color: #4CAF50;
             --input-border: #ddd;
         }
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background-color: var(--bg-color); 
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
             margin: 0; padding: 0;
             display: flex; justify-content: center; min-height: 100vh;
         }
 
         /* --- 模組化樣式 --- */
-        #login-screen, #status-modal, #settings-modal {
+        #login-screen, #status-modal, #settings-modal, #cropper-modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.6); z-index: 9999;
             display: none; align-items: center; justify-content: center;
         }
         #login-screen { background: var(--bg-color); }
+        #cropper-modal { background: rgba(0,0,0,0.8); } /* 裁剪介面使用更暗的背景 */
 
         .modal-box {
             background: white; padding: 25px; border-radius: 12px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center; width: 90%; max-width: 450px;
-            max-height: 90vh; 
-            overflow-y: auto; 
+            max-height: 90vh;
+            overflow-y: auto;
         }
+        /* 裁剪模態框調整，使其可以更寬 */
+        #cropper-modal .modal-box { max-width: 95%; max-height: 95vh; padding: 15px; }
+
         .login-input {
-            width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; 
-            border-radius: 8px; font-size: 16px; text-align: left; 
+            width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc;
+            border-radius: 8px; font-size: 16px; text-align: left;
             box-sizing: border-box;
         }
         .spinner {
@@ -52,11 +59,11 @@
         #app-screen { width: 100%; max-width: 500px; padding: 10px; box-sizing: border-box; }
         
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .header-btn { 
-            font-size: 24px; 
-            cursor: pointer; color: #555; padding: 6px; 
+        .header-btn {
+            font-size: 24px;
+            cursor: pointer; color: #555; padding: 6px;
             border-radius: 50%; transition: background 0.2s;
-            width: 36px; height: 36px; 
+            width: 36px; height: 36px;
             display: flex; align-items: center; justify-content: center;
         }
         .header-title h2 { margin: 0; color: #333; font-size: 1.2rem; line-height: 1.4; }
@@ -66,56 +73,92 @@
 
         .photo-controls { display: flex; gap: 10px; margin-bottom: 10px; }
         .btn-half { flex: 1; padding: 10px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; gap: 5px;}
-        .btn-cam { background-color: #FF5722; color: white; } 
-        .btn-gallery { background-color: #FFC107; color: #333; } 
+        .btn-cam { background-color: #FF5722; color: white; }
+        .btn-gallery { background-color: #FFC107; color: #333; }
 
         /* --- 圖片預覽 (保持修正) --- */
-        #preview-container { max-width: 100%; height: auto; }
+        #preview-container { max-width: 100%; height: auto; border: 2px dashed #ccc; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative;}
+        /* 新增 Aspect Ratio 類別 */
+        .ratio-4-3 { aspect-ratio: 4/3; }
+        .ratio-16-9 { aspect-ratio: 16/9; }
+        .ratio-9-16 { aspect-ratio: 9/16; }
+        .ratio-1-1 { aspect-ratio: 1/1; }
+
         #preview-img { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; }
+        .placeholder { position: absolute; color: #888; font-size: 1.1em; }
+        .ratio-tag { position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.6); color: white; padding: 2px 5px; border-radius: 4px; font-size: 0.7em; z-index: 10; }
+
 
         /* --- 輸入/表單樣式 (保持不變) --- */
         .input-group { margin-bottom: 8px; display: flex; flex-direction: column; }
         .input-label { font-weight: bold; font-size: 0.9rem; color: #333; margin-bottom: 4px; }
-        .text-input, textarea, select.text-input { 
-            width: 100%; padding: 10px; border: 1px solid var(--input-border); 
+        .text-input, textarea, select.text-input {
+            width: 100%; padding: 10px; border: 1px solid var(--input-border);
             border-radius: 6px; font-size: 15px; box-sizing: border-box;
             font-family: inherit; transition: border-color 0.3s;
         }
-        textarea { height: 80px; resize: vertical; } 
+        textarea { height: 80px; resize: vertical; }
         
         .time-component { display: flex; flex-direction: column; margin-bottom: 8px; }
         .time-input-row { display: flex; align-items: center; gap: 5px; }
 
+        /* 新增：總時間輸入組件排版 */
+        .total-time-input-group {
+            display: flex; /* 使用 Flexbox */
+            gap: 8px; /* 間隔 */
+        }
+        .total-time-input-group > .text-input:first-child {
+            flex-grow: 1; /* 讓總時間輸入框佔據更多空間 */
+        }
+
         /* --- 底部按鈕美學優化 (保持不變) --- */
         .footer-btns { display: flex; flex-direction: column; gap: 8px; margin-top: 15px; padding-bottom: 20px;}
-        .btn-main { 
-            width: 100%; 
-            padding: 14px 15px; 
-            border: none; 
-            border-radius: 8px; 
-            font-size: 16px; 
-            font-weight: 600; 
-            cursor: pointer; 
-            color: white; 
+        .btn-main {
+            width: 100%;
+            padding: 14px 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            color: white;
             transition: background 0.2s, transform 0.1s;
         }
         .btn-main:active { transform: scale(0.99); }
         
-        .btn-copy { background-color: var(--copy-color); } 
-        .btn-save { background-color: var(--primary-color); } 
-        .btn-view { background-color: var(--view-color); color: white; } 
-        .btn-drive { background-color: var(--copy-color); } 
+        .btn-copy { background-color: var(--copy-color); }
+        .btn-save { background-color: var(--primary-color); }
+        .btn-view { background-color: var(--view-color); color: white; }
+        .btn-drive { background-color: var(--copy-color); }
         
+        /* 語音按鈕樣式 */
+        .btn-voice {
+            background-color: #f0f0f0; 
+            color: #333;
+            border: 1px solid #ccc;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 5px;
+            transition: all 0.2s;
+        }
+        .btn-voice.recording {
+            background-color: #e53935; /* 錄音中：紅色背景 */
+            color: white;
+            box-shadow: 0 0 10px rgba(229, 57, 53, 0.5); 
+        }
+
         /* --- 設定內排版修正 (保持不變) --- */
         #machine-list-container, #concern-section-list-container {
             display: grid;
-            grid-template-columns: repeat(3, 1fr); 
+            grid-template-columns: repeat(3, 1fr);
             gap: 5px;
             margin-top: 10px;
         }
         .machine-list-item {
             display: flex;
-            flex-direction: column; 
+            flex-direction: column;
             justify-content: space-between;
             align-items: center;
             padding: 6px;
@@ -138,6 +181,9 @@
         
         .hidden { display: none !important; }
     </style>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
+
 </head>
 <body>
 
@@ -159,14 +205,32 @@
             <button id="status-close-btn" onclick="closeStatusModal()" class="btn-main btn-view" style="margin-top: 15px; display: none;">OK</button>
         </div>
     </div>
+    
+    <div id="cropper-modal" style="display: none;">
+        <div class="modal-box" style="max-width: 95%;">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 5px;">
+                <h3 style="margin: 0;">✂️ Crop Image (裁剪圖片)</h3>
+                <button onclick="closeCropperModal()" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color: #333;">&times;</button>
+            </div>
+            
+            <div style="max-height: 70vh; overflow: hidden; margin-bottom: 15px;">
+                <img id="cropper-image" style="max-width: 100%;">
+            </div>
+            
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-half btn-save" onclick="cropAndSave()">✅ Save Crop (儲存裁剪)</button>
+                <button class="btn-half" style="background-color: var(--danger-color);" onclick="closeCropperModal()">❌ Cancel (取消)</button>
+            </div>
+        </div>
+    </div>
 
     <div id="app-screen" style="display: none;">
-        <div class="author-header">Author: DERER LIN (v3.7)</div>
+        <div class="author-header">Author: DERER LIN (v3.8)</div>
 
         <div class="header">
             <div class="header-btn" onclick="logout()" title="Lock / Logout (鎖定/登出)">🔒</div>
             <div class="header-title">
-                <h2>Machine-NG<br>重點事項紀錄</h2>
+                <h2>Machine-NG<br>機械故障訊息</h2>
             </div>
             <div class="header-btn" onclick="openSettings()" title="Settings (設定)">⚙️</div>
         </div>
@@ -182,6 +246,10 @@
                 <button class="btn-half btn-cam" onclick="triggerFile('input-cam')">📷 Camera</button>
                 <button class="btn-half btn-gallery" onclick="triggerFile('input-gallery')">🖼️ Gallery</button>
             </div>
+
+            <button id="crop-button" class="btn-main hidden" style="margin-bottom: 10px; background-color: #007bff;" onclick="openCropperModal()">
+                ✂️ Crop/Adjust Image (裁剪/調整)
+            </button>
             
             <div id="preview-container" class="ratio-4-3" onclick="triggerFile('input-cam')" title="Click to take photo">
                 <div class="ratio-tag" id="ratio-display-tag">Ratio: 4:3</div>
@@ -210,10 +278,10 @@
             <div class="time-component">
                 <label class="input-label" for="input-stop-time-full">Stop time : (DD/MM/YYYY hh:mm)</label>
                 <div class="time-input-row">
-                    <input type="text" id="input-stop-time-full" class="text-input" 
-                           placeholder="請點右側按鈕或手動輸入" oninput="calculateTotalStopTime()">
-                    <button type="button" class="btn-update-time" 
-                            onclick="updateSingleTime('input-stop-time-full')" title="Set Current Time">
+                    <input type="text" id="input-stop-time-full" class="text-input"
+                               placeholder="請點右側按鈕或手動輸入" oninput="calculateTotalStopTime()">
+                    <button type="button" class="btn-update-time"
+                               onclick="updateSingleTime('input-stop-time-full')" title="Set Current Time">
                         <span style="font-size: 1.1em;">⏱️</span>
                     </button>
                 </div>
@@ -221,10 +289,10 @@
             <div class="time-component">
                 <label class="input-label" for="input-start-time-full">Start time : (DD/MM/YYYY hh:mm)</label>
                 <div class="time-input-row">
-                    <input type="text" id="input-start-time-full" class="text-input" 
-                           placeholder="請點右側按鈕或手動輸入" oninput="calculateTotalStopTime()">
-                    <button type="button" class="btn-update-time" 
-                            onclick="updateSingleTime('input-start-time-full')" title="Set Current Time">
+                    <input type="text" id="input-start-time-full" class="text-input"
+                               placeholder="請點右側按鈕或手動輸入" oninput="calculateTotalStopTime()">
+                    <button type="button" class="btn-update-time"
+                               onclick="updateSingleTime('input-start-time-full')" title="Set Current Time">
                         <span style="font-size: 1.1em;">⏱️</span>
                     </button>
                 </div>
@@ -319,8 +387,9 @@
                         <option value="16/9">16:9 (Wide)</option>
                         <option value="9/16">9:16 (Vertical / 直式)</option>
                         <option value="1/1">1:1 (Square)</option>
+                        <option value="FULL">FULL (Original / 原尺寸)</option>
                     </select>
-                    <div style="font-size: 0.8rem; color: #888; margin-top: 3px;">* Applies auto-crop.</div>
+                    <div style="font-size: 0.8rem; color: #888; margin-top: 3px;">* Applies auto-crop/cropping guide.</div>
                 </div>
                 
                 <div class="modal-group">
@@ -344,7 +413,7 @@
                         </div>
                 </div>
                 
-                 <div class="modal-group" style="border: 1px solid #ddd; padding: 10px; border-radius: 8px;">
+                <div class="modal-group" style="border: 1px solid #ddd; padding: 10px; border-radius: 8px;">
                     <label style="font-weight: bold; margin-bottom: 10px; display: block; color: var(--copy-color);">5. Machine List Management<br>(機器列表管理)</label>
                     
                     <input type="text" id="new-machine-name" class="login-input" style="margin: 0 0 5px 0;" placeholder="Add new machine name (e.g., CM4)">
@@ -366,33 +435,32 @@
 
 <script>
     // ================= 參數與初始化 =================
-    const DEFAULT_PASS = "12345"; 
+    const DEFAULT_PASS = "12345";
     const MAX_IMAGE_WIDTH = 1000;
     const MACHINE_LIST_KEY = "cfg_machine_list";
-    const CONCERN_LIST_KEY = "cfg_concern_list"; 
-    const EMPLOYEE_ID_KEY = "cfg_employee_id"; 
+    const CONCERN_LIST_KEY = "cfg_concern_list";
+    const EMPLOYEE_ID_KEY = "cfg_employee_id";
     const DEFAULT_MACHINE_LIST = ["BM5", "BM6", "BM7", "BM21", "BM22", "BM23", "CA3", "CA4", "CM1", "CM2", "CM3"];
-    // 修正 Concern List 初始值
-    const DEFAULT_CONCERN_LIST = ["Mixing", "Extrusion", "Cutting", "Calendering"]; 
+    const DEFAULT_CONCERN_LIST = ["Mixing", "Extrusion", "Cutting", "Calendering"];
     const DEFAULT_VOICE_TIMEOUT = 1.5;
 
-    // 你的固定路徑 (FIXED PATHS) - 已寫死
+    // 你的固定路徑 (FIXED PATHS)
     const FIXED_SCRIPT_ID = "AKfycbzfPzPODQjp_phrHPwjsoBYeA8-VgeaoYly6hr3Mx09Wj-o5tWHMPa-nTHfaHyloiH8zg/exec";
-    const FIXED_SHEET_ID = "1sDKZBJfasUbZSGNAfz9GIWfRdrdXxQMrXrxM3x9RlCY"; 
+    const FIXED_SHEET_ID = "1sDKZBJfasUbZSGNAfz9GIWfRdrdXxQMrXrxM3x9RlCY";
     const FIXED_FOLDER_ID = "1VPfLCMIuJPA66RjN8isrC4xq3luPMJe4";
 
     // 狀態變數
-    let processedImageBase64 = ""; 
+    let processedImageBase64 = ""; // 最終上傳的 Base64
+    let rawImageBase64 = ""; // 原始圖片 Base64，用於裁剪
+    let cropper = null; // Cropper 實例
     let recognition = null;
-    let isRecording = false; 
-    let activeTextAreaId = null; 
-    let snapshotText = "";       
-    let punctuationTimer = null; 
+    let isRecording = false;
+    let activeTextAreaId = null;
+    let snapshotText = "";
+    let punctuationTimer = null;
 
     document.addEventListener('DOMContentLoaded', () => {
-        if (typeof initApp === 'function') {
-            initApp();
-        }
+        initApp();
     });
 
     function initApp() {
@@ -402,7 +470,7 @@
         if(!localStorage.getItem(MACHINE_LIST_KEY)) {
             localStorage.setItem(MACHINE_LIST_KEY, JSON.stringify(DEFAULT_MACHINE_LIST));
         }
-        if(!localStorage.getItem(CONCERN_LIST_KEY)) { // 初始化 Concern List
+        if(!localStorage.getItem(CONCERN_LIST_KEY)) {
             localStorage.setItem(CONCERN_LIST_KEY, JSON.stringify(DEFAULT_CONCERN_LIST));
         }
         if(!localStorage.getItem("cfg_timeout")) {
@@ -411,14 +479,14 @@
         
         loadSettingsToUI();
         loadMachineListToUI();
-        loadConcernSectionToUI(); 
-        loadEmployeeID(); 
+        loadConcernSectionToUI();
+        loadEmployeeID();
         
         document.getElementById('input-stop-time-full').value = "";
         document.getElementById('input-start-time-full').value = "";
         document.getElementById('input-total-time').value = "";
         document.getElementById('input-total-time').style.backgroundColor = '#eee';
-        document.getElementById('total-time-unit').value = 'min'; // 預設 Total Time 單位為分鐘
+        document.getElementById('total-time-unit').value = 'min'; 
         
         const isLoggedIn = localStorage.getItem("isLoggedIn");
         if(isLoggedIn === "true") {
@@ -429,7 +497,7 @@
         }
     }
 
-    // ================= 員工 ID 持久化 (保持不變) =================
+    // ================= 員工 ID 持久化 =================
     function loadEmployeeID() {
         const savedId = localStorage.getItem(EMPLOYEE_ID_KEY);
         if (savedId) {
@@ -442,7 +510,7 @@
         localStorage.setItem(EMPLOYEE_ID_KEY, employeeId);
     }
 
-    // ================= Concern Section 管理 (保持邏輯) =================
+    // ================= Concern Section 管理 =================
     function getConcernList() {
         try {
             return JSON.parse(localStorage.getItem(CONCERN_LIST_KEY)) || DEFAULT_CONCERN_LIST;
@@ -527,18 +595,18 @@
         saveConcernList(newList);
     }
 
-    // ================= 登入與設定管理 (保持不變) =================
+    // ================= 登入與設定管理 =================
     
     function openSettings() {
         loadSettingsToUI();
         loadMachineListToUI();
-        loadConcernSectionToUI(); 
+        loadConcernSectionToUI();
         document.getElementById('settings-modal').style.display = 'flex';
     }
     
     function checkLogin() {
         const input = document.getElementById('loginPass').value;
-        const storedPass = localStorage.getItem("app_password"); 
+        const storedPass = localStorage.getItem("app_password");
         
         if(input === storedPass) {
             localStorage.setItem("isLoggedIn", "true");
@@ -554,7 +622,7 @@
         const newPass = document.getElementById('set-password').value;
         const ratio = document.getElementById('set-ratio').value;
         const lang = document.getElementById('set-lang').value;
-        const timeout = document.getElementById('set-timeout').value; 
+        const timeout = document.getElementById('set-timeout').value;
 
         if(newPass.trim() === "") { alert("Password cannot be empty!"); return; }
         if(isNaN(parseFloat(timeout)) || parseFloat(timeout) <= 0) {
@@ -562,10 +630,10 @@
             return;
         }
 
-        localStorage.setItem("app_password", newPass); 
+        localStorage.setItem("app_password", newPass);
         localStorage.setItem("cfg_ratio", ratio);
         localStorage.setItem("cfg_lang", lang);
-        localStorage.setItem("cfg_timeout", timeout); 
+        localStorage.setItem("cfg_timeout", timeout);
 
         alert("Settings Saved!");
         closeSettings();
@@ -575,7 +643,7 @@
     function loadSettingsToUI() {
         document.getElementById('set-password').value = localStorage.getItem("app_password") || DEFAULT_PASS;
         document.getElementById('set-ratio').value = localStorage.getItem("cfg_ratio") || "4/3";
-        document.getElementById('set-timeout').value = localStorage.getItem("cfg_timeout") || DEFAULT_VOICE_TIMEOUT; 
+        document.getElementById('set-timeout').value = localStorage.getItem("cfg_timeout") || DEFAULT_VOICE_TIMEOUT;
         const savedLang = localStorage.getItem("cfg_lang") || "cmn-Hant-TW";
         document.getElementById('set-lang').value = savedLang;
         document.getElementById('voice-lang-select').value = savedLang;
@@ -586,15 +654,19 @@
         const container = document.getElementById('preview-container');
         const tag = document.getElementById('ratio-display-tag');
         
-        container.className = ""; 
+        container.className = "";
         container.style.aspectRatio = "";
 
+        // 清除所有可能的 ratio 類別
+        container.classList.remove("ratio-4-3", "ratio-16-9", "ratio-9-16", "ratio-1-1");
+        
         if(ratio !== "FULL") {
             const ratioClass = `ratio-${ratio.replace("/", "-")}`;
             container.classList.add(ratioClass);
             tag.innerText = `Ratio: ${ratio.replace("/", ":")}`;
         } else {
              tag.innerText = "Ratio: Full (Original)";
+             container.style.aspectRatio = 'auto';
         }
         
         calculateTotalStopTime();
@@ -602,10 +674,10 @@
     
     function logout() {
         if(confirm("Lock and logout?\n(確定要鎖定並登出嗎？)")) {
-            localStorage.removeItem("isLoggedIn"); 
+            localStorage.removeItem("isLoggedIn");
             document.getElementById('app-screen').style.display = 'none';
-            document.getElementById('login-screen').style.display = 'flex'; 
-            document.getElementById('loginPass').value = ""; 
+            document.getElementById('login-screen').style.display = 'flex';
+            document.getElementById('loginPass').value = "";
             closeSettings();
         }
     }
@@ -701,21 +773,23 @@
     }
 
 
-    // ================= 時間處理函數 (保持不變) =================
+    // ================= 時間處理函數 (已優化) =================
     const DATETIME_REGEX = /^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})$/;
 
     function parseCustomDateTime(dtStr) {
         const match = dtStr.match(DATETIME_REGEX);
         if (!match) return null;
 
+        // 格式：DD/MM/YYYY hh:mm -> 轉換為 Date(YYYY, MM-1, DD, hh, mm)
         const day = parseInt(match[1], 10);
-        const month = parseInt(match[2], 10) - 1; 
+        const month = parseInt(match[2], 10) - 1;
         const year = parseInt(match[3], 10);
         const hour = parseInt(match[4], 10);
         const minute = parseInt(match[5], 10);
 
         const date = new Date(year, month, day, hour, minute);
 
+        // 簡單驗證日期是否溢出
         if (date.getFullYear() !== year || date.getMonth() !== month || date.getDate() !== day) {
              return null;
         }
@@ -733,7 +807,7 @@
         if (stopTimeStr === "" || startTimeStr === "") {
              totalTimeInput.value = "";
              totalTimeInput.style.backgroundColor = '#eee';
-             totalTimeInput.dataset.diffMinutes = ''; 
+             totalTimeInput.dataset.diffMinutes = '';
              return;
         }
         
@@ -743,12 +817,12 @@
         if (!stopDate || !startDate) {
             totalTimeInput.value = "Invalid Time";
             totalTimeInput.style.backgroundColor = '#fff0f0';
-            totalTimeInput.dataset.diffMinutes = ''; 
+            totalTimeInput.dataset.diffMinutes = '';
             return;
         }
 
         const diffMs = startDate.getTime() - stopDate.getTime();
-        const diffMinutes = Math.round(diffMs / (1000 * 60)); 
+        const diffMinutes = Math.round(diffMs / (1000 * 60));
         
         if (diffMinutes <= 0) {
             totalTimeInput.value = "0 min / 0.00 hr";
@@ -757,7 +831,7 @@
             return;
         }
 
-        totalTimeInput.dataset.diffMinutes = diffMinutes; 
+        totalTimeInput.dataset.diffMinutes = diffMinutes;
         
         let totalTimeFormatted;
         if (unit === 'h') {
@@ -773,13 +847,16 @@
 
 
     function getFullDateTimeString(dateObj) {
-        const dateOptions = { day: '2-digit', month: '2-digit', year: 'numeric' };
-        const timeOptions = { hour: '2-digit', minute: '2-digit', hour12: false };
+        const pad = (num) => num.toString().padStart(2, '0');
+
+        const day = pad(dateObj.getDate());
+        const month = pad(dateObj.getMonth() + 1); // 月份是從 0 開始
+        const year = dateObj.getFullYear();
+        const hour = pad(dateObj.getHours());
+        const minute = pad(dateObj.getMinutes());
         
-        const datePart = dateObj.toLocaleDateString('en-US', dateOptions).replace(/\//g, '/');
-        const timePart = dateObj.toLocaleTimeString('en-US', timeOptions).replace(/^(\d):/,'0$1:'); 
-        
-        return `${datePart} ${timePart}`;
+        // 確保格式為 DD/MM/YYYY hh:mm
+        return `${day}/${month}/${year} ${hour}:${minute}`;
     }
     
     function updateSingleTime(targetId) {
@@ -792,29 +869,28 @@
         }
     }
     
-    // ================= 複製格式化訊息 (修正格式與內容) =================
+    // ================= 複製格式化訊息 =================
     
     function extractDateAndTime(fullTimeStr) {
         const match = fullTimeStr.match(DATETIME_REGEX);
         if (match) {
-             const datePart = `${match[1]}/${match[2]}/${match[3]}`; 
-             const timePart = `${match[4]}:${match[5]}`; 
+             const datePart = `${match[1]}/${match[2]}/${match[3]}`;
+             const timePart = `${match[4]}:${match[5]}`;
              return { date: datePart, time: timePart };
         }
-        return { date: '', time: '' }; 
+        return { date: '', time: '' };
     }
     
     function copyFormattedInfo() {
         const totalTimeInput = document.getElementById('input-total-time');
         const totalTimeMinutes = totalTimeInput.dataset.diffMinutes;
         
-        // 修正 Total Time 格式: 只有在有有效分鐘數時才顯示格式
         let totalTimeFormat;
         if (totalTimeMinutes && totalTimeMinutes > 0) {
             const totalTimeHours = (totalTimeMinutes / 60).toFixed(2);
             totalTimeFormat = `${totalTimeMinutes} Min / ${totalTimeHours} hr`;
         } else {
-            totalTimeFormat = ''; 
+            totalTimeFormat = '';
         }
         
         // 1. 蒐集資料
@@ -824,16 +900,14 @@
         const startTimeFull = document.getElementById('input-start-time-full').value.trim();
         const repairFormNo = document.getElementById('input-form-no').value || "N/A";
         const reason = document.getElementById('input-reason').value || "N/A";
-        const concernSection = document.getElementById('input-concern-section').value || "N/A"; 
+        const concernSection = document.getElementById('input-concern-section').value || "N/A";
         const solution = document.getElementById('input-solution').value || "N/A";
-        const selfActions = document.getElementById('input-self-actions').value || "N/A"; 
+        const selfActions = document.getElementById('input-self-actions').value || "N/A";
         
         // 2. 處理時間
-        
-        // 修正 Start Time 顯示：如果 Start Time 為空，顯示空字串
         const startDisplay = startTimeFull === "" ? '' : startTimeFull;
 
-        // 3. 構建輸出字串 (最終格式: 去除所有 "-" 符號)
+        // 3. 構建輸出字串
         const output = `
 ID : ${employeeId}
 
@@ -868,9 +942,80 @@ ${selfActions.replace(/\n/g, '\n')}
         });
     }
 
-    // ================= 上傳與清除邏輯 (保持不變) =================
+    // ================= 圖片裁剪處理 (Cropper.js) =================
+
+    function openCropperModal() {
+        if (!rawImageBase64) {
+            alert("請先選擇一張圖片！");
+            return;
+        }
+        
+        document.getElementById('cropper-modal').style.display = 'flex';
+        const image = document.getElementById('cropper-image');
+        image.src = rawImageBase64;
+
+        // 取得設定的比例
+        const ratioStr = localStorage.getItem("cfg_ratio") || "4/3";
+        let aspectRatio = ratioStr === "FULL" ? NaN : eval(ratioStr); // 將 "4/3" 轉換為數字 4/3
+
+        // 銷毀舊的實例以防止重複初始化
+        if (cropper) {
+            cropper.destroy();
+        }
+
+        // 初始化 Cropper
+        cropper = new Cropper(image, {
+            aspectRatio: aspectRatio,
+            viewMode: 1, // 限制裁剪框在圖片內
+            autoCropArea: 0.9, // 預設裁剪區域佔 90%
+            zoomable: true,
+            movable: true,
+        });
+    }
+
+    function closeCropperModal() {
+        document.getElementById('cropper-modal').style.display = 'none';
+        if (cropper) {
+            cropper.destroy();
+            cropper = null;
+        }
+    }
+
+    function cropAndSave() {
+        if (!cropper) return;
+
+        // 取得裁剪後的 Base64 數據，並進行最終縮放
+        const croppedDataUrl = cropper.getCroppedCanvas({
+            maxWidth: MAX_IMAGE_WIDTH, // 使用您定義的最大寬度進行縮放
+            fillColor: '#fff',
+            imageSmoothingEnabled: true, // 啟用平滑處理
+            imageSmoothingQuality: 'high',
+        }).toDataURL('image/jpeg', 0.8);
+        
+        processedImageBase64 = croppedDataUrl;
+
+        // 更新主畫面預覽圖
+        document.getElementById('preview-img').src = processedImageBase64;
+        
+        // 如果是 FULL ratio，更新預覽容器的 aspect ratio
+        const ratioStr = localStorage.getItem("cfg_ratio") || "4/3";
+        if (ratioStr === "FULL") {
+             const tempImg = new Image();
+             tempImg.onload = function() {
+                 const container = document.getElementById('preview-container');
+                 container.style.aspectRatio = `${tempImg.width} / ${tempImg.height}`;
+             };
+             tempImg.src = processedImageBase64;
+        }
+
+
+        alert("✅ 圖片裁剪完成並已儲存！");
+        closeCropperModal();
+    }
+    
+    // ================= 上傳與清除邏輯 =================
     function clearInputs() {
-        document.getElementById('input-machine').value = ""; 
+        document.getElementById('input-machine').value = "";
         document.getElementById('input-total-time').value = "";
         document.getElementById('input-form-no').value = "";
         document.getElementById('input-reason').value = "";
@@ -882,26 +1027,32 @@ ${selfActions.replace(/\n/g, '\n')}
         document.getElementById('input-start-time-full').value = "";
         
         document.getElementById('input-total-time').style.backgroundColor = '#eee';
-        calculateTotalStopTime(); 
-
+        calculateTotalStopTime();
+        
+        // 新增：清除裁剪相關狀態並隱藏按鈕
         processedImageBase64 = "";
+        rawImageBase64 = "";
+        document.getElementById('crop-button').classList.add('hidden');
+        
         document.getElementById('preview-img').style.display = 'none';
         document.querySelector('.placeholder').style.display = 'block';
-        applySettings();
+        
+        // 重新應用設定以確保預覽容器的比例正確
+        applySettings(); 
     }
 
     function saveToCloud() {
         if(isRecording) manualStopVoice();
 
-        const employeeId = document.getElementById('input-employee-id').value; 
-        const machine = document.getElementById('input-machine').value; 
-        const stopTimeFull = document.getElementById('input-stop-time-full').value; 
-        const startTimeFull = document.getElementById('input-start-time-full').value; 
-        const totalTime = document.getElementById('input-total-time').value; 
+        const employeeId = document.getElementById('input-employee-id').value;
+        const machine = document.getElementById('input-machine').value;
+        const stopTimeFull = document.getElementById('input-stop-time-full').value;
+        const startTimeFull = document.getElementById('input-start-time-full').value;
+        const totalTime = document.getElementById('input-total-time').value;
         const formNo = document.getElementById('input-form-no').value;
         const reason = document.getElementById('input-reason').value;
         const concernSection = document.getElementById('input-concern-section').value;
-        const solution = document.getElementById('input-solution').value; 
+        const solution = document.getElementById('input-solution').value;
         const selfActions = document.getElementById('input-self-actions').value;
         
         if (formNo.trim() === "") {
@@ -909,7 +1060,7 @@ ${selfActions.replace(/\n/g, '\n')}
             return;
         }
 
-        if(!processedImageBase64 && !machine && !reason && !solution && !concernSection && !selfActions) { 
+        if(!processedImageBase64 && !machine && !reason && !solution && !concernSection && !selfActions) {
             alert("Empty! Please fill in machine info/notes or take a photo."); return;
         }
         if (machine.trim() === "") {
@@ -925,17 +1076,17 @@ ${selfActions.replace(/\n/g, '\n')}
         btn.disabled = true;
         showStatus('loading', 'Uploading...', '資料上傳中...');
 
-        const data = { 
-            image: processedImageBase64, 
-            employeeId: employeeId, 
+        const data = {
+            image: processedImageBase64,
+            employeeId: employeeId,
             machine: machine,
             stopTimeFull: stopTimeFull,
             startTimeFull: startTimeFull,
-            totalTime: totalTime, 
+            totalTime: totalTime,
             formNo: formNo,
-            reason: reason, 
+            reason: reason,
             concernSection: concernSection,
-            solution: solution, 
+            solution: solution,
             selfActions: selfActions,
             folderId: FIXED_FOLDER_ID
         };
@@ -946,7 +1097,7 @@ ${selfActions.replace(/\n/g, '\n')}
         })
         .then(r => r.json())
         .then(res => {
-            const action = res.action || '新增'; 
+            const action = res.action || '新增';
             if (res.result === 'success') {
                 showStatus('success', 'Upload Success!', `資料已成功 ${action}！`);
                 clearInputs();
@@ -964,21 +1115,9 @@ ${selfActions.replace(/\n/g, '\n')}
         });
     }
 
-    function viewExcel() {
-        const url = `https://docs.google.com/spreadsheets/d/${FIXED_SHEET_ID}/edit#gid=0`;
-        window.open(url, '_blank');
-    }
-
-    function viewDriveFolder() {
-        if(FIXED_FOLDER_ID && FIXED_FOLDER_ID.trim() !== "") {
-            window.open(`https://drive.google.com/drive/folders/${FIXED_FOLDER_ID}`, '_blank');
-        } else {
-            alert("Folder ID not set.");
-        }
-    }
+    // ================= 圖片與語音函數 =================
     
-    // ... 圖片/語音函數保持不變 ...
-    function triggerFile(id) { 
+    function triggerFile(id) {
         if (window.location.protocol === 'http:' && !window.location.hostname.includes('localhost')) {
             alert("❌ 相機功能需要 HTTPS 協定。請使用 Apps Script 網址開啟。");
             return;
@@ -986,6 +1125,7 @@ ${selfActions.replace(/\n/g, '\n')}
         document.getElementById(id).click();
     }
     
+    // 修改 handleFile：只讀取原始 Base64
     function handleFile(input) {
         if (!input.files || !input.files[0]) return;
         
@@ -993,60 +1133,27 @@ ${selfActions.replace(/\n/g, '\n')}
         const reader = new FileReader();
         
         reader.onload = function(e) {
-            const img = new Image();
-            img.onload = function() { processImageWithCanvas(img); };
-            img.src = e.target.result;
+            // 儲存原始 Base64 數據
+            rawImageBase64 = e.target.result;
+            
+            // 顯示在主預覽區
+            const preview = document.getElementById('preview-img');
+            preview.src = rawImageBase64;
+            preview.style.display = 'block';
+            document.querySelector('.placeholder').style.display = 'none';
+            document.getElementById('crop-button').classList.remove('hidden'); // 顯示裁剪按鈕
+            
+            // 初始狀態：預覽圖即為上傳圖 (未裁剪/縮放)，直到裁剪後才更新 processedImageBase64
+            processedImageBase64 = rawImageBase64; 
+            
+            // 由於 Cropper 會處理 FULL 比例，這裡只處理顯示
+            applySettings(); 
         }
         reader.readAsDataURL(file);
     }
     
-    function processImageWithCanvas(img) {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const ratioStr = localStorage.getItem("cfg_ratio") || "4/3";
-        
-        let targetRatio = 4/3;
-        let isFull = ratioStr === "FULL";
-
-        if(ratioStr === "16/9") targetRatio = 16/9;
-        else if(ratioStr === "9/16") targetRatio = 9/16;
-        else if(ratioStr === "1/1") targetRatio = 1;
-
-        let srcW = img.width; let srcH = img.height;
-        let drawW, drawH, startX, startY;
-
-        if (isFull) {
-            drawW = srcW; drawH = srcH; startX = 0; startY = 0;
-        } else {
-            let srcRatio = srcW / srcH;
-            if (srcRatio > targetRatio) {
-                drawH = srcH; drawW = srcH * targetRatio;
-                startX = (srcW - drawW) / 2; startY = 0;
-            } else {
-                drawW = srcW; drawH = srcW / targetRatio;
-                startX = 0; startY = (srcH - drawH) / 2;
-            }
-        }
-
-        const scale = MAX_IMAGE_WIDTH / drawW;
-        canvas.width = MAX_IMAGE_WIDTH; 
-        canvas.height = drawH * scale;
-
-        ctx.drawImage(img, startX, startY, drawW, drawH, 0, 0, canvas.width, canvas.height);
-        processedImageBase64 = canvas.toDataURL('image/jpeg', 0.8);
-        
-        const preview = document.getElementById('preview-img');
-        preview.src = processedImageBase64;
-        preview.style.display = 'block';
-        document.querySelector('.placeholder').style.display = 'none';
-
-        if(isFull) {
-             const container = document.getElementById('preview-container');
-             container.classList.remove("ratio-4-3", "ratio-16-9", "ratio-9-16", "ratio-1-1"); 
-             container.style.aspectRatio = `${canvas.width} / ${canvas.height}`;
-        }
-    }
-
+    // 舊的 processImageWithCanvas 函數已移除，功能由 Cropper.js 處理
+    
     function toggleVoice(btn) {
         if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
             alert("❌ 語音輸入被阻擋！瀏覽器不支援，或請確保 App 透過 HTTPS 網址開啟。");
@@ -1057,11 +1164,12 @@ ${selfActions.replace(/\n/g, '\n')}
         const targetArea = document.getElementById(targetId);
 
         if (isRecording && activeTextAreaId === targetId) {
-            manualStopVoice(); 
+            manualStopVoice();
         } else if (isRecording && activeTextAreaId !== targetId) {
              if(confirm(`目前正在錄製其他欄位，確定要切換到 [${targetArea.previousElementSibling.innerText.trim()}] 嗎？`)) {
-                manualStopVoice();
-                startVoice(btn, targetArea, targetId);
+                 manualStopVoice();
+                 // 稍微延遲以確保停止完成
+                 setTimeout(() => startVoice(btn, targetArea, targetId), 100);
              }
         } else {
             startVoice(btn, targetArea, targetId);
@@ -1073,8 +1181,8 @@ ${selfActions.replace(/\n/g, '\n')}
         recognition = new SpeechRecognition();
         
         recognition.lang = document.getElementById('voice-lang-select').value || 'cmn-Hant-TW';
-        recognition.continuous = true; 
-        recognition.interimResults = true; 
+        recognition.continuous = true;
+        recognition.interimResults = true;
 
         isRecording = true;
         activeTextAreaId = targetId;
@@ -1089,7 +1197,7 @@ ${selfActions.replace(/\n/g, '\n')}
         }
 
         recognition.onresult = function(event) {
-            let currentSessionText = ''; 
+            let currentSessionText = '';
             for (let i = event.resultIndex; i < event.results.length; ++i) {
                 currentSessionText += event.results[i][0].transcript;
             }
@@ -1102,8 +1210,8 @@ ${selfActions.replace(/\n/g, '\n')}
             if(currentSessionText.trim().length > 0) {
                 const timeoutMs = parseFloat(localStorage.getItem("cfg_timeout") || DEFAULT_VOICE_TIMEOUT) * 1000;
                 punctuationTimer = setTimeout(() => {
-                    manualStopVoice(); 
-                }, timeoutMs); 
+                    manualStopVoice();
+                }, timeoutMs);
             }
         };
 
@@ -1129,15 +1237,16 @@ ${selfActions.replace(/\n/g, '\n')}
 
     function manualStopVoice() {
         if(isRecording && recognition) {
-            isRecording = false; 
+            isRecording = false; // 設置狀態
             if(punctuationTimer) clearTimeout(punctuationTimer);
 
+            // 新增標點符號邏輯
             const targetArea = document.getElementById(activeTextAreaId);
             let currentVal = targetArea.value.trim();
             if(currentVal.length > 0) {
                 const lastChar = currentVal.slice(-1);
                 const lang = document.getElementById('voice-lang-select').value;
-                const marks = lang.includes('en') ? [",", "."] : ["，", "。", "、", "？", "！"];
+                const marks = lang.includes('en') ? [",", ".", "?", "!"] : ["，", "。", "、", "？", "！"];
                 
                 if(!marks.includes(lastChar)) {
                     const mark = lang.includes('en') ? ". " : "。";
@@ -1145,9 +1254,8 @@ ${selfActions.replace(/\n/g, '\n')}
                     targetArea.value = currentVal;
                 }
             }
-
+            
             recognition.stop();
-            resetVoiceUI();
         }
     }
 
