@@ -1,906 +1,840 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Machine-NG (重點事項紀錄)</title>
-    <style>
-        :root {
-            /* 主體配色：黑、橘、綠 */
-            --primary-color: #4CAF50; /* 綠色 - 主要/成功/儲存 */
-            --bg-color: #f7f9fc; 
-            --card-bg: #ffffff;
-            --danger-color: #e53935; 
-            --copy-color: #FF9800; /* 橘色 - Copy/Drive */
-            --view-color: #212121; /* 黑色 - View/次要 */
-            --frame-color: #4CAF50; 
-            --input-border: #ddd;
-        }
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background-color: var(--bg-color); 
-            margin: 0; padding: 0;
-            display: flex; justify-content: center; min-height: 100vh;
-        }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Machine-NG (重點事項紀錄)</title>
+    <style>
+        :root {
+            /* 主體配色：黑、橘、綠 */
+            --primary-color: #4CAF50; /* 綠色 - 主要/成功/儲存 */
+            --bg-color: #f7f9fc; 
+            --card-bg: #ffffff;
+            --danger-color: #e53935; 
+            --copy-color: #FF9800; /* 橘色 - Copy/Drive */
+            --view-color: #212121; /* 黑色 - View/次要 */
+            --frame-color: #4CAF50; 
+            --input-border: #ddd;
+        }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: var(--bg-color); 
+            margin: 0; padding: 0;
+            display: flex; justify-content: center; min-height: 100vh;
+        }
 
-        /* --- 模組化樣式 --- */
-        #login-screen, #status-modal, #settings-modal {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6); z-index: 9999;
-            display: none; align-items: center; justify-content: center;
-        }
-        #login-screen { background: var(--bg-color); }
+        /* --- 模組化樣式 --- */
+        #login-screen, #status-modal, #settings-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); z-index: 9999;
+            display: none; align-items: center; justify-content: center;
+        }
+        #login-screen { background: var(--bg-color); }
 
-        .modal-box {
-            background: white; padding: 25px; border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center; width: 90%; max-width: 450px;
-            max-height: 90vh; 
-            overflow-y: auto; 
-        }
-        .login-input {
-            width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; 
-            border-radius: 8px; font-size: 16px; text-align: left; 
-            box-sizing: border-box;
-        }
-        .spinner {
-            border: 4px solid #f3f3f3; border-top: 4px solid var(--primary-color);
-            border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite;
-            margin: 0 auto 15px auto;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
-        #app-screen { width: 100%; max-width: 500px; padding: 10px; box-sizing: border-box; }
-        
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .header-btn { 
-            font-size: 24px; 
-            cursor: pointer; color: #555; padding: 6px; 
-            border-radius: 50%; transition: background 0.2s;
-            width: 36px; height: 36px; 
-            display: flex; align-items: center; justify-content: center;
-        }
-        .header-title h2 { margin: 0; color: #333; font-size: 1.2rem; line-height: 1.4; }
+        .modal-box {
+            background: white; padding: 25px; border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center; width: 90%; max-width: 450px;
+            max-height: 90vh; 
+            overflow-y: auto; 
+        }
+        .login-input {
+            width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; 
+            border-radius: 8px; font-size: 16px; text-align: left; 
+            box-sizing: border-box;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3; border-top: 4px solid var(--primary-color);
+            border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite;
+            margin: 0 auto 15px auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        #app-screen { width: 100%; max-width: 500px; padding: 10px; box-sizing: border-box; }
+        
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .header-btn { 
+            font-size: 24px; 
+            cursor: pointer; color: #555; padding: 6px; 
+            border-radius: 50%; transition: background 0.2s;
+            width: 36px; height: 36px; 
+            display: flex; align-items: center; justify-content: center;
+        }
+        .header-title h2 { margin: 0; color: #333; font-size: 1.2rem; line-height: 1.4; }
 
-        .card { background: var(--card-bg); padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 12px; }
-        .section-title { font-weight: bold; color: #555; margin-bottom: 8px; display: block; font-size: 1rem; }
+        .card { background: var(--card-bg); padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 12px; }
+        .section-title { font-weight: bold; color: #555; margin-bottom: 8px; display: block; font-size: 1rem; }
 
-        .photo-controls { display: flex; gap: 10px; margin-bottom: 10px; }
-        .btn-half { flex: 1; padding: 10px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; gap: 5px;}
-        .btn-cam { background-color: #FF5722; color: white; } 
-        .btn-gallery { background-color: #FFC107; color: #333; } 
+        .photo-controls { display: flex; gap: 10px; margin-bottom: 10px; }
+        .btn-half { flex: 1; padding: 10px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; gap: 5px;}
+        .btn-cam { background-color: #FF5722; color: white; } 
+        .btn-gallery { background-color: #FFC107; color: #333; } 
 
-        /* --- 圖片預覽 (保持修正) --- */
-        #preview-container { max-width: 100%; height: auto; }
-        #preview-img { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; }
+        /* --- 圖片預覽 (保持修正) --- */
+        #preview-container { max-width: 100%; height: auto; }
+        #preview-img { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; }
 
-        /* --- 輸入/表單樣式 (保持不變) --- */
-        .input-group { margin-bottom: 8px; display: flex; flex-direction: column; }
-        .input-label { font-weight: bold; font-size: 0.9rem; color: #333; margin-bottom: 4px; }
-        .text-input, textarea, select.text-input { 
-            width: 100%; padding: 10px; border: 1px solid var(--input-border); 
-            border-radius: 6px; font-size: 15px; box-sizing: border-box;
-            font-family: inherit; transition: border-color 0.3s;
-        }
-        textarea { height: 80px; resize: vertical; } 
-        
-        .time-component { display: flex; flex-direction: column; margin-bottom: 8px; }
-        .time-input-row { display: flex; align-items: center; gap: 5px; }
-        
-        /* 新增語音按鈕樣式 */
-        .btn-voice {
-            background-color: #3f51b5; /* 藍色 */
-            color: white;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: background-color 0.3s;
-        }
-        .btn-voice.recording {
-            background-color: var(--danger-color); /* 錄音中變成紅色 */
-            animation: pulse 1s infinite alternate; /* 增加閃爍效果 */
-        }
-        @keyframes pulse {
-            from { box-shadow: 0 0 0 0 rgba(229, 57, 53, 0.7); }
-            to { box-shadow: 0 0 0 10px rgba(229, 57, 53, 0); }
-        }
-        .voice-control-group {
-            margin-top: 5px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+        /* --- 輸入/表單樣式 (保持不變) --- */
+        .input-group { margin-bottom: 8px; display: flex; flex-direction: column; }
+        .input-label { font-weight: bold; font-size: 0.9rem; color: #333; margin-bottom: 4px; }
+        .text-input, textarea, select.text-input { 
+            width: 100%; padding: 10px; border: 1px solid var(--input-border); 
+            border-radius: 6px; font-size: 15px; box-sizing: border-box;
+            font-family: inherit; transition: border-color 0.3s;
+        }
+        textarea { height: 80px; resize: vertical; } 
+        
+        .time-component { display: flex; flex-direction: column; margin-bottom: 8px; }
+        .time-input-row { display: flex; align-items: center; gap: 5px; }
 
-        /* --- 底部按鈕美學優化 (保持不變) --- */
-        .footer-btns { display: flex; flex-direction: column; gap: 8px; margin-top: 15px; padding-bottom: 20px;}
-        .btn-main { 
-            width: 100%; 
-            padding: 14px 15px; 
-            border: none; 
-            border-radius: 8px; 
-            font-size: 16px; 
-            font-weight: 600; 
-            cursor: pointer; 
-            color: white; 
-            transition: background 0.2s, transform 0.1s;
-        }
-        .btn-main:active { transform: scale(0.99); }
-        
-        .btn-copy { background-color: var(--copy-color); } 
-        .btn-save { background-color: var(--primary-color); } 
-        .btn-view { background-color: var(--view-color); color: white; } 
-        .btn-drive { background-color: var(--copy-color); } 
-        
-        /* --- 設定內排版修正 (保持不變) --- */
-        #machine-list-container, #concern-section-list-container {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr); 
-            gap: 5px;
-            margin-top: 10px;
-        }
-        .machine-list-item {
-            display: flex;
-            flex-direction: column; 
-            justify-content: space-between;
-            align-items: center;
-            padding: 6px;
-            background: #f1f1f1;
-            border-radius: 4px;
-            text-align: center;
-            font-size: 0.8em;
-            word-break: break-all;
-        }
-        .btn-remove-item {
-            background: var(--danger-color);
-            color: white;
-            border: none;
-            padding: 2px 5px;
-            border-radius: 3px;
-            cursor: pointer;
-            margin-top: 3px;
-            font-weight: bold;
-        }
-        
-        .hidden { display: none !important; }
-        
-        /* --- 新增: 近期紀錄列表樣式 --- */
-        .record-item {
-            padding: 8px 10px;
-            margin-bottom: 5px;
-            border-bottom: 1px solid #eee;
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            background-color: #fafafa;
-            border-radius: 4px;
-            transition: background-color 0.2s;
-        }
-        .record-item:hover {
-            background-color: #e6ffed; /* Hover 時用綠色系 */
-        }
-        .record-title {
-            font-weight: bold;
-            color: var(--view-color); /* 黑色 */
-        }
-        .record-subtitle {
-            color: #666;
-            font-size: 0.85em;
-        }
-        .record-time {
-            color: var(--copy-color); /* 橘色 */
-            font-size: 0.8em;
-        }
-    </style>
+        /* --- 底部按鈕美學優化 (保持不變) --- */
+        .footer-btns { display: flex; flex-direction: column; gap: 8px; margin-top: 15px; padding-bottom: 20px;}
+        .btn-main { 
+            width: 100%; 
+            padding: 14px 15px; 
+            border: none; 
+            border-radius: 8px; 
+            font-size: 16px; 
+            font-weight: 600; 
+            cursor: pointer; 
+            color: white; 
+            transition: background 0.2s, transform 0.1s;
+        }
+        .btn-main:active { transform: scale(0.99); }
+        
+        .btn-copy { background-color: var(--copy-color); } 
+        .btn-save { background-color: var(--primary-color); } 
+        .btn-view { background-color: var(--view-color); color: white; } 
+        .btn-drive { background-color: var(--copy-color); } 
+        
+        /* --- 設定內排版修正 (保持不變) --- */
+        #machine-list-container, #concern-section-list-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 5px;
+            margin-top: 10px;
+        }
+        .machine-list-item {
+            display: flex;
+            flex-direction: column; 
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px;
+            background: #f1f1f1;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 0.8em;
+            word-break: break-all;
+        }
+        .btn-remove-item {
+            background: var(--danger-color);
+            color: white;
+            border: none;
+            padding: 2px 5px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-top: 3px;
+            font-weight: bold;
+        }
+        
+        .hidden { display: none !important; }
+    </style>
 </head>
 <body>
 
-    <div id="login-screen" style="display: none;">
-        <div class="modal-box">
-            <h3>🔒 Login (登入)</h3>
-            <p style="color:#666; font-size:0.9em;">Default Password: 12345<br>(請輸入密碼)</p>
-            <input type="password" id="loginPass" class="login-input" placeholder="Password">
-            <button class="btn-main btn-save" onclick="checkLogin()">Login (進入)</button>
-        </div>
-    </div>
+    <div id="login-screen" style="display: none;">
+        <div class="modal-box">
+            <h3>🔒 Login (登入)</h3>
+            <p style="color:#666; font-size:0.9em;">Default Password: 12345<br>(請輸入密碼)</p>
+            <input type="password" id="loginPass" class="login-input" placeholder="Password">
+            <button class="btn-main btn-save" onclick="checkLogin()">Login (進入)</button>
+        </div>
+    </div>
 
-    <div id="status-modal" style="display: none;">
-        <div class="modal-box">
-            <div id="status-spinner" class="spinner"></div>
-            <div id="status-icon" class="status-icon" style="display:none; font-size: 40px;"></div>
-            <h3 id="status-text" style="color:#333; margin:0;">Uploading...</h3>
-            <p id="status-subtext" style="color:#666; font-size:0.9em; margin-top:5px;">(資料上傳中...)</p>
-            <button id="status-close-btn" onclick="closeStatusModal()" class="btn-main btn-view" style="margin-top: 15px; display: none;">OK</button>
-        </div>
-    </div>
+    <div id="status-modal" style="display: none;">
+        <div class="modal-box">
+            <div id="status-spinner" class="spinner"></div>
+            <div id="status-icon" class="status-icon" style="display:none; font-size: 40px;"></div>
+            <h3 id="status-text" style="color:#333; margin:0;">Uploading...</h3>
+            <p id="status-subtext" style="color:#666; font-size:0.9em; margin-top:5px;">(資料上傳中...)</p>
+            <button id="status-close-btn" onclick="closeStatusModal()" class="btn-main btn-view" style="margin-top: 15px; display: none;">OK</button>
+        </div>
+    </div>
 
-    <div id="app-screen" style="display: none;">
-        <div class="author-header">Author: DERER LIN (v3.7)</div>
+    <div id="app-screen" style="display: none;">
+        <div class="author-header">Author: DERER LIN (v3.7)</div>
 
-        <div class="header">
-            <div class="header-btn" onclick="logout()" title="Lock / Logout (鎖定/登出)">🔒</div>
-            <div class="header-title">
-                <h2>Machine-NG<br>重點事項紀錄</h2>
-            </div>
-            <div class="header-btn" onclick="openSettings()" title="Settings (設定)">⚙️</div>
-        </div>
+        <div class="header">
+            <div class="header-btn" onclick="logout()" title="Lock / Logout (鎖定/登出)">🔒</div>
+            <div class="header-title">
+                <h2>Machine-NG<br>重點事項紀錄</h2>
+            </div>
+            <div class="header-btn" onclick="openSettings()" title="Settings (設定)">⚙️</div>
+        </div>
 
-        <div class="input-group">
-            <label class="input-label" for="input-employee-id">Employee ID (員工編號):</label>
-            <input type="text" id="input-employee-id" class="text-input" placeholder="儲存後不會清除">
-        </div>
+        <div class="input-group">
+            <label class="input-label" for="input-employee-id">Employee ID (員工編號):</label>
+            <input type="text" id="input-employee-id" class="text-input" placeholder="儲存後不會清除">
+        </div>
 
-        <div class="card">
-            <span class="section-title">1. Photo (圖片紀錄)</span>
-            <div class="photo-controls">
-                <button class="btn-half btn-cam" onclick="triggerFile('input-cam')">📷 Camera</button>
-                <button class="btn-half btn-gallery" onclick="triggerFile('input-gallery')">🖼️ Gallery</button>
-            </div>
-            
-            <div id="preview-container" class="ratio-4-3" onclick="triggerFile('input-cam')" title="Click to take photo">
-                <div class="ratio-tag" id="ratio-display-tag">Ratio: 4:3</div>
-                <span class="placeholder">Tap here to Take Photo</span>
-                <img id="preview-img">
-            </div>
-            
-            <input type="file" id="input-cam" accept="image/*" capture="environment" class="hidden" onchange="handleFile(this)">
-            <input type="file" id="input-gallery" accept="image/*" class="hidden" onchange="handleFile(this)">
-        </div>
+        <div class="card">
+            <span class="section-title">1. Photo (圖片紀錄)</span>
+            <div class="photo-controls">
+                <button class="btn-half btn-cam" onclick="triggerFile('input-cam')">📷 Camera</button>
+                <button class="btn-half btn-gallery" onclick="triggerFile('input-gallery')">🖼️ Gallery</button>
+            </div>
+            
+            <div id="preview-container" class="ratio-4-3" onclick="triggerFile('input-cam')" title="Click to take photo">
+                <div class="ratio-tag" id="ratio-display-tag">Ratio: 4:3</div>
+                <span class="placeholder">Tap here to Take Photo</span>
+                <img id="preview-img">
+            </div>
+            
+            <input type="file" id="input-cam" accept="image/*" capture="environment" class="hidden" onchange="handleFile(this)">
+            <input type="file" id="input-gallery" accept="image/*" class="hidden" onchange="handleFile(this)">
+        </div>
 
-        <div class="card" id="info-card">
-            <span class="section-title" id="machine-info-title">2. Machine NG Information</span>
-            
-            <div class="input-group">
-                <label class="input-label" for="input-machine">Machine :</label>
-                <select id="input-machine" class="text-input">
-                    </select>
-            </div>
-            
-            <div class="input-group">
-                <label class="input-label" for="input-form-no">Repair Form No:</label>
-                <input type="text" id="input-form-no" class="text-input" placeholder="e.g. A69304">
-            </div>
+        <div class="card" id="info-card">
+            <span class="section-title" id="machine-info-title">2. Machine NG Information</span>
+            
+            <div class="input-group">
+                <label class="input-label" for="input-machine">Machine :</label>
+                <select id="input-machine" class="text-input">
+                    </select>
+            </div>
+            
+            <div class="input-group">
+                <label class="input-label" for="input-form-no">Repair Form No:</label>
+                <input type="text" id="input-form-no" class="text-input" placeholder="e.g. A69304">
+            </div>
 
-            <div class="time-component">
-                <label class="input-label" for="input-stop-time-full">Stop time : (DD/MM/YYYY hh:mm)</label>
-                <div class="time-input-row">
-                    <input type="text" id="input-stop-time-full" class="text-input" 
-                           placeholder="請點右側按鈕或手動輸入" oninput="calculateTotalStopTime()">
-                    <button type="button" class="btn-update-time" 
-                            onclick="updateSingleTime('input-stop-time-full')" title="Set Current Time">
-                        <span style="font-size: 1.1em;">⏱️</span>
-                    </button>
-                </div>
-            </div>
-            <div class="time-component">
-                <label class="input-label" for="input-start-time-full">Start time : (DD/MM/YYYY hh:mm)</label>
-                <div class="time-input-row">
-                    <input type="text" id="input-start-time-full" class="text-input" 
-                           placeholder="請點右側按鈕或手動輸入" oninput="calculateTotalStopTime()">
-                    <button type="button" class="btn-update-time" 
-                            onclick="updateSingleTime('input-start-time-full')" title="Set Current Time">
-                        <span style="font-size: 1.1em;">⏱️</span>
-                    </button>
-                </div>
-            </div>
+            <div class="time-component">
+                <label class="input-label" for="input-stop-time-full">Stop time : (DD/MM/YYYY hh:mm)</label>
+                <div class="time-input-row">
+                    <input type="text" id="input-stop-time-full" class="text-input" 
+                           placeholder="請點右側按鈕或手動輸入" oninput="calculateTotalStopTime()">
+                    <button type="button" class="btn-update-time" 
+                            onclick="updateSingleTime('input-stop-time-full')" title="Set Current Time">
+                        <span style="font-size: 1.1em;">⏱️</span>
+                    </button>
+                </div>
+            </div>
+            <div class="time-component">
+                <label class="input-label" for="input-start-time-full">Start time : (DD/MM/YYYY hh:mm)</label>
+                <div class="time-input-row">
+                    <input type="text" id="input-start-time-full" class="text-input" 
+                           placeholder="請點右側按鈕或手動輸入" oninput="calculateTotalStopTime()">
+                    <button type="button" class="btn-update-time" 
+                            onclick="updateSingleTime('input-start-time-full')" title="Set Current Time">
+                        <span style="font-size: 1.1em;">⏱️</span>
+                    </button>
+                </div>
+            </div>
 
-            <div class="input-group">
-                <label class="input-label" for="input-total-time">Total stop time : (自動計算)</label>
-                <div class="total-time-input-group">
-                    <input type="text" id="input-total-time" class="text-input" placeholder="" readonly style="background-color: #eee; font-weight: bold;">
-                    <select id="total-time-unit" onchange="calculateTotalStopTime()" class="text-input" style="width: auto;">
-                        <option value="h">hr (小時)</option>
-                        <option value="min">min (分鐘)</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div class="input-group">
-                <label class="input-label" for="input-concern-section">Concern Section :</label>
-                <select id="input-concern-section" class="text-input">
-                    </select>
-            </div>
+            <div class="input-group">
+                <label class="input-label" for="input-total-time">Total stop time : (自動計算)</label>
+                <div class="total-time-input-group">
+                    <input type="text" id="input-total-time" class="text-input" placeholder="" readonly style="background-color: #eee; font-weight: bold;">
+                    <select id="total-time-unit" onchange="calculateTotalStopTime()" class="text-input" style="width: auto;">
+                        <option value="h">hr (小時)</option>
+                        <option value="min">min (分鐘)</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="input-group">
+                <label class="input-label" for="input-concern-section">Concern Section :</label>
+                <select id="input-concern-section" class="text-input">
+                    </select>
+            </div>
 
-            <div class="input-group">
-                <label class="input-label" for="input-reason">Reason :</label>
-                <textarea id="input-reason" placeholder="e.g. dischrge door not open"></textarea>
-                <div class="voice-control-group">
-                    <button type="button" class="btn-voice" data-target="input-reason" onclick="toggleVoice(this)">
-                        🎤 語音輸入
-                    </button>
-                    <span style="font-size: 0.8em; color: #666;"> (靜默 1.5 秒自動停止)</span>
-                </div>
-            </div>
-            
-            <div class="input-group">
-                <label class="input-label" for="input-solution">How to Solve Problem:</label>
-                <textarea id="input-solution" placeholder="e.g. hydraulic pressure set"></textarea>
-                <div class="voice-control-group">
-                    <button type="button" class="btn-voice" data-target="input-solution" onclick="toggleVoice(this)">
-                        🎤 語音輸入
-                    </button>
-                </div>
-            </div>
-            
-             <div class="input-group">
-                <label class="input-label" for="input-self-actions">Self Actions:</label>
-                <textarea id="input-self-actions" placeholder="e.g. check and inform maintenance team"></textarea>
-                <div class="voice-control-group">
-                    <button type="button" class="btn-voice" data-target="input-self-actions" onclick="toggleVoice(this)">
-                        🎤 語音輸入
-                    </button>
-                </div>
-            </div>
-            
-            <select id="voice-lang-select" class="hidden">
-                <option value="cmn-Hant-TW">中文 (繁體)</option>
-                <option value="en-US">English</option>
-                <option value="ja-JP">Japanese</option>
-                <option value="hi-IN">Hindi (印地語)</option>
-            </select>
-        </div>
-        
-                <div class="card" id="recent-records-card" style="margin-top: 15px;">
-            <span class="section-title">3. Recent Records (近期紀錄 - Last 10)</span>
-            <ul id="recent-records-list" style="list-style: none; padding: 0; margin: 0; font-size: 0.9em;">
-                                <li style="color: #999;">Loading recent records...</li>
-            </ul>
-        </div>
-                
-        <div class="footer-btns">
-            <button class="btn-main btn-copy" onclick="copyFormattedInfo()">📋 Copy Info</button>
-            <button class="btn-main btn-save" id="saveBtn" onclick="saveToCloud()">💾 Save to Cloud</button>
-            <button class="btn-main btn-view" onclick="viewExcel()">📊 View Excel</button>
-            <button class="btn-main btn-drive" onclick="viewDriveFolder()">📂 View Photos</button>
-        </div>
-    </div>
+            <div class="input-group">
+                <label class="input-label" for="input-reason">Reason :</label>
+                <textarea id="input-reason" placeholder="e.g. dischrge door not open"></textarea>
+                <div class="voice-control-group">
+                    <button type="button" class="btn-voice" data-target="input-reason" onclick="toggleVoice(this)">
+                        🎤 語音輸入
+                    </button>
+                    <span style="font-size: 0.8em; color: #666;"> (靜默 1.5 秒自動停止)</span>
+                </div>
+            </div>
+            
+            <div class="input-group">
+                <label class="input-label" for="input-solution">How to Solve Problem:</label>
+                <textarea id="input-solution" placeholder="e.g. hydraulic pressure set"></textarea>
+                <div class="voice-control-group">
+                    <button type="button" class="btn-voice" data-target="input-solution" onclick="toggleVoice(this)">
+                        🎤 語音輸入
+                    </button>
+                </div>
+            </div>
+            
+             <div class="input-group">
+                <label class="input-label" for="input-self-actions">Self Actions:</label>
+                <textarea id="input-self-actions" placeholder="e.g. check and inform maintenance team"></textarea>
+                <div class="voice-control-group">
+                    <button type="button" class="btn-voice" data-target="input-self-actions" onclick="toggleVoice(this)">
+                        🎤 語音輸入
+                    </button>
+                </div>
+            </div>
+            
+            <select id="voice-lang-select" class="hidden">
+                <option value="cmn-Hant-TW">中文 (繁體)</option>
+                <option value="en-US">English</option>
+                <option value="ja-JP">Japanese</option>
+                <option value="hi-IN">Hindi (印地語)</option>
+            </select>
+        </div>
+        
+        <div class="footer-btns">
+            <button class="btn-main btn-copy" onclick="copyFormattedInfo()">📋 Copy Info</button>
+            <button class="btn-main btn-save" id="saveBtn" onclick="saveToCloud()">💾 Save to Cloud</button>
+            <button class="btn-main btn-view" onclick="viewExcel()">📊 View Excel</button>
+            <button class="btn-main btn-drive" onclick="viewDriveFolder()">📂 View Photos</button>
+        </div>
+    </div>
 
-    <div id="settings-modal" style="display: none;">
-        <div class="modal-box">
-            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
-                <h3>Settings (設定)</h3>
-                <button onclick="closeSettings()" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
-            </div>
-            
-            <div class="settings-content-group">
-                <div class="modal-group" style="background: #f9f9f9; padding: 10px; border-radius: 8px; border: 1px dashed #ccc;">
-                    <label style="color:#d63384; font-weight: bold; margin-bottom: 5px; display: block;">🔑 Login Password (修改登入密碼) (Default: 12345)</label>
-                    <input type="text" id="set-password" class="login-input" style="margin: 0;" placeholder="Current: 12345">
-                </div>
+    <div id="settings-modal" style="display: none;">
+        <div class="modal-box">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                <h3>Settings (設定)</h3>
+                <button onclick="closeSettings()" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+            </div>
+            
+            <div class="settings-content-group">
+                <div class="modal-group" style="background: #f9f9f9; padding: 10px; border-radius: 8px; border: 1px dashed #ccc;">
+                    <label style="color:#d63384; font-weight: bold; margin-bottom: 5px; display: block;">🔑 Login Password (修改登入密碼) (Default: 12345)</label>
+                    <input type="text" id="set-password" class="login-input" style="margin: 0;" placeholder="Current: 12345">
+                </div>
 
-                <div class="modal-group">
-                    <label style="font-weight: bold; margin-bottom: 5px; display: block;">1. Voice Timeout (錄音靜默秒數)</label>
-                    <input type="number" id="set-timeout" class="login-input" style="margin: 0;" placeholder="Default: 1.5 (seconds)">
-                </div>
+                <div class="modal-group">
+                    <label style="font-weight: bold; margin-bottom: 5px; display: block;">1. Voice Timeout (錄音靜默秒數)</label>
+                    <input type="number" id="set-timeout" class="login-input" style="margin: 0;" placeholder="Default: 1.5 (seconds)">
+                </div>
 
-                <div class="modal-group">
-                    <label style="font-weight: bold; margin-bottom: 5px; display: block;">2. Photo Aspect Ratio (照片比例)</label>
-                    <select id="set-ratio" class="login-input" style="margin: 0;">
-                        <option value="4/3">4:3 (Standard)</option>
-                        <option value="16/9">16:9 (Wide)</option>
-                        <option value="9/16">9:16 (Vertical / 直式)</option>
-                        <option value="1/1">1:1 (Square)</option>
-                    </select>
-                    <div style="font-size: 0.8rem; color: #888; margin-top: 3px;">* Applies auto-crop.</div>
-                </div>
-                
-                <div class="modal-group">
-                    <label style="font-weight: bold; margin-bottom: 5px; display: block;">3. Voice Language (語音辨識語言)</label>
-                    <select id="set-lang" class="login-input" style="margin: 0;" onchange="syncLanguage()">
-                        <option value="cmn-Hant-TW">Traditional Chinese (繁體中文)</option>
-                        <option value="en-US">English</option>
-                        <option value="ja-JP">Japanese</option>
-                        <option value="hi-IN">Hindi (印地語)</option>
-                    </select>
-                </div>
+                <div class="modal-group">
+                    <label style="font-weight: bold; margin-bottom: 5px; display: block;">2. Photo Aspect Ratio (照片比例)</label>
+                    <select id="set-ratio" class="login-input" style="margin: 0;">
+                        <option value="4/3">4:3 (Standard)</option>
+                        <option value="16/9">16:9 (Wide)</option>
+                        <option value="9/16">9:16 (Vertical / 直式)</option>
+                        <option value="1/1">1:1 (Square)</option>
+                    </select>
+                    <div style="font-size: 0.8rem; color: #888; margin-top: 3px;">* Applies auto-crop.</div>
+                </div>
+                
+                <div class="modal-group">
+                    <label style="font-weight: bold; margin-bottom: 5px; display: block;">3. Voice Language (語音辨識語言)</label>
+                    <select id="set-lang" class="login-input" style="margin: 0;" onchange="syncLanguage()">
+                        <option value="cmn-Hant-TW">Traditional Chinese (繁體中文)</option>
+                        <option value="en-US">English</option>
+                        <option value="ja-JP">Japanese</option>
+                        <option value="hi-IN">Hindi (印地語)</option>
+                    </select>
+                </div>
 
 
-                <div class="modal-group" style="border: 1px solid #ddd; padding: 10px; border-radius: 8px;">
-                    <label style="font-weight: bold; margin-bottom: 10px; display: block; color: var(--copy-color);">4. Concern Section List Management<br>(相關部門列表管理)</label>
-                    
-                    <input type="text" id="new-concern-section" class="login-input" style="margin: 0 0 5px 0;" placeholder="Add new section (e.g., Electrical)">
-                    <button type="button" class="btn-add-item" onclick="addConcernSection()">+ Add Section (新增)</button>
+                <div class="modal-group" style="border: 1px solid #ddd; padding: 10px; border-radius: 8px;">
+                    <label style="font-weight: bold; margin-bottom: 10px; display: block; color: var(--copy-color);">4. Concern Section List Management<br>(相關部門列表管理)</label>
+                    
+                    <input type="text" id="new-concern-section" class="login-input" style="margin: 0 0 5px 0;" placeholder="Add new section (e.g., Electrical)">
+                    <button type="button" class="btn-add-item" onclick="addConcernSection()">+ Add Section (新增)</button>
 
-                    <div id="concern-section-list-container">
-                        </div>
-                </div>
-                
-                 <div class="modal-group" style="border: 1px solid #ddd; padding: 10px; border-radius: 8px;">
-                    <label style="font-weight: bold; margin-bottom: 10px; display: block; color: var(--copy-color);">5. Machine List Management<br>(機器列表管理)</label>
-                    
-                    <input type="text" id="new-machine-name" class="login-input" style="margin: 0 0 5px 0;" placeholder="Add new machine name (e.g., CM4)">
-                    <button type="button" class="btn-add-item" onclick="addMachine()">+ Add Machine (新增)</button>
+                    <div id="concern-section-list-container">
+                        </div>
+                </div>
+                
+                 <div class="modal-group" style="border: 1px solid #ddd; padding: 10px; border-radius: 8px;">
+                    <label style="font-weight: bold; margin-bottom: 10px; display: block; color: var(--copy-color);">5. Machine List Management<br>(機器列表管理)</label>
+                    
+                    <input type="text" id="new-machine-name" class="login-input" style="margin: 0 0 5px 0;" placeholder="Add new machine name (e.g., CM4)">
+                    <button type="button" class="btn-add-item" onclick="addMachine()">+ Add Machine (新增)</button>
 
-                    <div id="machine-list-container">
-                        </div>
-                </div>
-            </div>
+                    <div id="machine-list-container">
+                        </div>
+                </div>
+            </div>
 
 
-            <div style="text-align: center; color: var(--primary-color); font-size: 0.9em; margin-top: 15px;">
-                <p>✅ Cloud Paths are Locked (System Mode)</p>
-            </div>
+            <div style="text-align: center; color: var(--primary-color); font-size: 0.9em; margin-top: 15px;">
+                <p>✅ Cloud Paths are Locked (System Mode)</p>
+            </div>
 
-            <button class="btn-main btn-save" onclick="saveSettings()">Save Settings (儲存設定)</button>
-        </div>
-    </div>
+            <button class="btn-main btn-save" onclick="saveSettings()">Save Settings (儲存設定)</button>
+        </div>
+    </div>
 
 <script>
-    // ================= 參數與初始化 =================
-    const DEFAULT_PASS = "12345"; 
-    const MAX_IMAGE_WIDTH = 1000;
-    const MACHINE_LIST_KEY = "cfg_machine_list";
-    const CONCERN_LIST_KEY = "cfg_concern_list"; 
-    const EMPLOYEE_ID_KEY = "cfg_employee_id"; 
-    const DEFAULT_MACHINE_LIST = ["BM5", "BM6", "BM7", "BM21", "BM22", "BM23", "CA3", "CA4", "CM1", "CM2", "CM3"];
-    // 修正 Concern List 初始值
-    const DEFAULT_CONCERN_LIST = ["Mixing", "Extrusion", "Cutting", "Calendering"]; 
-    const DEFAULT_VOICE_TIMEOUT = 1.5;
+    // ================= 參數與初始化 =================
+    const DEFAULT_PASS = "12345"; 
+    const MAX_IMAGE_WIDTH = 1000;
+    const MACHINE_LIST_KEY = "cfg_machine_list";
+    const CONCERN_LIST_KEY = "cfg_concern_list"; 
+    const EMPLOYEE_ID_KEY = "cfg_employee_id"; 
+    const DEFAULT_MACHINE_LIST = ["BM5", "BM6", "BM7", "BM21", "BM22", "BM23", "CA3", "CA4", "CM1", "CM2", "CM3"];
+    // 修正 Concern List 初始值
+    const DEFAULT_CONCERN_LIST = ["Mixing", "Extrusion", "Cutting", "Calendering"]; 
+    const DEFAULT_VOICE_TIMEOUT = 1.5;
 
-    // 你的固定路徑 (FIXED PATHS) - 已寫死
-    const FIXED_SCRIPT_ID = "AKfycbzfPzPODQjp_phrHPwjsoBYeA8-VgeaoYly6hr3Mx09Wj-o5tWHMPa-nTHfaHyloiH8zg/exec";
-    const FIXED_SHEET_ID = "1sDKZBJfasUbZSGNAfz9GIWfRdrdXxQMrXrxM3x9RlCY"; 
-    const FIXED_FOLDER_ID = "1VPfLCMIuJPA66RjN8isrC4xq3luPMJe4";
-    // 從網頁 URL 動態獲取 SCRIPT URL (防止硬編碼快取問題)
-    const SCRIPT_URL = 'https://script.google.com/macros/s/' + FIXED_SCRIPT_ID + '/exec';
+    // 你的固定路徑 (FIXED PATHS) - 已寫死
+    const FIXED_SCRIPT_ID = "AKfycbzfPzPODQjp_phrHPwjsoBYeA8-VgeaoYly6hr3Mx09Wj-o5tWHMPa-nTHfaHyloiH8zg/exec";
+    const FIXED_SHEET_ID = "1sDKZBJfasUbZSGNAfz9GIWfRdrdXxQMrXrxM3x9RlCY"; 
+    const FIXED_FOLDER_ID = "1VPfLCMIuJPA66RjN8isrC4xq3luPMJe4";
 
+    // 狀態變數
+    let processedImageBase64 = ""; 
+    let recognition = null;
+    let isRecording = false; 
+    let activeTextAreaId = null; 
+    let snapshotText = "";       
+    let punctuationTimer = null; 
 
-    // 狀態變數
-    let processedImageBase64 = ""; 
-    let recognition = null;
-    let isRecording = false; 
-    let activeTextAreaId = null; 
-    let snapshotText = "";       
-    let punctuationTimer = null; 
+    document.addEventListener('DOMContentLoaded', () => {
+        if (typeof initApp === 'function') {
+            initApp();
+        }
+    });
 
-    document.addEventListener('DOMContentLoaded', () => {
-        if (typeof initApp === 'function') {
-            initApp();
-        }
-    });
+    function initApp() {
+        if(!localStorage.getItem("app_password")) {
+            localStorage.setItem("app_password", DEFAULT_PASS);
+        }
+        if(!localStorage.getItem(MACHINE_LIST_KEY)) {
+            localStorage.setItem(MACHINE_LIST_KEY, JSON.stringify(DEFAULT_MACHINE_LIST));
+        }
+        if(!localStorage.getItem(CONCERN_LIST_KEY)) { // 初始化 Concern List
+            localStorage.setItem(CONCERN_LIST_KEY, JSON.stringify(DEFAULT_CONCERN_LIST));
+        }
+        if(!localStorage.getItem("cfg_timeout")) {
+            localStorage.setItem("cfg_timeout", DEFAULT_VOICE_TIMEOUT);
+        }
+        
+        loadSettingsToUI();
+        loadMachineListToUI();
+        loadConcernSectionToUI(); 
+        loadEmployeeID(); 
+        
+        document.getElementById('input-stop-time-full').value = "";
+        document.getElementById('input-start-time-full').value = "";
+        document.getElementById('input-total-time').value = "";
+        document.getElementById('input-total-time').style.backgroundColor = '#eee';
+        document.getElementById('total-time-unit').value = 'min'; // 預設 Total Time 單位為分鐘
+        
+        const isLoggedIn = localStorage.getItem("isLoggedIn");
+        if(isLoggedIn === "true") {
+            document.getElementById('app-screen').style.display = 'block';
+            applySettings();
+        } else {
+            document.getElementById('login-screen').style.display = 'flex';
+        }
+    }
 
-    function initApp() {
-        if(!localStorage.getItem("app_password")) {
-            localStorage.setItem("app_password", DEFAULT_PASS);
-        }
-        if(!localStorage.getItem(MACHINE_LIST_KEY)) {
-            localStorage.setItem(MACHINE_LIST_KEY, JSON.stringify(DEFAULT_MACHINE_LIST));
-        }
-        if(!localStorage.getItem(CONCERN_LIST_KEY)) { // 初始化 Concern List
-            localStorage.setItem(CONCERN_LIST_KEY, JSON.stringify(DEFAULT_CONCERN_LIST));
-        }
-        if(!localStorage.getItem("cfg_timeout")) {
-            localStorage.setItem("cfg_timeout", DEFAULT_VOICE_TIMEOUT);
-        }
-        
-        loadSettingsToUI();
-        loadMachineListToUI();
-        loadConcernSectionToUI(); 
-        loadEmployeeID(); 
-        
-        document.getElementById('input-stop-time-full').value = "";
-        document.getElementById('input-start-time-full').value = "";
-        document.getElementById('input-total-time').value = "";
-        document.getElementById('input-total-time').style.backgroundColor = '#eee';
-        document.getElementById('total-time-unit').value = 'min'; // 預設 Total Time 單位為分鐘
-        
-        const isLoggedIn = localStorage.getItem("isLoggedIn");
-        if(isLoggedIn === "true") {
-            document.getElementById('app-screen').style.display = 'block';
-            applySettings();
-            loadRecentRecords(); // <<< [新增] 載入最近紀錄
-        } else {
-            document.getElementById('login-screen').style.display = 'flex';
-        }
-    }
+    // ================= 員工 ID 持久化 (保持不變) =================
+    function loadEmployeeID() {
+        const savedId = localStorage.getItem(EMPLOYEE_ID_KEY);
+        if (savedId) {
+            document.getElementById('input-employee-id').value = savedId;
+        }
+    }
 
-    // ================= 員工 ID 持久化 (保持不變) =================
-    function loadEmployeeID() {
-        const savedId = localStorage.getItem(EMPLOYEE_ID_KEY);
-        if (savedId) {
-            document.getElementById('input-employee-id').value = savedId;
-        }
-    }
+    function saveEmployeeID() {
+        const employeeId = document.getElementById('input-employee-id').value.trim();
+        localStorage.setItem(EMPLOYEE_ID_KEY, employeeId);
+    }
 
-    function saveEmployeeID() {
-        const employeeId = document.getElementById('input-employee-id').value.trim();
-        localStorage.setItem(EMPLOYEE_ID_KEY, employeeId);
-    }
+    // ================= Concern Section 管理 (保持邏輯) =================
+    function getConcernList() {
+        try {
+            return JSON.parse(localStorage.getItem(CONCERN_LIST_KEY)) || DEFAULT_CONCERN_LIST;
+        } catch (e) {
+            console.error("Failed to parse concern list", e);
+            return DEFAULT_CONCERN_LIST;
+        }
+    }
 
-    // ================= Concern Section 管理 (保持邏輯) =================
-    function getConcernList() {
-        try {
-            return JSON.parse(localStorage.getItem(CONCERN_LIST_KEY)) || DEFAULT_CONCERN_LIST;
-        } catch (e) {
-            console.error("Failed to parse concern list", e);
-            return DEFAULT_CONCERN_LIST;
-        }
-    }
+    function saveConcernList(list) {
+        const uniqueSortedList = [...new Set(list)].sort((a, b) => a.localeCompare(b));
+        localStorage.setItem(CONCERN_LIST_KEY, JSON.stringify(uniqueSortedList));
+        loadConcernSectionToUI();
+        return uniqueSortedList;
+    }
 
-    function saveConcernList(list) {
-        const uniqueSortedList = [...new Set(list)].sort((a, b) => a.localeCompare(b));
-        localStorage.setItem(CONCERN_LIST_KEY, JSON.stringify(uniqueSortedList));
-        loadConcernSectionToUI();
-        return uniqueSortedList;
-    }
+    function loadConcernSectionToUI() {
+        const select = document.getElementById('input-concern-section');
+        const list = getConcernList();
+        
+        select.innerHTML = '';
+        
+        const defaultOption = document.createElement('option');
+        defaultOption.value = "";
+        defaultOption.textContent = "--- Select Section ---";
+        select.appendChild(defaultOption);
 
-    function loadConcernSectionToUI() {
-        const select = document.getElementById('input-concern-section');
-        const list = getConcernList();
-        
-        select.innerHTML = '';
-        
-        const defaultOption = document.createElement('option');
-        defaultOption.value = "";
-        defaultOption.textContent = "--- Select Section ---";
-        select.appendChild(defaultOption);
+        list.forEach(section => {
+            const option = document.createElement('option');
+            option.value = section;
+            option.textContent = section;
+            select.appendChild(option);
+        });
+        
+        if (document.getElementById('settings-modal').style.display === 'flex') {
+            renderConcernListSettings();
+        }
+    }
 
-        list.forEach(section => {
-            const option = document.createElement('option');
-            option.value = section;
-            option.textContent = section;
-            select.appendChild(option);
-        });
-        
-        if (document.getElementById('settings-modal').style.display === 'flex') {
-            renderConcernListSettings();
-        }
-    }
+    function renderConcernListSettings() {
+        const container = document.getElementById('concern-section-list-container');
+        const list = getConcernList();
+        container.innerHTML = '';
 
-    function renderConcernListSettings() {
-        const container = document.getElementById('concern-section-list-container');
-        const list = getConcernList();
-        container.innerHTML = '';
+        list.forEach((section, index) => {
+            const item = document.createElement('div');
+            item.className = 'machine-list-item';
+            item.innerHTML = `
+                <span style="font-weight: bold;">${section}</span>
+                <button type="button" class="btn-remove-item" onclick="removeConcernSection('${section}')">X</button>
+            `;
+            container.appendChild(item);
+        });
+    }
 
-        list.forEach((section, index) => {
-            const item = document.createElement('div');
-            item.className = 'machine-list-item';
-            item.innerHTML = `
-                <span style="font-weight: bold;">${section}</span>
-                <button type="button" class="btn-remove-item" onclick="removeConcernSection('${section}')">X</button>
-            `;
-            container.appendChild(item);
-        });
-    }
+    function addConcernSection() {
+        const input = document.getElementById('new-concern-section');
+        const newSection = input.value.trim();
 
-    function addConcernSection() {
-        const input = document.getElementById('new-concern-section');
-        const newSection = input.value.trim();
+        if (newSection === "" || newSection === "--- SELECT SECTION ---") {
+            alert("請輸入有效的部門名稱。");
+            return;
+        }
 
-        if (newSection === "" || newSection === "--- SELECT SECTION ---") {
-            alert("請輸入有效的部門名稱。");
-            return;
-        }
+        let list = getConcernList();
+        if (list.includes(newSection)) {
+            alert(`部門 ${newSection} 已經存在於清單中。`);
+            return;
+        }
 
-        let list = getConcernList();
-        if (list.includes(newSection)) {
-            alert(`部門 ${newSection} 已經存在於清單中。`);
-            return;
-        }
+        list.push(newSection);
+        saveConcernList(list);
+        
+        input.value = "";
+    }
 
-        list.push(newSection);
-        saveConcernList(list);
-        
-        input.value = "";
-    }
+    function removeConcernSection(name) {
+        if (!confirm(`確定要從清單中刪除部門 ${name} 嗎？`)) return;
 
-    function removeConcernSection(name) {
-        if (!confirm(`確定要從清單中刪除部門 ${name} 嗎？`)) return;
+        let list = getConcernList();
+        const newList = list.filter(m => m !== name);
+        saveConcernList(newList);
+    }
 
-        let list = getConcernList();
-        const newList = list.filter(m => m !== name);
-        saveConcernList(newList);
-    }
+    // ================= 登入與設定管理 (保持不變) =================
+    
+    function openSettings() {
+        loadSettingsToUI();
+        loadMachineListToUI();
+        loadConcernSectionToUI(); 
+        document.getElementById('settings-modal').style.display = 'flex';
+    }
+    
+    function checkLogin() {
+        const input = document.getElementById('loginPass').value;
+        const storedPass = localStorage.getItem("app_password"); 
+        
+        if(input === storedPass) {
+            localStorage.setItem("isLoggedIn", "true");
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('app-screen').style.display = 'block';
+            applySettings();
+        } else {
+            alert("Wrong Password! (密碼錯誤)");
+        }
+    }
+    
+    function saveSettings() {
+        const newPass = document.getElementById('set-password').value;
+        const ratio = document.getElementById('set-ratio').value;
+        const lang = document.getElementById('set-lang').value;
+        const timeout = document.getElementById('set-timeout').value; 
 
-    // ================= 登入與設定管理 (保持不變) =================
-    
-    function openSettings() {
-        loadSettingsToUI();
-        loadMachineListToUI();
-        loadConcernSectionToUI(); 
-        document.getElementById('settings-modal').style.display = 'flex';
-    }
-    
-    function checkLogin() {
-        const input = document.getElementById('loginPass').value;
-        const storedPass = localStorage.getItem("app_password"); 
-        
-        if(input === storedPass) {
-            localStorage.setItem("isLoggedIn", "true");
-            document.getElementById('login-screen').style.display = 'none';
-            document.getElementById('app-screen').style.display = 'block';
-            applySettings();
-            loadRecentRecords(); // <<< [新增] 載入最近紀錄
-        } else {
-            alert("Wrong Password! (密碼錯誤)");
-        }
-    }
-    
-    function saveSettings() {
-        const newPass = document.getElementById('set-password').value;
-        const ratio = document.getElementById('set-ratio').value;
-        const lang = document.getElementById('set-lang').value;
-        const timeout = document.getElementById('set-timeout').value; 
+        if(newPass.trim() === "") { alert("Password cannot be empty!"); return; }
+        if(isNaN(parseFloat(timeout)) || parseFloat(timeout) <= 0) {
+            alert("錄音靜默秒數必須是有效的數字 (大於 0)。");
+            return;
+        }
 
-        if(newPass.trim() === "") { alert("Password cannot be empty!"); return; }
-        if(isNaN(parseFloat(timeout)) || parseFloat(timeout) <= 0) {
-            alert("錄音靜默秒數必須是有效的數字 (大於 0)。");
-            return;
-        }
+        localStorage.setItem("app_password", newPass); 
+        localStorage.setItem("cfg_ratio", ratio);
+        localStorage.setItem("cfg_lang", lang);
+        localStorage.setItem("cfg_timeout", timeout); 
 
-        localStorage.setItem("app_password", newPass); 
-        localStorage.setItem("cfg_ratio", ratio);
-        localStorage.setItem("cfg_lang", lang);
-        localStorage.setItem("cfg_timeout", timeout); 
+        alert("Settings Saved!");
+        closeSettings();
+        applySettings();
+    }
 
-        alert("Settings Saved!");
-        closeSettings();
-        applySettings();
-    }
+    function loadSettingsToUI() {
+        document.getElementById('set-password').value = localStorage.getItem("app_password") || DEFAULT_PASS;
+        document.getElementById('set-ratio').value = localStorage.getItem("cfg_ratio") || "4/3";
+        document.getElementById('set-timeout').value = localStorage.getItem("cfg_timeout") || DEFAULT_VOICE_TIMEOUT; 
+        const savedLang = localStorage.getItem("cfg_lang") || "cmn-Hant-TW";
+        document.getElementById('set-lang').value = savedLang;
+        document.getElementById('voice-lang-select').value = savedLang;
+    }
+    
+    function applySettings() {
+        const ratio = localStorage.getItem("cfg_ratio") || "4/3";
+        const container = document.getElementById('preview-container');
+        const tag = document.getElementById('ratio-display-tag');
+        
+        container.className = ""; 
+        container.style.aspectRatio = "";
 
-    function loadSettingsToUI() {
-        document.getElementById('set-password').value = localStorage.getItem("app_password") || DEFAULT_PASS;
-        document.getElementById('set-ratio').value = localStorage.getItem("cfg_ratio") || "4/3";
-        document.getElementById('set-timeout').value = localStorage.getItem("cfg_timeout") || DEFAULT_VOICE_TIMEOUT; 
-        const savedLang = localStorage.getItem("cfg_lang") || "cmn-Hant-TW";
-        document.getElementById('set-lang').value = savedLang;
-        document.getElementById('voice-lang-select').value = savedLang;
-    }
-    
-    function applySettings() {
-        const ratio = localStorage.getItem("cfg_ratio") || "4/3";
-        const container = document.getElementById('preview-container');
-        const tag = document.getElementById('ratio-display-tag');
-        
-        container.className = ""; 
-        container.style.aspectRatio = "";
+        if(ratio !== "FULL") {
+            const ratioClass = `ratio-${ratio.replace("/", "-")}`;
+            container.classList.add(ratioClass);
+            tag.innerText = `Ratio: ${ratio.replace("/", ":")}`;
+        } else {
+             tag.innerText = "Ratio: Full (Original)";
+        }
+        
+        calculateTotalStopTime();
+    }
+    
+    function logout() {
+        if(confirm("Lock and logout?\n(確定要鎖定並登出嗎？)")) {
+            localStorage.removeItem("isLoggedIn"); 
+            document.getElementById('app-screen').style.display = 'none';
+            document.getElementById('login-screen').style.display = 'flex'; 
+            document.getElementById('loginPass').value = ""; 
+            closeSettings();
+        }
+    }
+    
+    function closeSettings() {
+        document.getElementById('settings-modal').style.display = 'none';
+    }
+    function syncLanguage() {
+        const val = document.getElementById('set-lang').value;
+        document.getElementById('voice-lang-select').value = val;
+        localStorage.setItem("cfg_lang", val);
+    }
+    
+    // ... 機器列表管理函數 (保持不變) ...
+    function getMachineList() {
+        try {
+            return JSON.parse(localStorage.getItem(MACHINE_LIST_KEY)) || DEFAULT_MACHINE_LIST;
+        } catch (e) {
+            console.error("Failed to parse machine list", e);
+            return DEFAULT_MACHINE_LIST;
+        }
+    }
+    function saveMachineList(list) {
+        const uniqueSortedList = [...new Set(list)].sort((a, b) => a.localeCompare(b));
+        localStorage.setItem(MACHINE_LIST_KEY, JSON.stringify(uniqueSortedList));
+        loadMachineListToUI();
+        return uniqueSortedList;
+    }
+    function loadMachineListToUI() {
+        const select = document.getElementById('input-machine');
+        const list = getMachineList();
+        
+        select.innerHTML = '';
+        
+        const defaultOption = document.createElement('option');
+        defaultOption.value = "";
+        defaultOption.textContent = "--- Select Machine ---";
+        select.appendChild(defaultOption);
 
-        if(ratio !== "FULL") {
-            const ratioClass = `ratio-${ratio.replace("/", "-")}`;
-            container.classList.add(ratioClass);
-            tag.innerText = `Ratio: ${ratio.replace("/", ":")}`;
-        } else {
-             tag.innerText = "Ratio: Full (Original)";
-        }
-        
-        calculateTotalStopTime();
-    }
-    
-    function logout() {
-        if(confirm("Lock and logout?\n(確定要鎖定並登出嗎？)")) {
-            localStorage.removeItem("isLoggedIn"); 
-            document.getElementById('app-screen').style.display = 'none';
-            document.getElementById('login-screen').style.display = 'flex'; 
-            document.getElementById('loginPass').value = ""; 
-            closeSettings();
-        }
-    }
-    
-    function closeSettings() {
-        document.getElementById('settings-modal').style.display = 'none';
-    }
-    function syncLanguage() {
-        const val = document.getElementById('set-lang').value;
-        document.getElementById('voice-lang-select').value = val;
-        localStorage.setItem("cfg_lang", val);
-    }
-    
-    // ... 機器列表管理函數 (保持不變) ...
-    function getMachineList() {
-        try {
-            return JSON.parse(localStorage.getItem(MACHINE_LIST_KEY)) || DEFAULT_MACHINE_LIST;
-        } catch (e) {
-            console.error("Failed to parse machine list", e);
-            return DEFAULT_MACHINE_LIST;
-        }
-    }
-    function saveMachineList(list) {
-        const uniqueSortedList = [...new Set(list)].sort((a, b) => a.localeCompare(b));
-        localStorage.setItem(MACHINE_LIST_KEY, JSON.stringify(uniqueSortedList));
-        loadMachineListToUI();
-        return uniqueSortedList;
-    }
-    function loadMachineListToUI() {
-        const select = document.getElementById('input-machine');
-        const list = getMachineList();
-        
-        select.innerHTML = '';
-        
-        const defaultOption = document.createElement('option');
-        defaultOption.value = "";
-        defaultOption.textContent = "--- Select Machine ---";
-        select.appendChild(defaultOption);
+        list.forEach(machine => {
+            const option = document.createElement('option');
+            option.value = machine;
+            option.textContent = machine;
+            select.appendChild(option);
+        });
+        
+        if (document.getElementById('settings-modal').style.display === 'flex') {
+            renderMachineListSettings();
+        }
+    }
+    function renderMachineListSettings() {
+        const container = document.getElementById('machine-list-container');
+        const list = getMachineList();
+        container.innerHTML = '';
 
-        list.forEach(machine => {
-            const option = document.createElement('option');
-            option.value = machine;
-            option.textContent = machine;
-            select.appendChild(option);
-        });
-        
-        if (document.getElementById('settings-modal').style.display === 'flex') {
-            renderMachineListSettings();
-        }
-    }
-    function renderMachineListSettings() {
-        const container = document.getElementById('machine-list-container');
-        const list = getMachineList();
-        container.innerHTML = '';
+        list.forEach((machine, index) => {
+            const item = document.createElement('div');
+            item.className = 'machine-list-item';
+            item.innerHTML = `
+                <span style="font-weight: bold;">${machine}</span>
+                <button type="button" class="btn-remove-item" onclick="removeMachine('${machine}')">X</button>
+            `;
+            container.appendChild(item);
+        });
+    }
+    function addMachine() {
+        const input = document.getElementById('new-machine-name');
+        const newMachine = input.value.trim().toUpperCase();
 
-        list.forEach((machine, index) => {
-            const item = document.createElement('div');
-            item.className = 'machine-list-item';
-            item.innerHTML = `
-                <span style="font-weight: bold;">${machine}</span>
-                <button type="button" class="btn-remove-item" onclick="removeMachine('${machine}')">X</button>
-            `;
-            container.appendChild(item);
-        });
-    }
-    function addMachine() {
-        const input = document.getElementById('new-machine-name');
-        const newMachine = input.value.trim().toUpperCase();
+        if (newMachine === "" || newMachine === "--- SELECT MACHINE ---") {
+            alert("請輸入有效的機器名稱。");
+            return;
+        }
 
-        if (newMachine === "" || newMachine === "--- SELECT MACHINE ---") {
-            alert("請輸入有效的機器名稱。");
-            return;
-        }
+        let list = getMachineList();
+        if (list.includes(newMachine)) {
+            alert(`機器 ${newMachine} 已經存在於清單中。`);
+            return;
+        }
 
-        let list = getMachineList();
-        if (list.includes(newMachine)) {
-            alert(`機器 ${newMachine} 已經存在於清單中。`);
-            return;
-        }
+        list.push(newMachine);
+        saveMachineList(list);
+        
+        input.value = "";
+    }
 
-        list.push(newMachine);
-        saveMachineList(list);
-        
-        input.value = "";
-    }
+    function removeMachine(name) {
+        if (!confirm(`確定要從清單中刪除機器 ${name} 嗎？`)) return;
 
-    function removeMachine(name) {
-        if (!confirm(`確定要從清單中刪除機器 ${name} 嗎？`)) return;
-
-        let list = getMachineList();
-        const newList = list.filter(m => m !== name);
-        saveMachineList(newList);
-    }
+        let list = getMachineList();
+        const newList = list.filter(m => m !== name);
+        saveMachineList(newList);
+    }
 
 
-    // ================= 時間處理函數 (保持不變) =================
-    const DATETIME_REGEX = /^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})$/;
+    // ================= 時間處理函數 (保持不變) =================
+    const DATETIME_REGEX = /^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})$/;
 
-    function parseCustomDateTime(dtStr) {
-        const match = dtStr.match(DATETIME_REGEX);
-        if (!match) return null;
+    function parseCustomDateTime(dtStr) {
+        const match = dtStr.match(DATETIME_REGEX);
+        if (!match) return null;
 
-        const day = parseInt(match[1], 10);
-        const month = parseInt(match[2], 10) - 1; 
-        const year = parseInt(match[3], 10);
-        const hour = parseInt(match[4], 10);
-        const minute = parseInt(match[5], 10);
+        const day = parseInt(match[1], 10);
+        const month = parseInt(match[2], 10) - 1; 
+        const year = parseInt(match[3], 10);
+        const hour = parseInt(match[4], 10);
+        const minute = parseInt(match[5], 10);
 
-        const date = new Date(year, month, day, hour, minute);
+        const date = new Date(year, month, day, hour, minute);
 
-        if (date.getFullYear() !== year || date.getMonth() !== month || date.getDate() !== day) {
-             return null;
-        }
+        if (date.getFullYear() !== year || date.getMonth() !== month || date.getDate() !== day) {
+             return null;
+        }
 
-        return date;
-    }
-    
-    function calculateTotalStopTime() {
-        const stopTimeStr = document.getElementById('input-stop-time-full').value.trim();
-        const startTimeStr = document.getElementById('input-start-time-full').value.trim();
-        const totalTimeInput = document.getElementById('input-total-time');
-        const unitSelect = document.getElementById('total-time-unit');
-        const unit = unitSelect ? unitSelect.value : 'h';
+        return date;
+    }
+    
+    function calculateTotalStopTime() {
+        const stopTimeStr = document.getElementById('input-stop-time-full').value.trim();
+        const startTimeStr = document.getElementById('input-start-time-full').value.trim();
+        const totalTimeInput = document.getElementById('input-total-time');
+        const unitSelect = document.getElementById('total-time-unit');
+        const unit = unitSelect ? unitSelect.value : 'h';
 
-        if (stopTimeStr === "" || startTimeStr === "") {
-             totalTimeInput.value = "";
-             totalTimeInput.style.backgroundColor = '#eee';
-             totalTimeInput.dataset.diffMinutes = ''; 
-             return;
-        }
-        
-        const stopDate = parseCustomDateTime(stopTimeStr);
-        const startDate = parseCustomDateTime(startTimeStr);
+        if (stopTimeStr === "" || startTimeStr === "") {
+             totalTimeInput.value = "";
+             totalTimeInput.style.backgroundColor = '#eee';
+             totalTimeInput.dataset.diffMinutes = ''; 
+             return;
+        }
+        
+        const stopDate = parseCustomDateTime(stopTimeStr);
+        const startDate = parseCustomDateTime(startTimeStr);
 
-        if (!stopDate || !startDate) {
-            totalTimeInput.value = "Invalid Time";
-            totalTimeInput.style.backgroundColor = '#fff0f0';
-            totalTimeInput.dataset.diffMinutes = ''; 
-            return;
-        }
+        if (!stopDate || !startDate) {
+            totalTimeInput.value = "Invalid Time";
+            totalTimeInput.style.backgroundColor = '#fff0f0';
+            totalTimeInput.dataset.diffMinutes = ''; 
+            return;
+        }
 
-        const diffMs = startDate.getTime() - stopDate.getTime();
-        const diffMinutes = Math.round(diffMs / (1000 * 60)); 
-        
-        if (diffMinutes <= 0) {
-            totalTimeInput.value = "0 min / 0.00 hr";
-            totalTimeInput.style.backgroundColor = '#fff0f0';
-            totalTimeInput.dataset.diffMinutes = 0;
-            return;
-        }
+        const diffMs = startDate.getTime() - stopDate.getTime();
+        const diffMinutes = Math.round(diffMs / (1000 * 60)); 
+        
+        if (diffMinutes <= 0) {
+            totalTimeInput.value = "0 min / 0.00 hr";
+            totalTimeInput.style.backgroundColor = '#fff0f0';
+            totalTimeInput.dataset.diffMinutes = 0;
+            return;
+        }
 
-        totalTimeInput.dataset.diffMinutes = diffMinutes; 
-        
-        let totalTimeFormatted;
-        if (unit === 'h') {
-             const diffHours = diffMs / (1000 * 60 * 60);
-             totalTimeFormatted = diffHours.toFixed(2) + " hr";
-        } else {
-             totalTimeFormatted = diffMinutes + " min";
-        }
-        
-        totalTimeInput.value = totalTimeFormatted;
-        totalTimeInput.style.backgroundColor = '#e6ffed';
-    }
+        totalTimeInput.dataset.diffMinutes = diffMinutes; 
+        
+        let totalTimeFormatted;
+        if (unit === 'h') {
+             const diffHours = diffMs / (1000 * 60 * 60);
+             totalTimeFormatted = diffHours.toFixed(2) + " hr";
+        } else {
+             totalTimeFormatted = diffMinutes + " min";
+        }
+        
+        totalTimeInput.value = totalTimeFormatted;
+        totalTimeInput.style.backgroundColor = '#e6ffed';
+    }
 
 
-    function getFullDateTimeString(dateObj) {
-        const dateOptions = { day: '2-digit', month: '2-digit', year: 'numeric' };
-        const timeOptions = { hour: '2-digit', minute: '2-digit', hour12: false };
-        
-        const datePart = dateObj.toLocaleDateString('en-US', dateOptions).replace(/\//g, '/');
-        const timePart = dateObj.toLocaleTimeString('en-US', timeOptions).replace(/^(\d):/,'0$1:'); 
-        
-        return `${datePart} ${timePart}`;
-    }
-    
-    function updateSingleTime(targetId) {
-        const targetElement = document.getElementById(targetId);
-        const fullDateTime = getFullDateTimeString(new Date());
-        
-        if (targetElement) {
-             targetElement.value = fullDateTime;
-             calculateTotalStopTime();
-        }
-    }
-    
-    // ================= 複製格式化訊息 (修正格式與內容) =================
-    
-    function extractDateAndTime(fullTimeStr) {
-        const match = fullTimeStr.match(DATETIME_REGEX);
-        if (match) {
-             const datePart = `${match[1]}/${match[2]}/${match[3]}`; 
-             const timePart = `${match[4]}:${match[5]}`; 
-             return { date: datePart, time: timePart };
-        }
-        return { date: '', time: '' }; 
-    }
-    
-    function copyFormattedInfo() {
-        const totalTimeInput = document.getElementById('input-total-time');
-        const totalTimeMinutes = totalTimeInput.dataset.diffMinutes;
-        
-        // 修正 Total Time 格式: 只有在有有效分鐘數時才顯示格式
-        let totalTimeFormat;
-        if (totalTimeMinutes && totalTimeMinutes > 0) {
-            const totalTimeHours = (totalTimeMinutes / 60).toFixed(2);
-            totalTimeFormat = `${totalTimeMinutes} Min / ${totalTimeHours} hr`;
-        } else {
-            totalTimeFormat = ''; 
-        }
-        
-        // 1. 蒐集資料
-        const employeeId = document.getElementById('input-employee-id').value || "N/A";
-        const machine = document.getElementById('input-machine').value || "N/A";
-        const stopTimeFull = document.getElementById('input-stop-time-full').value.trim();
-        const startTimeFull = document.getElementById('input-start-time-full').value.trim();
-        const repairFormNo = document.getElementById('input-form-no').value || "N/A";
-        const reason = document.getElementById('input-reason').value || "N/A";
-        const concernSection = document.getElementById('input-concern-section').value || "N/A"; 
-        const solution = document.getElementById('input-solution').value || "N/A";
-        const selfActions = document.getElementById('input-self-actions').value || "N/A"; 
-        
-        // 2. 處理時間
-        
-        // 修正 Start Time 顯示：如果 Start Time 為空，顯示空字串
-        const startDisplay = startTimeFull === "" ? '' : startTimeFull;
+    function getFullDateTimeString(dateObj) {
+        const dateOptions = { day: '2-digit', month: '2-digit', year: 'numeric' };
+        const timeOptions = { hour: '2-digit', minute: '2-digit', hour12: false };
+        
+        const datePart = dateObj.toLocaleDateString('en-US', dateOptions).replace(/\//g, '/');
+        const timePart = dateObj.toLocaleTimeString('en-US', timeOptions).replace(/^(\d):/,'0$1:'); 
+        
+        return `${datePart} ${timePart}`;
+    }
+    
+    function updateSingleTime(targetId) {
+        const targetElement = document.getElementById(targetId);
+        const fullDateTime = getFullDateTimeString(new Date());
+        
+        if (targetElement) {
+             targetElement.value = fullDateTime;
+             calculateTotalStopTime();
+        }
+    }
+    
+    // ================= 複製格式化訊息 (修正格式與內容) =================
+    
+    function extractDateAndTime(fullTimeStr) {
+        const match = fullTimeStr.match(DATETIME_REGEX);
+        if (match) {
+             const datePart = `${match[1]}/${match[2]}/${match[3]}`; 
+             const timePart = `${match[4]}:${match[5]}`; 
+             return { date: datePart, time: timePart };
+        }
+        return { date: '', time: '' }; 
+    }
+    
+    function copyFormattedInfo() {
+        const totalTimeInput = document.getElementById('input-total-time');
+        const totalTimeMinutes = totalTimeInput.dataset.diffMinutes;
+        
+        // 修正 Total Time 格式: 只有在有有效分鐘數時才顯示格式
+        let totalTimeFormat;
+        if (totalTimeMinutes && totalTimeMinutes > 0) {
+            const totalTimeHours = (totalTimeMinutes / 60).toFixed(2);
+            totalTimeFormat = `${totalTimeMinutes} Min / ${totalTimeHours} hr`;
+        } else {
+            totalTimeFormat = ''; 
+        }
+        
+        // 1. 蒐集資料
+        const employeeId = document.getElementById('input-employee-id').value || "N/A";
+        const machine = document.getElementById('input-machine').value || "N/A";
+        const stopTimeFull = document.getElementById('input-stop-time-full').value.trim();
+        const startTimeFull = document.getElementById('input-start-time-full').value.trim();
+        const repairFormNo = document.getElementById('input-form-no').value || "N/A";
+        const reason = document.getElementById('input-reason').value || "N/A";
+        const concernSection = document.getElementById('input-concern-section').value || "N/A"; 
+        const solution = document.getElementById('input-solution').value || "N/A";
+        const selfActions = document.getElementById('input-self-actions').value || "N/A"; 
+        
+        // 2. 處理時間
+        
+        // 修正 Start Time 顯示：如果 Start Time 為空，顯示空字串
+        const startDisplay = startTimeFull === "" ? '' : startTimeFull;
 
-        // 3. 構建輸出字串 (最終格式: 去除所有 "-" 符號)
-        const output = `
+        // 3. 構建輸出字串 (最終格式: 去除所有 "-" 符號)
+        const output = `
 ID : ${employeeId}
 
 Machine : ${machine}
@@ -923,468 +857,345 @@ ${solution.replace(/\n/g, '\n')}
 
 Self Actions:
 ${selfActions.replace(/\n/g, '\n')}
-        `.trim();
+        `.trim();
 
-        // 4. 複製到剪貼簿
-        navigator.clipboard.writeText(output).then(() => {
-            alert("✅ 整合訊息已複製到剪貼簿！");
-        }).catch(err => {
-            console.error('無法複製文字:', err);
-            alert("❌ 無法複製文字，請檢查瀏覽器權限。");
-        });
-    }
+        // 4. 複製到剪貼簿
+        navigator.clipboard.writeText(output).then(() => {
+            alert("✅ 整合訊息已複製到剪貼簿！");
+        }).catch(err => {
+            console.error('無法複製文字:', err);
+            alert("❌ 無法複製文字，請檢查瀏覽器權限。");
+        });
+    }
 
-    // ================= 上傳與清除邏輯 (保持不變) =================
-    function clearInputs() {
-        document.getElementById('input-machine').value = ""; 
-        document.getElementById('input-total-time').value = "";
-        document.getElementById('input-form-no').value = "";
-        document.getElementById('input-reason').value = "";
-        document.getElementById('input-concern-section').value = "";
-        document.getElementById('input-solution').value = "";
-        document.getElementById('input-self-actions').value = "";
+    // ================= 上傳與清除邏輯 (保持不變) =================
+    function clearInputs() {
+        document.getElementById('input-machine').value = ""; 
+        document.getElementById('input-total-time').value = "";
+        document.getElementById('input-form-no').value = "";
+        document.getElementById('input-reason').value = "";
+        document.getElementById('input-concern-section').value = "";
+        document.getElementById('input-solution').value = "";
+        document.getElementById('input-self-actions').value = "";
 
-        document.getElementById('input-stop-time-full').value = "";
-        document.getElementById('input-start-time-full').value = "";
-        
-        document.getElementById('input-total-time').style.backgroundColor = '#eee';
-        calculateTotalStopTime(); 
+        document.getElementById('input-stop-time-full').value = "";
+        document.getElementById('input-start-time-full').value = "";
+        
+        document.getElementById('input-total-time').style.backgroundColor = '#eee';
+        calculateTotalStopTime(); 
 
-        processedImageBase64 = "";
-        document.getElementById('preview-img').style.display = 'none';
-        document.querySelector('.placeholder').style.display = 'block';
-        applySettings();
-    }
+        processedImageBase64 = "";
+        document.getElementById('preview-img').style.display = 'none';
+        document.querySelector('.placeholder').style.display = 'block';
+        applySettings();
+    }
 
-    function saveToCloud() {
-        if(isRecording) manualStopVoice();
+    function saveToCloud() {
+        if(isRecording) manualStopVoice();
 
-        const employeeId = document.getElementById('input-employee-id').value; 
-        const machine = document.getElementById('input-machine').value; 
-        const stopTimeFull = document.getElementById('input-stop-time-full').value; 
-        const startTimeFull = document.getElementById('input-start-time-full').value; 
-        const totalTime = document.getElementById('input-total-time').value; 
-        const formNo = document.getElementById('input-form-no').value;
-        const reason = document.getElementById('input-reason').value;
-        const concernSection = document.getElementById('input-concern-section').value;
-        const solution = document.getElementById('input-solution').value; 
-        const selfActions = document.getElementById('input-self-actions').value;
-        
-        if (formNo.trim() === "") {
-            alert("請填寫 Repair Form No 以便追蹤。");
-            return;
-        }
+        const employeeId = document.getElementById('input-employee-id').value; 
+        const machine = document.getElementById('input-machine').value; 
+        const stopTimeFull = document.getElementById('input-stop-time-full').value; 
+        const startTimeFull = document.getElementById('input-start-time-full').value; 
+        const totalTime = document.getElementById('input-total-time').value; 
+        const formNo = document.getElementById('input-form-no').value;
+        const reason = document.getElementById('input-reason').value;
+        const concernSection = document.getElementById('input-concern-section').value;
+        const solution = document.getElementById('input-solution').value; 
+        const selfActions = document.getElementById('input-self-actions').value;
+        
+        if (formNo.trim() === "") {
+            alert("請填寫 Repair Form No 以便追蹤。");
+            return;
+        }
 
-        if(!processedImageBase64 && !machine && !reason && !solution && !concernSection && !selfActions) { 
-            alert("Empty! Please fill in machine info/notes or take a photo."); return;
-        }
-        if (machine.trim() === "") {
-            alert("請選擇 Machine (機台)。");
-            return;
-        }
-        
-        saveEmployeeID();
+        if(!processedImageBase64 && !machine && !reason && !solution && !concernSection && !selfActions) { 
+            alert("Empty! Please fill in machine info/notes or take a photo."); return;
+        }
+        if (machine.trim() === "") {
+            alert("請選擇 Machine (機台)。");
+            return;
+        }
+        
+        saveEmployeeID();
 
-        const scriptUrl = SCRIPT_URL;
-        const btn = document.getElementById('saveBtn');
-        
-        btn.disabled = true;
-        showStatus('loading', 'Uploading...', '資料上傳中...');
+        const scriptUrl = `https://script.google.com/macros/s/${FIXED_SCRIPT_ID}/exec`;
+        const btn = document.getElementById('saveBtn');
+        
+        btn.disabled = true;
+        showStatus('loading', 'Uploading...', '資料上傳中...');
 
-        const data = { 
-            image: processedImageBase64, 
-            employeeId: employeeId, 
-            machine: machine,
-            stopTimeFull: stopTimeFull,
-            startTimeFull: startTimeFull,
-            totalTime: totalTime, 
-            formNo: formNo,
-            reason: reason, 
-            concernSection: concernSection,
-            solution: solution, 
-            selfActions: selfActions,
-            folderId: FIXED_FOLDER_ID
-        };
+        const data = { 
+            image: processedImageBase64, 
+            employeeId: employeeId, 
+            machine: machine,
+            stopTimeFull: stopTimeFull,
+            startTimeFull: startTimeFull,
+            totalTime: totalTime, 
+            formNo: formNo,
+            reason: reason, 
+            concernSection: concernSection,
+            solution: solution, 
+            selfActions: selfActions,
+            folderId: FIXED_FOLDER_ID
+        };
 
-        fetch(scriptUrl, {
-            method: 'POST',
-            body: JSON.stringify(data)
-        })
-        .then(r => r.json())
-        .then(res => {
-            const action = res.action || '新增'; 
-            if (res.result === 'success') {
-                showStatus('success', 'Upload Success!', `資料已成功 ${action}！`);
-                clearInputs();
-                loadRecentRecords(); // 成功後更新列表
-                setTimeout(() => { closeStatusModal(); }, 2000);
-            } else {
-                showStatus('error', 'Upload Failed', `上傳失敗：${res.error || '未知的錯誤。'}`);
-            }
-        })
-        .catch(e => {
-            console.error(e);
-            showStatus('error', 'Upload Failed', '網路或伺服器錯誤，請檢查。');
-        })
-        .finally(() => {
-            btn.disabled = false;
-        });
-    }
+        fetch(scriptUrl, {
+            method: 'POST',
+            body: JSON.stringify(data)
+        })
+        .then(r => r.json())
+        .then(res => {
+            const action = res.action || '新增'; 
+            if (res.result === 'success') {
+                showStatus('success', 'Upload Success!', `資料已成功 ${action}！`);
+                clearInputs();
+                setTimeout(() => { closeStatusModal(); }, 2000);
+            } else {
+                showStatus('error', 'Upload Failed', `上傳失敗：${res.error || '未知的錯誤。'}`);
+            }
+        })
+        .catch(e => {
+            console.error(e);
+            showStatus('error', 'Upload Failed', '網路或伺服器錯誤，請檢查。');
+        })
+        .finally(() => {
+            btn.disabled = false;
+        });
+    }
 
-    function viewExcel() {
-        const url = `https://docs.google.com/spreadsheets/d/${FIXED_SHEET_ID}/edit#gid=0`;
-        window.open(url, '_blank');
-    }
+    function viewExcel() {
+        const url = `https://docs.google.com/spreadsheets/d/${FIXED_SHEET_ID}/edit#gid=0`;
+        window.open(url, '_blank');
+    }
 
-    function viewDriveFolder() {
-        if(FIXED_FOLDER_ID && FIXED_FOLDER_ID.trim() !== "") {
-            window.open(`https://drive.google.com/drive/folders/${FIXED_FOLDER_ID}`, '_blank');
-        } else {
-            alert("Folder ID not set.");
-        }
-    }
-    
-    // ... 圖片/語音函數保持不變 ...
-    function triggerFile(id) { 
-        if (window.location.protocol === 'http:' && !window.location.hostname.includes('localhost')) {
-            alert("❌ 相機功能需要 HTTPS 協定。請使用 Apps Script 網址開啟。");
-            return;
-        }
-        document.getElementById(id).click();
-    }
-    
-    function handleFile(input) {
-        if (!input.files || !input.files[0]) return;
-        
-        const file = input.files[0];
-        const reader = new FileReader();
-        
-        reader.onload = function(e) {
-            const img = new Image();
-            img.onload = function() { processImageWithCanvas(img); };
-            img.src = e.target.result;
-        }
-        reader.readAsDataURL(file);
-    }
-    
-    function processImageWithCanvas(img) {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const ratioStr = localStorage.getItem("cfg_ratio") || "4/3";
-        
-        let targetRatio = 4/3;
-        let isFull = ratioStr === "FULL";
+    function viewDriveFolder() {
+        if(FIXED_FOLDER_ID && FIXED_FOLDER_ID.trim() !== "") {
+            window.open(`https://drive.google.com/drive/folders/${FIXED_FOLDER_ID}`, '_blank');
+        } else {
+            alert("Folder ID not set.");
+        }
+    }
+    
+    // ... 圖片/語音函數保持不變 ...
+    function triggerFile(id) { 
+        if (window.location.protocol === 'http:' && !window.location.hostname.includes('localhost')) {
+            alert("❌ 相機功能需要 HTTPS 協定。請使用 Apps Script 網址開啟。");
+            return;
+        }
+        document.getElementById(id).click();
+    }
+    
+    function handleFile(input) {
+        if (!input.files || !input.files[0]) return;
+        
+        const file = input.files[0];
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() { processImageWithCanvas(img); };
+            img.src = e.target.result;
+        }
+        reader.readAsDataURL(file);
+    }
+    
+    function processImageWithCanvas(img) {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const ratioStr = localStorage.getItem("cfg_ratio") || "4/3";
+        
+        let targetRatio = 4/3;
+        let isFull = ratioStr === "FULL";
 
-        if(ratioStr === "16/9") targetRatio = 16/9;
-        else if(ratioStr === "9/16") targetRatio = 9/16;
-        else if(ratioStr === "1/1") targetRatio = 1;
+        if(ratioStr === "16/9") targetRatio = 16/9;
+        else if(ratioStr === "9/16") targetRatio = 9/16;
+        else if(ratioStr === "1/1") targetRatio = 1;
 
-        let srcW = img.width; let srcH = img.height;
-        let drawW, drawH, startX, startY;
+        let srcW = img.width; let srcH = img.height;
+        let drawW, drawH, startX, startY;
 
-        if (isFull) {
-            drawW = srcW; drawH = srcH; startX = 0; startY = 0;
-        } else {
-            let srcRatio = srcW / srcH;
-            if (srcRatio > targetRatio) {
-                drawH = srcH; drawW = srcH * targetRatio;
-                startX = (srcW - drawW) / 2; startY = 0;
-            } else {
-                drawW = srcW; drawH = srcW / targetRatio;
-                startX = 0; startY = (srcH - drawH) / 2;
-            }
-        }
+        if (isFull) {
+            drawW = srcW; drawH = srcH; startX = 0; startY = 0;
+        } else {
+            let srcRatio = srcW / srcH;
+            if (srcRatio > targetRatio) {
+                drawH = srcH; drawW = srcH * targetRatio;
+                startX = (srcW - drawW) / 2; startY = 0;
+            } else {
+                drawW = srcW; drawH = srcW / targetRatio;
+                startX = 0; startY = (srcH - drawH) / 2;
+            }
+        }
 
-        const scale = MAX_IMAGE_WIDTH / drawW;
-        canvas.width = MAX_IMAGE_WIDTH; 
-        canvas.height = drawH * scale;
+        const scale = MAX_IMAGE_WIDTH / drawW;
+        canvas.width = MAX_IMAGE_WIDTH; 
+        canvas.height = drawH * scale;
 
-        ctx.drawImage(img, startX, startY, drawW, drawH, 0, 0, canvas.width, canvas.height);
-        processedImageBase64 = canvas.toDataURL('image/jpeg', 0.8);
-        
-        const preview = document.getElementById('preview-img');
-        preview.src = processedImageBase64;
-        preview.style.display = 'block';
-        document.querySelector('.placeholder').style.display = 'none';
+        ctx.drawImage(img, startX, startY, drawW, drawH, 0, 0, canvas.width, canvas.height);
+        processedImageBase64 = canvas.toDataURL('image/jpeg', 0.8);
+        
+        const preview = document.getElementById('preview-img');
+        preview.src = processedImageBase64;
+        preview.style.display = 'block';
+        document.querySelector('.placeholder').style.display = 'none';
 
-        if(isFull) {
-             const container = document.getElementById('preview-container');
-             container.classList.remove("ratio-4-3", "ratio-16-9", "ratio-9-16", "ratio-1-1"); 
-             container.style.aspectRatio = `${canvas.width} / ${canvas.height}`;
-        }
-    }
+        if(isFull) {
+             const container = document.getElementById('preview-container');
+             container.classList.remove("ratio-4-3", "ratio-16-9", "ratio-9-16", "ratio-1-1"); 
+             container.style.aspectRatio = `${canvas.width} / ${canvas.height}`;
+        }
+    }
 
-    function toggleVoice(btn) {
-        if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-            alert("❌ 語音輸入被阻擋！瀏覽器不支援，或請確保 App 透過 HTTPS 網址開啟。");
-            return;
-        }
-        
-        const targetId = btn.getAttribute('data-target');
-        const targetArea = document.getElementById(targetId);
+    function toggleVoice(btn) {
+        if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+            alert("❌ 語音輸入被阻擋！瀏覽器不支援，或請確保 App 透過 HTTPS 網址開啟。");
+            return;
+        }
+        
+        const targetId = btn.getAttribute('data-target');
+        const targetArea = document.getElementById(targetId);
 
-        if (isRecording && activeTextAreaId === targetId) {
-            manualStopVoice(); 
-        } else if (isRecording && activeTextAreaId !== targetId) {
-             if(confirm(`目前正在錄製其他欄位，確定要切換到 [${targetArea.previousElementSibling.innerText.trim()}] 嗎？`)) {
-                manualStopVoice();
-                startVoice(btn, targetArea, targetId);
-             }
-        } else {
-            startVoice(btn, targetArea, targetId);
-        }
-    }
-    
-    function startVoice(btn, targetArea, targetId) {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        recognition = new SpeechRecognition();
-        
-        recognition.lang = document.getElementById('voice-lang-select').value || 'cmn-Hant-TW';
-        recognition.continuous = true; 
-        recognition.interimResults = true; 
+        if (isRecording && activeTextAreaId === targetId) {
+            manualStopVoice(); 
+        } else if (isRecording && activeTextAreaId !== targetId) {
+             if(confirm(`目前正在錄製其他欄位，確定要切換到 [${targetArea.previousElementSibling.innerText.trim()}] 嗎？`)) {
+                manualStopVoice();
+                startVoice(btn, targetArea, targetId);
+             }
+        } else {
+            startVoice(btn, targetArea, targetId);
+        }
+    }
+    
+    function startVoice(btn, targetArea, targetId) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SpeechRecognition();
+        
+        recognition.lang = document.getElementById('voice-lang-select').value || 'cmn-Hant-TW';
+        recognition.continuous = true; 
+        recognition.interimResults = true; 
 
-        isRecording = true;
-        activeTextAreaId = targetId;
-        
-        document.querySelectorAll('.btn-voice').forEach(b => b.classList.remove('recording'));
-        btn.classList.add('recording');
-        btn.innerText = "🛑 停止錄音";
-        
-        snapshotText = targetArea.value;
-        if(snapshotText.length > 0 && !snapshotText.endsWith(" ")) {
-            snapshotText += " ";
-        }
+        isRecording = true;
+        activeTextAreaId = targetId;
+        
+        document.querySelectorAll('.btn-voice').forEach(b => b.classList.remove('recording'));
+        btn.classList.add('recording');
+        btn.innerText = "🛑 停止錄音";
+        
+        snapshotText = targetArea.value;
+        if(snapshotText.length > 0 && !snapshotText.endsWith(" ")) {
+            snapshotText += " ";
+        }
 
-        recognition.onresult = function(event) {
-            let currentSessionText = ''; 
-            for (let i = event.resultIndex; i < event.results.length; ++i) {
-                currentSessionText += event.results[i][0].transcript;
-            }
+        recognition.onresult = function(event) {
+            let currentSessionText = ''; 
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                currentSessionText += event.results[i][0].transcript;
+            }
 
-            targetArea.value = snapshotText + currentSessionText;
-            targetArea.scrollTop = targetArea.scrollHeight;
+            targetArea.value = snapshotText + currentSessionText;
+            targetArea.scrollTop = targetArea.scrollHeight;
 
-            if(punctuationTimer) clearTimeout(punctuationTimer);
-            
-            if(currentSessionText.trim().length > 0) {
-                const timeoutMs = parseFloat(localStorage.getItem("cfg_timeout") || DEFAULT_VOICE_TIMEOUT) * 1000;
-                punctuationTimer = setTimeout(() => {
-                    manualStopVoice(); 
-                }, timeoutMs); 
-            }
-        };
+            if(punctuationTimer) clearTimeout(punctuationTimer);
+            
+            if(currentSessionText.trim().length > 0) {
+                const timeoutMs = parseFloat(localStorage.getItem("cfg_timeout") || DEFAULT_VOICE_TIMEOUT) * 1000;
+                punctuationTimer = setTimeout(() => {
+                    manualStopVoice(); 
+                }, timeoutMs); 
+            }
+        };
 
-        recognition.onend = function() {
-            if(punctuationTimer) clearTimeout(punctuationTimer);
-            resetVoiceUI();
-        };
-        
-        recognition.onerror = function(event) {
-            console.error("Speech Recognition Error:", event.error);
-            resetVoiceUI();
-            alert(`❌ 語音辨識發生錯誤！請檢查麥克風權限或 App 是否在 HTTPS 環境中。錯誤碼: ${event.error}`);
-        };
-        
-        try {
-            recognition.start();
-        } catch(e) {
-            console.error("Start error", e);
-            resetVoiceUI();
-            alert("❌ 語音 API 啟動失敗。請確認瀏覽器支援和權限。");
-        }
-    }
+        recognition.onend = function() {
+            if(punctuationTimer) clearTimeout(punctuationTimer);
+            resetVoiceUI();
+        };
+        
+        recognition.onerror = function(event) {
+            console.error("Speech Recognition Error:", event.error);
+            resetVoiceUI();
+            alert(`❌ 語音辨識發生錯誤！請檢查麥克風權限或 App 是否在 HTTPS 環境中。錯誤碼: ${event.error}`);
+        };
+        
+        try {
+            recognition.start();
+        } catch(e) {
+            console.error("Start error", e);
+            resetVoiceUI();
+            alert("❌ 語音 API 啟動失敗。請確認瀏覽器支援和權限。");
+        }
+    }
 
-    function manualStopVoice() {
-        if(isRecording && recognition) {
-            isRecording = false; 
-            if(punctuationTimer) clearTimeout(punctuationTimer);
+    function manualStopVoice() {
+        if(isRecording && recognition) {
+            isRecording = false; 
+            if(punctuationTimer) clearTimeout(punctuationTimer);
 
-            const targetArea = document.getElementById(activeTextAreaId);
-            let currentVal = targetArea.value.trim();
-            if(currentVal.length > 0) {
-                const lastChar = currentVal.slice(-1);
-                const lang = document.getElementById('voice-lang-select').value;
-                const marks = lang.includes('en') ? [",", "."] : ["，", "。", "、", "？", "！"];
-                
-                if(!marks.includes(lastChar)) {
-                    const mark = lang.includes('en') ? ". " : "。";
-                    currentVal += mark;
-                    targetArea.value = currentVal;
-                }
-            }
+            const targetArea = document.getElementById(activeTextAreaId);
+            let currentVal = targetArea.value.trim();
+            if(currentVal.length > 0) {
+                const lastChar = currentVal.slice(-1);
+                const lang = document.getElementById('voice-lang-select').value;
+                const marks = lang.includes('en') ? [",", "."] : ["，", "。", "、", "？", "！"];
+                
+                if(!marks.includes(lastChar)) {
+                    const mark = lang.includes('en') ? ". " : "。";
+                    currentVal += mark;
+                    targetArea.value = currentVal;
+                }
+            }
 
-            recognition.stop();
-            resetVoiceUI();
-        }
-    }
+            recognition.stop();
+            resetVoiceUI();
+        }
+    }
 
-    function resetVoiceUI() {
-        if(punctuationTimer) clearTimeout(punctuationTimer);
-        
-        document.querySelectorAll('.btn-voice').forEach(b => {
-             b.classList.remove('recording');
-             b.innerText = "🎤 語音輸入";
-        });
-        
-        isRecording = false;
-        activeTextAreaId = null;
-    }
+    function resetVoiceUI() {
+        if(punctuationTimer) clearTimeout(punctuationTimer);
+        
+        document.querySelectorAll('.btn-voice').forEach(b => {
+             b.classList.remove('recording');
+             b.innerText = "🎤 語音輸入";
+        });
+        
+        isRecording = false;
+        activeTextAreaId = null;
+    }
 
-    function showStatus(type, title, subtitle) {
-        const modal = document.getElementById('status-modal');
-        const spinner = document.getElementById('status-spinner');
-        const icon = document.getElementById('status-icon');
-        const text = document.getElementById('status-text');
-        const sub = document.getElementById('status-subtext');
-        const closeBtn = document.getElementById('status-close-btn');
+    function showStatus(type, title, subtitle) {
+        const modal = document.getElementById('status-modal');
+        const spinner = document.getElementById('status-spinner');
+        const icon = document.getElementById('status-icon');
+        const text = document.getElementById('status-text');
+        const sub = document.getElementById('status-subtext');
+        const closeBtn = document.getElementById('status-close-btn');
 
-        modal.style.display = 'flex';
-        text.innerText = title; sub.innerText = subtitle;
+        modal.style.display = 'flex';
+        text.innerText = title; sub.innerText = subtitle;
 
-        spinner.style.display = (type === 'loading') ? 'block' : 'none';
-        icon.style.display = (type !== 'loading') ? 'block' : 'none';
-        closeBtn.style.display = (type === 'error' || type === 'success') ? 'block' : 'none';
+        spinner.style.display = (type === 'loading') ? 'block' : 'none';
+        icon.style.display = (type !== 'loading') ? 'block' : 'none';
+        closeBtn.style.display = (type === 'error') ? 'block' : 'none';
 
-        if(type === 'success') icon.innerText = '✅';
-        else if(type === 'error') icon.innerText = '❌';
-    }
+        if(type === 'success') icon.innerText = '✅';
+        else if(type === 'error') icon.innerText = '❌';
+    }
 
-    function closeStatusModal() { document.getElementById('status-modal').style.display = 'none'; }
+    function closeStatusModal() { document.getElementById('status-modal').style.display = 'none'; }
 
-    function viewExcel() {
-        const url = `https://docs.google.com/spreadsheets/d/${FIXED_SHEET_ID}/edit#gid=0`;
-        window.open(url, '_blank');
-    }
+    function viewExcel() {
+        const url = `https://docs.google.com/spreadsheets/d/${FIXED_SHEET_ID}/edit#gid=0`;
+        window.open(url, '_blank');
+    }
 
-    function viewDriveFolder() {
-        if(FIXED_FOLDER_ID && FIXED_FOLDER_ID.trim() !== "") {
-            window.open(`https://drive.google.com/drive/folders/${FIXED_FOLDER_ID}`, '_blank');
-        } else {
-            alert("Folder ID not set.");
-        }
-    }
-    
-    
-// ================= 紀錄讀取與表單填入功能 (新增的邏輯) =================
-
-/**
- * 載入最近的紀錄並渲染到列表中
- */
-function loadRecentRecords() {
-    const listContainer = document.getElementById('recent-records-list');
-    // 使用 SCRIPT_URL 調用後端 doGetRecords (Action=loadRecords)
-    const scriptUrl = SCRIPT_URL + '?action=loadRecords';
-    
-    listContainer.innerHTML = '<li style="color: #999; text-align: center; margin-top: 10px;">Loading...</li>';
-
-    fetch(scriptUrl)
-        .then(r => r.json())
-        .then(res => {
-            listContainer.innerHTML = '';
-            
-            if (res.result === 'success' && res.data.length > 0) {
-                res.data.forEach(record => {
-                    const listItem = document.createElement('li');
-                    listItem.className = 'record-item';
-                    listItem.setAttribute('data-form-no', record.formNo);
-                    // 點擊事件：呼叫 fillForm 函數
-                    listItem.onclick = () => fillForm(record.formNo);
-                    
-                    const totalTimeDisplay = record.totalTime && record.totalTime > 0 ? 
-                        ` (${record.totalTime} min / ${(record.totalTime / 60).toFixed(2)} hr)` : 
-                        '';
-                    
-                    listItem.innerHTML = `
-                        <div class="record-title">#${record.formNo} - ${record.machine}</div>
-                        <div class="record-subtitle">
-                            Concern: ${record.concernSection}
-                        </div>
-                        <div class="record-time">
-                            Stop: ${record.stopTime || 'N/A'} | Start: ${record.startTime || 'N/A'} ${totalTimeDisplay}
-                        </div>
-                    `;
-                    listContainer.appendChild(listItem);
-                });
-            } else {
-                listContainer.innerHTML = '<li style="color: #999; text-align: center; margin-top: 10px;">No recent records found.</li>';
-            }
-        })
-        .catch(e => {
-            console.error("Failed to load recent records:", e);
-            listContainer.innerHTML = '<li style="color: red; text-align: center; margin-top: 10px;">❌ Failed to load data.</li>';
-        });
-}
-
-
-/**
- * 根據 Form No 獲取單一資料並填入表單
- * @param {string} formNo - 要載入的 Repair Form No
- */
-function fillForm(formNo) {
-    if (!formNo) return;
-    
-    if(!confirm(`確定要載入 Form No: ${formNo} 的紀錄來補充或修改嗎？\n(這會覆蓋當前表單內容)`)) {
-        return;
-    }
-    
-    // Action=getRow
-    const scriptUrl = SCRIPT_URL + `?action=getRow&formNo=${encodeURIComponent(formNo)}`;
-    showStatus('loading', 'Loading Record...', `載入 ${formNo} 紀錄中...`);
-
-    fetch(scriptUrl)
-        .then(r => r.json())
-        .then(res => {
-            if (res.result === 'success') {
-                handleRecordLoad(res.data);
-                showStatus('success', 'Load Complete', `紀錄 ${formNo} 已載入表單！`);
-            } else {
-                showStatus('error', 'Load Failed', `載入失敗：${res.error}`);
-            }
-        })
-        .catch(e => {
-            console.error("Load failed:", e);
-            showStatus('error', 'Load Failed', '網路或伺服器錯誤，無法載入資料。');
-        })
-        .finally(() => {
-            // 延遲關閉 Modal
-            setTimeout(() => { closeStatusModal(); }, 1500); 
-        });
-}
-
-
-/**
- * 將從 GAS 獲取的單一紀錄數據填入主表單
- * @param {object} data - 從 doGetRow 獲取的紀錄物件
- */
-function handleRecordLoad(data) {
-    // 1. 填入所有文字欄位
-    document.getElementById('input-employee-id').value = data.employeeId || "";
-    document.getElementById('input-form-no').value = data.formNo || "";
-    document.getElementById('input-reason').value = data.reason || "";
-    document.getElementById('input-solution').value = data.solution || "";
-    document.getElementById('input-self-actions').value = data.selfActions || "";
-
-    // 2. 填入 Select 選單 (機台 & 部門)
-    document.getElementById('input-machine').value = data.machine || "";
-    document.getElementById('input-concern-section').value = data.concernSection || "";
-
-    // 3. 填入時間欄位 (直接使用後端傳回的 DD/MM/YYYY hh:mm 格式字串)
-    document.getElementById('input-stop-time-full').value = data.stopTimeFull || "";
-    document.getElementById('input-start-time-full').value = data.startTimeFull || "";
-    
-    // 4. 重新計算 Total Time
-    calculateTotalStopTime();
-    
-    // 5. 清除圖片預覽（因為圖片無法從 Apps Script 反向載入）
-    processedImageBase64 = "";
-    const preview = document.getElementById('preview-img');
-    preview.style.display = 'none';
-    preview.src = "";
-    document.querySelector('.placeholder').style.display = 'block';
-
-    // 提示使用者
-    // alert(`紀錄 #${data.formNo} 已成功載入！\n您可以補充 Solution / Self Actions / 時間 / 圖片，然後點擊 [Save to Cloud] 進行更新。`);
-}
+    function viewDriveFolder() {
+        if(FIXED_FOLDER_ID && FIXED_FOLDER_ID.trim() !== "") {
+            window.open(`https://drive.google.com/drive/folders/${FIXED_FOLDER_ID}`, '_blank');
+        } else {
+            alert("Folder ID not set.");
+        }
+    }
 </script>
 
 </body>
