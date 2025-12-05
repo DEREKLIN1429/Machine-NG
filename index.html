@@ -171,7 +171,7 @@
     </div>
 
     <div id="app-screen" style="display: none;">
-        <div class="author-header">Author: DERER LIN (v4.3 - Recent Limit + Fix Copy)</div>
+        <div class="author-header">Author: DERER LIN (v4.3 - Text Copy Only)</div>
         <div class="header">
             <div class="header-btn" onclick="logout()" title="Logout">🔒</div>
             <div class="header-title"><h2>Machine-NG<br>重點事項紀錄</h2></div>
@@ -491,7 +491,7 @@
     function showStatus(t,h,s){const m=document.getElementById('status-modal');document.getElementById('status-text').innerText=h;document.getElementById('status-subtext').innerText=s;document.getElementById('status-spinner').style.display=t==='loading'?'block':'none';document.getElementById('status-icon').style.display=t!=='loading'?'block':'none';document.getElementById('status-close-btn').style.display=t!=='loading'?'block':'none';document.getElementById('status-icon').innerText=t==='success'?'✅':'❌';m.style.display='flex'}
     function closeStatusModal(){document.getElementById('status-modal').style.display='none'}
     
-    // ✅ 已修正：可複製所有欄位
+    // ✅ 已修正：只複製純文字，移除 Emoji 圖標
     function copyFormattedInfo(){
         const emp = document.getElementById('input-employee-id').value || "N/A";
         const machine = document.getElementById('input-machine').value || "N/A";
@@ -504,35 +504,35 @@
         const solution = document.getElementById('input-solution').value || "N/A";
         const action = document.getElementById('input-self-actions').value || "N/A";
 
-        // 若單號和機台都沒填，提醒一下 (防止誤按)
         if (machine === "N/A" && form === "N/A") {
             alert("請至少填寫 Machine 與 Form No");
             return;
         }
 
+        // 純文字格式 (移除 👤, 🏭 等圖示)
         const textToCopy = 
-`【Machine NG Record】
+`[Machine NG Record]
 -----------------------
-👤 Employee: ${emp}
-🏭 Machine: ${machine}
-📄 Form No: ${form}
+Employee: ${emp}
+Machine: ${machine}
+Form No: ${form}
 -----------------------
-🛑 Stop Time: ${stop}
-🚀 Start Time: ${start}
-⏱️ Total: ${total}
+Stop Time: ${stop}
+Start Time: ${start}
+Total Time: ${total}
 -----------------------
-⚠️ Concern: ${concern}
-❓ Reason: 
+Concern: ${concern}
+Reason: 
 ${reason}
 
-💡 Solution: 
+Solution: 
 ${solution}
 
-🛠️ Self Actions: 
+Self Actions: 
 ${action}`;
 
         navigator.clipboard.writeText(textToCopy.trim())
-            .then(() => alert("📋 Full Info Copied!"))
+            .then(() => alert("Text Only Copied!"))
             .catch(err => alert("Copy failed: " + err));
     }
 
