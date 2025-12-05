@@ -171,7 +171,7 @@
     </div>
 
     <div id="app-screen" style="display: none;">
-        <div class="author-header">Author: DERER LIN (v4.3 - Recent Limit)</div>
+        <div class="author-header">Author: DERER LIN (v4.3 - Recent Limit + Fix Copy)</div>
         <div class="header">
             <div class="header-btn" onclick="logout()" title="Logout">🔒</div>
             <div class="header-title"><h2>Machine-NG<br>重點事項紀錄</h2></div>
@@ -265,12 +265,13 @@
     const DEFAULT_MACHINE_LIST = ["BM5", "BM6", "BM7", "BM21", "BM22", "BM23", "CA3", "CA4", "CM1", "CM2", "CM3"];
     const DEFAULT_CONCERN_LIST = ["Mixing", "Extrusion", "Cutting", "Calendering"];
     const DEFAULT_VOICE_TIMEOUT = 1.5;
-    const DEFAULT_RECENT_LIMIT = 5; // 新增：預設筆數
+    const DEFAULT_RECENT_LIMIT = 5;
 
-    // TODO: 請務必修改以下三個路徑
+    // TODO: ⚠️ 請務必將下方三個 ID 替換為您自己的資料 ⚠️
     const FIXED_SCRIPT_ID = "AKfycbzfPzPODQjp_phrHPwjsoBYeA8-VgeaoYly6hr3Mx09Wj-o5tWHMPa-nTHfaHyloiH8zg/exec"; 
     const FIXED_SHEET_ID = "1sDKZBJfasUbZSGNAfz9GIWfRdrdXxQMrXrxM3x9RlCY"; 
     const FIXED_FOLDER_ID = "1VPfLCMIuJPA66RjN8isrC4xq3luPMJe4"; 
+    
     const GAS_URL = `https://script.google.com/macros/s/${FIXED_SCRIPT_ID}/exec`;
 
     let processedImageBase64 = "", recognition = null, isRecording = false, activeTextAreaId = null, snapshotText = "", punctuationTimer = null;
@@ -282,7 +283,6 @@
         if(!localStorage.getItem(MACHINE_LIST_KEY)) localStorage.setItem(MACHINE_LIST_KEY, JSON.stringify(DEFAULT_MACHINE_LIST));
         if(!localStorage.getItem(CONCERN_LIST_KEY)) localStorage.setItem(CONCERN_LIST_KEY, JSON.stringify(DEFAULT_CONCERN_LIST));
         if(!localStorage.getItem("cfg_timeout")) localStorage.setItem("cfg_timeout", DEFAULT_VOICE_TIMEOUT);
-        // 初始化紀錄筆數
         if(!localStorage.getItem("cfg_recent_limit")) localStorage.setItem("cfg_recent_limit", DEFAULT_RECENT_LIMIT);
         
         loadSettingsToUI(); loadMachineListToUI(); loadConcernSectionToUI(); loadEmployeeID(); 
@@ -307,15 +307,13 @@
     function saveSettings(){
         const p=document.getElementById('set-password').value.trim();if(p)localStorage.setItem("app_password",p);
         const t=parseFloat(document.getElementById('set-timeout').value);if(!isNaN(t))localStorage.setItem("cfg_timeout",t);
-        
-        // 儲存筆數設定
         const limit = parseInt(document.getElementById('set-recent-limit').value);
         if(!isNaN(limit) && limit > 0) localStorage.setItem("cfg_recent_limit", limit);
 
         localStorage.setItem("cfg_ratio",document.getElementById('set-ratio').value);
         localStorage.setItem("cfg_lang",document.getElementById('set-lang').value);
         alert("Saved!");closeSettings();applySettings();
-        loadRecentRecords(); // 重新載入以應用新筆數
+        loadRecentRecords();
     }
     function loadSettingsToUI(){
         document.getElementById('set-timeout').value=localStorage.getItem("cfg_timeout")||DEFAULT_VOICE_TIMEOUT;
@@ -391,7 +389,6 @@
     }
     function updateSingleTime(id){const n=new Date();document.getElementById(id).value=getFullDateTimeString(n);calculateTotalStopTime()}
     
-    // 修正：截取指定數量的紀錄
     function loadRecentRecords(){
         const listContainer=document.getElementById('recent-records-list');listContainer.innerHTML='<p style="text-align: center; color: #999;">Loading...</p>';
         const limit = parseInt(localStorage.getItem("cfg_recent_limit")) || DEFAULT_RECENT_LIMIT;
@@ -399,7 +396,6 @@
         fetch(`${GAS_URL}?action=loadRecords`).then(r=>r.json()).then(res=>{
             listContainer.innerHTML='';
             if(res.result==='success'&&res.data.length>0){
-                // 根據設定筆數進行截斷
                 const recordsToShow = res.data.slice(0, limit);
                 recordsToShow.forEach(r=>{
                     const i=document.createElement('div');i.className='record-item';i.setAttribute('onclick',`populateForm('${r.formNo}')`);
@@ -494,11 +490,52 @@
 
     function showStatus(t,h,s){const m=document.getElementById('status-modal');document.getElementById('status-text').innerText=h;document.getElementById('status-subtext').innerText=s;document.getElementById('status-spinner').style.display=t==='loading'?'block':'none';document.getElementById('status-icon').style.display=t!=='loading'?'block':'none';document.getElementById('status-close-btn').style.display=t!=='loading'?'block':'none';document.getElementById('status-icon').innerText=t==='success'?'✅':'❌';m.style.display='flex'}
     function closeStatusModal(){document.getElementById('status-modal').style.display='none'}
+    
+    // ✅ 已修正：可複製所有欄位
     function copyFormattedInfo(){
-        const m=document.getElementById('input-machine').value;const f=document.getElementById('input-form-no').value;const r=document.getElementById('input-reason').value;
-        if(!m||!f||!r){alert("Data incomplete");return}
-        navigator.clipboard.writeText(`Machine: ${m}\nForm: ${f}\nReason: ${r}`).then(()=>alert("Copied!"));
+        const emp = document.getElementById('input-employee-id').value || "N/A";
+        const machine = document.getElementById('input-machine').value || "N/A";
+        const form = document.getElementById('input-form-no').value || "N/A";
+        const stop = document.getElementById('input-stop-time-full').value || "";
+        const start = document.getElementById('input-start-time-full').value || "";
+        const total = document.getElementById('input-total-time').value || "";
+        const concern = document.getElementById('input-concern-section').value || "N/A";
+        const reason = document.getElementById('input-reason').value || "N/A";
+        const solution = document.getElementById('input-solution').value || "N/A";
+        const action = document.getElementById('input-self-actions').value || "N/A";
+
+        // 若單號和機台都沒填，提醒一下 (防止誤按)
+        if (machine === "N/A" && form === "N/A") {
+            alert("請至少填寫 Machine 與 Form No");
+            return;
+        }
+
+        const textToCopy = 
+`【Machine NG Record】
+-----------------------
+👤 Employee: ${emp}
+🏭 Machine: ${machine}
+📄 Form No: ${form}
+-----------------------
+🛑 Stop Time: ${stop}
+🚀 Start Time: ${start}
+⏱️ Total: ${total}
+-----------------------
+⚠️ Concern: ${concern}
+❓ Reason: 
+${reason}
+
+💡 Solution: 
+${solution}
+
+🛠️ Self Actions: 
+${action}`;
+
+        navigator.clipboard.writeText(textToCopy.trim())
+            .then(() => alert("📋 Full Info Copied!"))
+            .catch(err => alert("Copy failed: " + err));
     }
+
     function viewExcel(){window.open(`https://docs.google.com/spreadsheets/d/${FIXED_SHEET_ID}/edit`,'_blank')}
     function viewDriveFolder(){window.open(`https://drive.google.com/drive/folders/${FIXED_FOLDER_ID}`,'_blank')}
     function clearInputs(){
