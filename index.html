@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Machine-NG (重點事項紀錄)</title>
+    <title>Machine-NG (機械故障資訊)</title>
     <style>
         :root {
             --primary-color: #4CAF50; --bg-color: #f7f9fc; --card-bg: #ffffff;
@@ -171,10 +171,10 @@
     </div>
 
     <div id="app-screen" style="display: none;">
-        <div class="author-header">Author: DERER LIN (v4.3 - Text Copy Only)</div>
+        <div class="author-header">Author: DERER LIN (v4.4 - Format Copy & Fix File)</div>
         <div class="header">
             <div class="header-btn" onclick="logout()" title="Logout">🔒</div>
-            <div class="header-title"><h2>Machine-NG<br>重點事項紀錄</h2></div>
+            <div class="header-title"><h2>Machine-NG<br>機械故障資訊</h2></div>
             <div class="header-btn" onclick="openSettings()" title="Settings">⚙️</div>
         </div>
         <div class="input-group">
@@ -491,7 +491,7 @@
     function showStatus(t,h,s){const m=document.getElementById('status-modal');document.getElementById('status-text').innerText=h;document.getElementById('status-subtext').innerText=s;document.getElementById('status-spinner').style.display=t==='loading'?'block':'none';document.getElementById('status-icon').style.display=t!=='loading'?'block':'none';document.getElementById('status-close-btn').style.display=t!=='loading'?'block':'none';document.getElementById('status-icon').innerText=t==='success'?'✅':'❌';m.style.display='flex'}
     function closeStatusModal(){document.getElementById('status-modal').style.display='none'}
     
-    // ✅ 已修正：只複製純文字，移除 Emoji 圖標
+    // ✅ 已修正：去除標題 + 每個欄位空一行 + 純文字
     function copyFormattedInfo(){
         const emp = document.getElementById('input-employee-id').value || "N/A";
         const machine = document.getElementById('input-machine').value || "N/A";
@@ -509,19 +509,25 @@
             return;
         }
 
-        // 純文字格式 (移除 👤, 🏭 等圖示)
+        // 修改：去除標題、加入空行
         const textToCopy = 
-`[Machine NG Record]
------------------------
+`-----------------------
 Employee: ${emp}
+
 Machine: ${machine}
+
 Form No: ${form}
+
 -----------------------
 Stop Time: ${stop}
+
 Start Time: ${start}
+
 Total Time: ${total}
+
 -----------------------
 Concern: ${concern}
+
 Reason: 
 ${reason}
 
@@ -532,7 +538,7 @@ Self Actions:
 ${action}`;
 
         navigator.clipboard.writeText(textToCopy.trim())
-            .then(() => alert("Text Only Copied!"))
+            .then(() => alert("Copied!"))
             .catch(err => alert("Copy failed: " + err));
     }
 
