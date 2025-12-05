@@ -171,7 +171,7 @@
     </div>
 
     <div id="app-screen" style="display: none;">
-        <div class="author-header">Author: DERER LIN (v4.6 - Copy Title Added)</div>
+        <div class="author-header">Author: DERER LIN (v4.7 - Fix Voice Duplication)</div>
         <div class="header">
             <div class="header-btn" onclick="logout()" title="Logout">🔒</div>
             <div class="header-title"><h2>Machine-NG<br>重點事項紀錄</h2></div>
@@ -274,7 +274,9 @@
     
     const GAS_URL = `https://script.google.com/macros/s/${FIXED_SCRIPT_ID}/exec`;
 
-    let processedImageBase64 = "", recognition = null, isRecording = false, activeTextAreaId = null, snapshotText = "", punctuationTimer = null;
+    // 修正語音變數
+    let processedImageBase64 = "", recognition = null, isRecording = false, activeTextAreaId = null;
+    let initialText = "", currentSessionFinal = "", punctuationTimer = null; // 修正邏輯用的變數
 
     document.addEventListener('DOMContentLoaded', () => { initApp(); });
 
@@ -428,29 +430,40 @@
         if (isRecording) { manualStopVoice(); } else { activeTextAreaId = button.dataset.target; startVoice(button); }
     }
 
+    // ✅ 已修正：語音輸入不再重複
     function startVoice(button) {
         isRecording = true; button.classList.add('recording'); button.innerHTML = '🔴 錄音中...';
         recognition = new webkitSpeechRecognition(); recognition.continuous = true; recognition.interimResults = true;
         recognition.lang = document.getElementById('voice-lang-select').value; 
         
         const targetElement = document.getElementById(activeTextAreaId);
-        snapshotText = targetElement.value; 
-        if (snapshotText.length > 0 && !snapshotText.endsWith(' ') && !snapshotText.endsWith('\n')) {
-            snapshotText += ' ';
+        
+        // 鎖定初始文字 (Snaphot)
+        initialText = targetElement.value; 
+        if (initialText.length > 0 && !initialText.endsWith(' ') && !initialText.endsWith('\n')) {
+            initialText += ' ';
         }
+        currentSessionFinal = ''; // 清空本次對話紀錄
 
         recognition.onstart = function() { clearTimeout(punctuationTimer); };
 
         recognition.onresult = function(event) {
             clearTimeout(punctuationTimer); 
-            let sessionFinal = '';
-            let sessionInterim = '';
+            let interimTranscript = '';
+            
+            // 重新計算本次所有的 finalized 文字 (這樣才不會重複疊加)
+            currentSessionFinal = ''; 
+
             for (let i = event.resultIndex; i < event.results.length; ++i) {
-                if (event.results[i].isFinal) { sessionFinal += event.results[i][0].transcript; } 
-                else { sessionInterim += event.results[i][0].transcript; }
+                if (event.results[i].isFinal) { 
+                    currentSessionFinal += event.results[i][0].transcript; 
+                } else { 
+                    interimTranscript += event.results[i][0].transcript; 
+                }
             }
-            if (sessionFinal) { snapshotText += sessionFinal; }
-            targetElement.value = snapshotText + sessionInterim;
+            
+            // 介面永遠顯示：【初始文字】 + 【這次講完的】 + 【正在講的】
+            targetElement.value = initialText + currentSessionFinal + interimTranscript;
             
             const timeout = parseFloat(localStorage.getItem("cfg_timeout") || DEFAULT_VOICE_TIMEOUT) * 1000;
             punctuationTimer = setTimeout(manualStopVoice, timeout);
@@ -465,9 +478,13 @@
         recognition.onend = function() {
             if (isRecording) {
                 try { 
+                    // 重新開始時，更新初始文字 (把剛講完的變成初始文字)
                     const el = document.getElementById(activeTextAreaId);
-                    if(el) snapshotText = el.value; 
-                    if (snapshotText.length > 0 && !snapshotText.endsWith(' ') && !snapshotText.endsWith('\n')) { snapshotText += ' '; }
+                    if(el) {
+                        initialText = el.value;
+                        if (initialText.length > 0 && !initialText.endsWith(' ') && !initialText.endsWith('\n')) { initialText += ' '; }
+                    }
+                    currentSessionFinal = '';
                     recognition.start(); 
                 } catch(e) { console.warn("Restart failed"); }
             } else {
@@ -480,7 +497,10 @@
 
     function manualStopVoice() {
         isRecording = false; 
-        if (recognition) { clearTimeout(punctuationTimer); recognition.stop(); const targetElement = document.getElementById(activeTextAreaId); if(targetElement) snapshotText = targetElement.value; }
+        if (recognition) { 
+            clearTimeout(punctuationTimer); 
+            recognition.stop(); 
+        }
         resetVoiceUI();
     }
 
@@ -491,7 +511,6 @@
     function showStatus(t,h,s){const m=document.getElementById('status-modal');document.getElementById('status-text').innerText=h;document.getElementById('status-subtext').innerText=s;document.getElementById('status-spinner').style.display=t==='loading'?'block':'none';document.getElementById('status-icon').style.display=t!=='loading'?'block':'none';document.getElementById('status-close-btn').style.display=t!=='loading'?'block':'none';document.getElementById('status-icon').innerText=t==='success'?'✅':'❌';m.style.display='flex'}
     function closeStatusModal(){document.getElementById('status-modal').style.display='none'}
     
-    // ✅ 已修正：標題加入 [Machine NG Record]
     function copyFormattedInfo(){
         const emp = document.getElementById('input-employee-id').value || "N/A";
         const machine = document.getElementById('input-machine').value || "N/A";
